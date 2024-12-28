@@ -13,6 +13,9 @@
 #include <vector>
 #include <ctime>
 
+std::string escapeNewLines(const std::string& input);
+std::string convertEscapedNewlines(const std::string& input);
+
 // trim whitespace from the beginning and end of a string
 static std::string trim(const std::string & str) {
     size_t start = 0;
@@ -29,27 +32,40 @@ static std::string trim(const std::string & str) {
     return str.substr(start, end - start);
 }
 
-static std::string k_system =
-R"(Transcript of a never ending dialog, where the User interacts with an Assistant.
-The Assistant is helpful, kind, honest, good at writing, and never fails to answer the User's requests immediately and with precision.
+std::string convertEscapedNewlines(const std::string& input) {
+    std::string output = input;
+    size_t pos = 0;
+    
+    // Find and replace all occurrences of "\\n" with "\n"
+    while ((pos = output.find("\\n", pos)) != std::string::npos) {
+        output.replace(pos, 2, "\n");
+        pos += 1; // Move past the newly inserted '\n' to avoid infinite loop
+    }
+    
+    return output;
+}
 
-User: Recommend a nice restaurant in the area.
-Assistant: I recommend the restaurant "The Golden Duck". It is a 5 star restaurant with a great view of the city. The food is delicious and the service is excellent. The prices are reasonable and the portions are generous. The restaurant is located at 123 Main Street, New York, NY 10001. The phone number is (212) 555-1234. The hours are Monday through Friday from 11:00 am to 10:00 pm. The restaurant is closed on Saturdays and Sundays.
-User: Who is Richard Feynman?
-Assistant: Richard Feynman was an American physicist who is best known for his work in quantum mechanics and particle physics. He was awarded the Nobel Prize in Physics in 1965 for his contributions to the development of quantum electrodynamics. He was a popular lecturer and author, and he wrote several books, including "Surely You're Joking, Mr. Feynman!" and "What Do You Care What Other People Think?".
-User:)";
+std::vector<std::string> k_prompts;
 
-static std::vector<std::string> k_prompts = {
-    "What is the meaning of life?",
-    "Tell me an interesting fact about llamas.",
-    "What is the best way to cook a steak?",
-    "Are you familiar with the Special Theory of Relativity and can you explain it to me?",
-    "Recommend some interesting books to read.",
-    "What is the best way to learn a new language?",
-    "How to get a job at Google?",
-    "If you could have any superpower, what would it be?",
-    "I want to learn how to play the piano.",
-};
+std::string escapeNewLines(const std::string& input) {
+
+    std::string output;
+
+    for (char ch : input) {
+        switch (ch) {
+            case '\n':
+                output += "\\n";   // Escape newlines
+                break;
+            default:
+                output += ch;
+        }
+    }
+    return output;
+}
+
+static std::string k_system;
+
+static std::vector<std::string> k_prompts;
 
 struct client {
     ~client() {
