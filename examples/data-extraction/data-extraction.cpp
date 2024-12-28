@@ -202,7 +202,7 @@ int main(int argc, char ** argv) {
     }
 
     std::vector<llama_token> tokens_system;
-    k_system = convertEscapedNewlines(params.system);
+    k_system = convertEscapedNewlines(params.system_prompt);
     tokens_system = common_tokenize(ctx, k_system, true);
     const int32_t n_tokens_system = tokens_system.size();
 
