@@ -656,7 +656,7 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         [](common_params & params, const std::string & value) {
             std::ifstream file(value);
             if (!file) {
-                throw std::runtime_error(string_format("error: failed to open file '%s'\n", value.c_str()));
+                throw std::runtime_error(string_format("error: failed to open system prompt file '%s'\n", value.c_str()));
             }
             // Copy the contents of the file to the param
             std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.system_prompt));
