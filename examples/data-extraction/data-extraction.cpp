@@ -153,19 +153,41 @@ int main(int argc, char ** argv) {
 
     // load the prompts from an external file if there are any
     if (params.prompt.empty()) {
-        LOG_INF("\033[32mNo new questions so proceed with build-in defaults.\033[0m\n");
+        throw std::runtime_error("Error: No prompts given");
     } else {
         // Output each line of the input params.prompts vector and copy to k_prompts
-        int index = 0;
-        LOG_INF("\033[32mNow printing the external prompt file %s\033[0m\n\n", params.prompt_file.c_str());
+        size_t index = 0;
+        printf("\n\033[32mNow processing the external prompt file starting with line %zu from %s\033[0m\n\n", params.promptStartingNumber, params.prompt_file.c_str());
 
-        std::vector<std::string> prompts = split_string(params.prompt, '\n');
-        for (const auto& prompt : prompts) {
-            k_prompts.resize(index + 1);
-            k_prompts[index] = prompt;
-            index++;
-            LOG_INF("%3d prompt: %s\n", index, prompt.c_str());
+        // Create and open a text file
+        std::ofstream outFile1(inputFile.c_str());
+
+        // Check if the file was opened successfully
+        if (!outFile1) {
+            std::cerr << "Failed to open the input prompt out file." << std::endl;
+            return 1; // Return with error code
         }
+
+        allPrompts = split_string(params.prompt, '\n');
+        allIDs = split_string(params.IDs, '\n');
+
+        // Print the prompts and write to outfile (only those equal to or after starting index)
+        std::string tmpPrompt;
+        for (const auto& prompt : allPrompts) {
+            if(index >= params.promptStartingNumber){
+                k_prompts.resize(index + 1);
+                k_prompts[index] = prompt;
+
+                // Write each prompt to the out file
+                if(params.saveInput){
+                    outFile1 << prompt << std::endl; // Adding newline for separation in file
+                }
+            }
+            index++;
+        }
+
+        // Close the file
+        outFile1.close();
     }
 
     LOG_INF("\n\n");
@@ -180,6 +202,7 @@ int main(int argc, char ** argv) {
     }
 
     std::vector<llama_token> tokens_system;
+    k_system = convertEscapedNewlines(params.system);
     tokens_system = common_tokenize(ctx, k_system, true);
     const int32_t n_tokens_system = tokens_system.size();
 

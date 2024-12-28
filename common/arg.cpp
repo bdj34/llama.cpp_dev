@@ -651,6 +651,13 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
+        {"--system_prompt"}, "SYSTEM_PROMPT",
+            "system prompt",
+        [](common_params & params, const std::string & value) {
+            params.system_prompt = value;
+        }
+    ));
+    add_opt(common_arg(
         {"--no-perf"},
         string_format("disable internal libllama performance timings (default: %s)", params.no_perf ? "true" : "false"),
         [](common_params & params) {
