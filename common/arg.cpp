@@ -690,6 +690,18 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
+        {"-ID", "--ID_file"}, "FNAME",
+        "a file containing the note or patient IDs",
+        [](common_params & params, const std::string & value) {
+            std::ifstream file(value);
+            if (!file) {
+                throw std::runtime_error(string_format("error: failed to open ID file '%s'\n", value.c_str()));
+            }
+            // store the external file name in params
+            params.ID_file = value;
+        }
+    ));
+    add_opt(common_arg(
         {"--in-file"}, "FNAME",
         "an input file (repeat to specify multiple files)",
         [](common_params & params, const std::string & value) {
