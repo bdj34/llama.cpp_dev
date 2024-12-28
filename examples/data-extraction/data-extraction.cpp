@@ -91,6 +91,8 @@ struct client {
     std::string prompt;
     std::string response;
 
+    std::string ptID;
+
     struct common_sampler * smpl = nullptr;
 };
 
@@ -287,15 +289,20 @@ int main(int argc, char ** argv) {
                     client.t_start_prompt = ggml_time_us();
                     client.t_start_gen    = 0;
 
-                    client.input    = k_prompts[rand() % k_prompts.size()];
-                    client.prompt   = client.input + "\nAssistant:";
+                    client.input    = convertEscapedNewlines(k_prompts[promptNumber]);
+                    if(!params.patient_file.empty()){
+                        client.ptID = allPatients[promptNumber];
+                    }
+
+                    promptNumber++;
+                    client.prompt   = client.input;
                     client.response = "";
 
                     common_sampler_reset(client.smpl);
 
                     // do not prepend BOS because we have a system prompt!
                     std::vector<llama_token> tokens_prompt;
-                    tokens_prompt = common_tokenize(ctx, client.prompt, false);
+                    tokens_prompt = ::common_tokenize(ctx, client.prompt, false);
 
                     for (size_t i = 0; i < tokens_prompt.size(); ++i) {
                         common_batch_add(batch, tokens_prompt[i], i + n_tokens_system, { client.id + 1 }, false);
@@ -310,14 +317,13 @@ int main(int argc, char ** argv) {
                     client.n_decoded = 0;
                     client.i_batch   = batch.n_tokens - 1;
 
-                    LOG_INF("\033[31mClient %3d, seq %4d, started decoding ...\033[0m\n", client.id, client.seq_id);
-
+                    if(params.patient_file.empty()){
+                        LOG_INF("\n\n\033[0mClient %3d, seq %4d, started decoding ...\033[0m\n", client.id, client.seq_id);
+                    }else{
+                        LOG_INF("\n\n\033[0mClient %3d, Patient %s, seq %4d, started decoding ...\033[0m\n", client.id, client.ptID.c_str(), client.seq_id);
+                    }
+                    
                     g_seq_id += 1;
-
-                    // insert new requests one-by-one
-                    //if (cont_batching) {
-                    //    break;
-                    //}
                 }
             }
         }
