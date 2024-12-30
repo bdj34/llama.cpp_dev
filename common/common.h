@@ -236,8 +236,12 @@ struct common_params {
     std::string hf_file              = ""; // HF file                                                       // NOLINT
     std::string prompt               = "";                                                                  // NOLINT
     std::string prompt_file          = ""; // store the external prompt file name                           // NOLINT
-    std::string system_prompt        = ""; // store the system prompt                                       // NOLINT
-    std::string ID_file              = ""; // path to the file with patient/note IDs                        // NOLINT
+    std::string system_prompt_file   = ""; // store the system prompt file name                             // Brian added
+    std::string system_prompt        = ""; // store the system prompt                                       // Brian added
+    std::string ID_file              = ""; // path to the file with patient/note IDs                        // Brian added
+    std::string IDs                  = ""; // patient/note IDs from file                                    // Brian added
+    std::string outDir               = ""; // path to the dir where output will be stored                   // Brian added
+    bool saveInput                   = false; // Whether to save the full input txt file                     // Brian added
     std::string path_prompt_cache    = ""; // path to file for saving/loading prompt eval state             // NOLINT
     std::string input_prefix         = ""; // string to prefix user inputs with                             // NOLINT
     std::string input_suffix         = ""; // string to suffix user inputs with                             // NOLINT

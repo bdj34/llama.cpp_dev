@@ -12,11 +12,13 @@
 #include <string>
 #include <vector>
 #include <ctime>
+#include <iostream>
+#include <fstream>
 
 std::string escapeNewLines(const std::string& input);
 std::string convertEscapedNewlines(const std::string& input);
 
-// trim whitespace from the beginning and end of a string
+// trim whitespace from the beginning and end of a string. Only used for printing
 static std::string trim(const std::string & str) {
     size_t start = 0;
     size_t end = str.size();
@@ -63,9 +65,7 @@ std::string escapeNewLines(const std::string& input) {
     return output;
 }
 
-static std::string k_system;
-
-static std::vector<std::string> k_prompts;
+std::string k_system;
 
 struct client {
     ~client() {
@@ -91,7 +91,7 @@ struct client {
     std::string prompt;
     std::string response;
 
-    std::string ptID;
+    std::string inputID;
 
     struct common_sampler * smpl = nullptr;
 };
@@ -143,6 +143,16 @@ int main(int argc, char ** argv) {
 
     const bool dump_kv_cache = params.dump_kv_cache;
 
+    // Get current time
+    std::time_t now = std::time(nullptr);
+    std::tm* now_tm = std::localtime(&now);
+    // Buffer to hold the date-time format
+    char dateTimeBuffer[60];  // Ensure the buffer is large enough for the format
+    // Format the date and time with strftime
+    strftime(dateTimeBuffer, sizeof(dateTimeBuffer), "%Y-%m-%d_%H-%M-%S", now_tm);
+    // Convert to string for use in filenames or other outputs
+    std::string dateTimeOutFile = dateTimeBuffer;
+
     // init llama.cpp
     llama_backend_init();
     llama_numa_init(params.numa);
@@ -153,13 +163,21 @@ int main(int argc, char ** argv) {
     llama_model * model = llama_init.model;
     llama_context * ctx = llama_init.context;
 
+    // Set file names
+    std::string dirPath = params.outDir;
+    std::string inputFile = dirPath + "/inputTextNoFormatting_" + dateTimeOutFile + ".txt";
+    std::string metadataFile = dirPath + "/metadata_" + dateTimeOutFile + ".txt";
+    std::string outputFile = dirPath + "/output_" + dateTimeOutFile + ".txt";
+
+    std::vector<std::string> allPrompts;
+    std::vector<std::string> allIDs;
     // load the prompts from an external file if there are any
     if (params.prompt.empty()) {
         throw std::runtime_error("Error: No prompts given");
     } else {
         // Output each line of the input params.prompts vector and copy to k_prompts
         size_t index = 0;
-        printf("\n\033[32mNow processing the external prompt file starting with line %zu from %s\033[0m\n\n", params.promptStartingNumber, params.prompt_file.c_str());
+        printf("\n\033[32mNow processing the external prompts from %s\033[0m\n\n", params.prompt_file.c_str());
 
         // Create and open a text file
         std::ofstream outFile1(inputFile.c_str());
@@ -176,14 +194,12 @@ int main(int argc, char ** argv) {
         // Print the prompts and write to outfile (only those equal to or after starting index)
         std::string tmpPrompt;
         for (const auto& prompt : allPrompts) {
-            if(index >= params.promptStartingNumber){
-                k_prompts.resize(index + 1);
-                k_prompts[index] = prompt;
+            k_prompts.resize(index + 1);
+            k_prompts[index] = prompt;
 
-                // Write each prompt to the out file
-                if(params.saveInput){
-                    outFile1 << prompt << std::endl; // Adding newline for separation in file
-                }
+            // Write each prompt to the out file
+            if(params.saveInput){
+                outFile1 << prompt << std::endl; // Adding newline for separation in file
             }
             index++;
         }
@@ -196,6 +212,39 @@ int main(int argc, char ** argv) {
 
     const int n_ctx = llama_n_ctx(ctx);
 
+    // Get system prompt from file/params
+    k_system = convertEscapedNewlines(params.system_prompt);
+
+    // Write format to the metadataFile
+    std::string fullPrompt_example = convertEscapedNewlines(k_system) + convertEscapedNewlines(k_prompts[0]);
+    std::vector<llama_token> tokens_format;
+    // Bool in third arg represents BOS token, which we DO want here.
+    tokens_format = ::common_tokenize(ctx, fullPrompt_example, true);
+    // Create and open a text file to save the full prompt (system + input)
+    std::ofstream outFile2(metadataFile.c_str());
+
+    // Check if the file was opened successfully
+    if (!outFile2) {
+        std::cerr << "Failed to open the metadata out file." << std::endl;
+        return 1; // Return with error code
+    }
+
+    // Write each prompt to the out file
+    outFile2 << "Start date-time: " << dateTimeOutFile << std::endl;
+    outFile2 << "Output file format (tab-separated): {Model answer, with newlines escaped}\t{Patient ID or SurgPathID}" << std::endl << std::endl;   
+    outFile2 << "Model path: " << params.model << std::endl << std::endl;
+    outFile2 << "Input file path: " << params.prompt_file << std::endl;
+    outFile2 << "Patient ID file path (if applicable): " << params.ID_file << std::endl;
+    outFile2 << "Reading until line" << n_seq << std::endl << std::endl;
+    outFile2 << "Full prompt format (no escaping):" << std::endl; 
+    outFile2 << fullPrompt_example << std::endl << std::endl << std::endl << "Prompt format tokenized (including BOS token):" << std::endl; // Adding newline for separation in file
+
+    // Iterate through the vector and write each element to the file
+    for (size_t i = 0; i < tokens_format.size(); ++i) {
+        outFile2 << tokens_format[i] << "\t";
+    }
+    outFile2 << std::endl << std::endl;
+
     std::vector<client> clients(n_clients);
     for (size_t i = 0; i < clients.size(); ++i) {
         auto & client = clients[i];
@@ -203,8 +252,10 @@ int main(int argc, char ** argv) {
         client.smpl = common_sampler_init(model, params.sampling);
     }
 
+    // Initialize system prompt token vec
     std::vector<llama_token> tokens_system;
-    k_system = convertEscapedNewlines(params.system_prompt);
+    // Print the string and tokenize
+    printf("System prompt: %s\n", k_system.c_str());
     tokens_system = common_tokenize(ctx, k_system, true);
     const int32_t n_tokens_system = tokens_system.size();
 
@@ -248,6 +299,14 @@ int main(int argc, char ** argv) {
 
     LOG_INF("Processing requests ...\n\n");
 
+    // Open output file to write to
+    std::ofstream outFile3(outputFile.c_str());
+    // Check if the file was opened successfully
+    if (!outFile3) {
+        std::cerr << "Failed to open the output out file." << std::endl;
+        return 1; // Return with error code
+    }
+
     while (true) {
         if (dump_kv_cache) {
             llama_kv_cache_view_update(ctx, &kvc_view);
@@ -281,6 +340,7 @@ int main(int argc, char ** argv) {
         }
 
         // insert new sequences for decoding
+        size_t promptNumber = 0;
         if (cont_batching || batch.n_tokens == 0) {
             for (auto & client : clients) {
                 if (client.seq_id == -1 && g_seq_id < n_seq) {
@@ -290,8 +350,8 @@ int main(int argc, char ** argv) {
                     client.t_start_gen    = 0;
 
                     client.input    = convertEscapedNewlines(k_prompts[promptNumber]);
-                    if(!params.patient_file.empty()){
-                        client.ptID = allPatients[promptNumber];
+                    if(!params.ID_file.empty()){
+                        client.inputID = allIDs[promptNumber];
                     }
 
                     promptNumber++;
@@ -317,10 +377,10 @@ int main(int argc, char ** argv) {
                     client.n_decoded = 0;
                     client.i_batch   = batch.n_tokens - 1;
 
-                    if(params.patient_file.empty()){
+                    if(params.ID_file.empty()){
                         LOG_INF("\n\n\033[0mClient %3d, seq %4d, started decoding ...\033[0m\n", client.id, client.seq_id);
                     }else{
-                        LOG_INF("\n\n\033[0mClient %3d, Patient %s, seq %4d, started decoding ...\033[0m\n", client.id, client.ptID.c_str(), client.seq_id);
+                        LOG_INF("\n\n\033[0mClient %3d, Patient %s, seq %4d, started decoding ...\033[0m\n", client.id, client.inputID.c_str(), client.seq_id);
                     }
                     
                     g_seq_id += 1;
@@ -399,33 +459,75 @@ int main(int argc, char ** argv) {
                 client.response += token_str;
                 client.sampled = id;
 
-                //printf("client %d, seq %d, token %d, pos %d, batch %d: %s\n",
-                //        client.id, client.seq_id, id, client.n_decoded, client.i_batch, token_str.c_str());
+                bool foundStop = false;
+                for (const auto& item : params.antiprompt) {
+                    if (client.response.find(item) != std::string::npos) {
+                        foundStop = true;
+                        break;
+                    }
+                }
 
-                if (client.n_decoded > 2 &&
+                // Determine when to stop generating
+                if (client.n_decoded > 0 &&
                         (llama_token_is_eog(model, id) ||
-                         (params.n_predict > 0 && client.n_decoded + client.n_prompt >= params.n_predict) ||
-                         client.response.find("User:") != std::string::npos ||
-                         client.response.find('\n') != std::string::npos)) {
-                    // basic reverse prompt
-                    const size_t pos = client.response.find("User:");
+                        foundStop ||
+                         (params.n_predict > 0 && client.n_decoded >= params.n_predict))) {
+                    
+                    // Brian edit: basic reverse prompt identifying the EOT or EOS tokens
+                    const std::string eos_str = common_token_to_piece(ctx, llama_token_eos(model));
+                    int32_t eot_token = llama_token_eot(model);
+
+                    size_t pos;
+                    if (eot_token == -1) {
+                        pos = client.response.rfind(eos_str);
+                    } else{
+                        const std::string eot_str = common_token_to_piece(ctx, llama_token_eot(model));
+                        const size_t pos_eos = client.response.rfind(eos_str);
+                        const size_t pos_eot = client.response.rfind(eot_str);
+                        if (pos_eos == std::string::npos && pos_eot == std::string::npos) {
+                            pos = std::string::npos;
+                        } else if (pos_eos == std::string::npos) {
+                            pos = pos_eot;
+                        } else if (pos_eot == std::string::npos) {
+                            pos = pos_eos;
+                        } else {
+                            pos = (pos_eos > pos_eot) ? pos_eos : pos_eot;
+                        }
+                    }
+
                     if (pos != std::string::npos) {
                         client.response = client.response.substr(0, pos);
                     }
 
+                    // Copy the client response and the ptID to the output file
+                    if(!client.inputID.empty()){
+                        outFile3 << escapeNewLines(client.response);
+                        outFile3 << "\t" << client.inputID;
+                    }else{
+                        std::cerr << "No ID given to identify each input!" << std::endl;
+                        return 1;
+                    }
+                    outFile3 << std::endl;
+
                     // delete only the generated part of the sequence, i.e. keep the system prompt in the cache
-                    llama_kv_cache_seq_rm(ctx,    client.id + 1, -1, -1);
+                    llama_kv_cache_seq_rm(ctx, client.id + 1, -1, -1);
                     llama_kv_cache_seq_cp(ctx, 0, client.id + 1, -1, -1);
 
                     const auto t_main_end = ggml_time_us();
 
-                    LOG_INF("\033[31mClient %3d, seq %3d/%3d, prompt %4d t, response %4d t, time %5.2f s, speed %5.2f t/s, cache miss %d \033[0m \n\nInput:    %s\n\033[35mResponse: %s\033[0m\n\n",
-                            client.id, client.seq_id, n_seq, client.n_prompt, client.n_decoded,
+                    LOG_INF("\033[0m \nInput:\n\033[96m%s\033[91m%s\033[0m\n\033[92mJust completed: Patient: %s, sequence %3d of %3d, prompt: %4d tokens, response: %4d tokens, time: %5.2f seconds, speed %5.2f t/s",
+                            //escapeNewLines(client.input).c_str(),
+                            client.input.c_str(),
+                            client.response.c_str(),
+                            client.inputID.c_str(), client.seq_id, n_seq, client.n_prompt, client.n_decoded,
                             (t_main_end - client.t_start_prompt) / 1e6,
-                            (double) (client.n_prompt + client.n_decoded) / (t_main_end - client.t_start_prompt) * 1e6,
-                            n_cache_miss,
-                            ::trim(client.input).c_str(),
-                            ::trim(client.response).c_str());
+                            (double) (client.n_prompt + client.n_decoded) / (t_main_end - client.t_start_prompt) * 1e6);
+                            // n_cache_miss,
+                            //k_system.c_str(),
+                            //::trim(prompts[promptNumber]).c_str());
+                    
+                    LOG_INF("\nJust completed ID: %s",
+                        client.inputID.c_str());
 
                     n_total_prompt += client.n_prompt;
                     n_total_gen    += client.n_decoded;
@@ -438,7 +540,23 @@ int main(int argc, char ** argv) {
         }
     }
 
+    // Close the file
+    outFile3.close();
+
+    // Reopen the metadata file in append mode
+    std::ofstream metaFile(metadataFile, std::ios::app);  // Append mode
+
+    // Check if the file was opened successfully
+    if (!metaFile) {
+        std::cerr << "Failed to open the metadata out file." << std::endl;
+        return 1; // Return with error code
+    }
+
     const auto t_main_end = ggml_time_us();
+
+    metaFile << "Total runtime (seconds): " << (t_main_end - t_main_start)/(1e6) << std::endl;
+
+    metaFile.close();
 
     print_date_time();
 
@@ -462,7 +580,8 @@ int main(int argc, char ** argv) {
     llama_batch_free(batch);
 
     llama_free(ctx);
-    llama_free_model(model);
+    // Keep model in RAM/VRAM? Maybe we won't have to load again (for VA)??
+    //llama_free_model(model);
 
     llama_backend_free();
 

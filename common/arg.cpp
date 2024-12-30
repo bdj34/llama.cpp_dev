@@ -690,7 +690,7 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
-        {"-ID", "--ID_file"}, "FNAME",
+        {"--ID_file"}, "FNAME",
         "a file containing the note or patient IDs",
         [](common_params & params, const std::string & value) {
             std::ifstream file(value);
@@ -699,6 +699,25 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
             }
             // store the external file name in params
             params.ID_file = value;
+            std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.IDs));
+            if (!params.IDs.empty() && params.IDs.back() == '\n') {
+                params.IDs.pop_back();
+            }
+        }
+    ));
+    add_opt(common_arg(
+        {"--outDir"}, "OUTPUTDIR",
+        "a path to the directory where outputs will be written",
+        [](common_params & params, const std::string & value) {
+            // store the external file name in params
+            params.outDir = value;
+        }
+    ));
+    add_opt(common_arg(
+        {"--saveInput"},
+        string_format("Save the inputs to a txt file? (default: %s)", params.saveInput ? "yes" : "no"),
+        [](common_params & params) {
+            params.saveInput = true;
         }
     ));
     add_opt(common_arg(
