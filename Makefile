@@ -1,51 +1,52 @@
 ifndef LLAMA_MAKEFILE
-$(error The Makefile build is deprecated. Use the CMake build instead. For more details, see https://github.com/ggerganov/llama.cpp/blob/master/docs/build.md)
+# $(error The Makefile build is deprecated. Use the CMake build instead. For more details, see https://github.com/ggerganov/llama.cpp/blob/master/docs/build.md)
 endif
 
 # Define the default target now so that it is always the first target
 BUILD_TARGETS = \
-	libllava.a \
-	llama-batched \
-	llama-batched-bench \
-	llama-bench \
-	llama-cli \
-	llama-convert-llama2c-to-ggml \
-	llama-embedding \
-	llama-eval-callback \
-	llama-export-lora \
-	llama-gbnf-validator \
-	llama-gguf \
-	llama-gguf-hash \
-	llama-gguf-split \
-	llama-gritlm \
-	llama-imatrix \
-	llama-infill \
-	llama-llava-cli \
-	llama-minicpmv-cli\
-	llama-qwen2vl-cli\
-	llama-lookahead \
-	llama-lookup \
-	llama-lookup-create \
-	llama-lookup-merge \
-	llama-lookup-stats \
-	llama-parallel \
-	llama-passkey \
-	llama-perplexity \
-	llama-q8dot \
-	llama-quantize \
-	llama-quantize-stats \
-	llama-retrieval \
-	llama-save-load-state \
-	llama-server \
-	llama-simple \
-	llama-simple-chat \
-	llama-run \
-	llama-speculative \
-	llama-tokenize \
-	llama-vdot \
-	llama-cvector-generator \
-	llama-gen-docs \
-	tests/test-c.o
+	llama-data-extraction \
+	# libllava.a \
+	# llama-batched \
+	# llama-batched-bench \
+	# llama-bench \
+	# llama-cli \
+	# llama-convert-llama2c-to-ggml \
+	# llama-embedding \
+	# llama-eval-callback \
+	# llama-export-lora \
+	# llama-gbnf-validator \
+	# llama-gguf \
+	# llama-gguf-hash \
+	# llama-gguf-split \
+	# llama-gritlm \
+	# llama-imatrix \
+	# llama-infill \
+	# llama-llava-cli \
+	# llama-minicpmv-cli\
+	# llama-qwen2vl-cli\
+	# llama-lookahead \
+	# llama-lookup \
+	# llama-lookup-create \
+	# llama-lookup-merge \
+	# llama-lookup-stats \
+	# llama-parallel \
+	# llama-passkey \
+	# llama-perplexity \
+	# llama-q8dot \
+	# llama-quantize \
+	# llama-quantize-stats \
+	# llama-retrieval \
+	# llama-save-load-state \
+	# llama-server \
+	# llama-simple \
+	# llama-simple-chat \
+	# llama-run \
+	# llama-speculative \
+	# llama-tokenize \
+	# llama-vdot \
+	# llama-cvector-generator \
+	# llama-gen-docs \
+	# tests/test-c.o
 
 # Binaries only useful for tests
 TEST_TARGETS = \
@@ -72,7 +73,7 @@ TEST_TARGETS = \
 # Legacy build targets that were renamed in #7809, but should still be removed when the project is cleaned
 LEGACY_TARGETS_CLEAN = main quantize quantize-stats perplexity imatrix embedding vdot q8dot convert-llama2c-to-ggml \
 	simple batched batched-bench save-load-state server gguf gguf-split eval-callback llama-bench libllava.a llava-cli baby-llama \
-	retrieval speculative infill tokenize parallel export-lora lookahead lookup passkey gritlm
+	retrieval speculative infill tokenize parallel export-lora lookahead lookup passkey gritlm llama-data-extraction
 
 # Legacy build targets that were renamed in #7809, but we want to build binaries that for them that output a deprecation warning if people try to use them.
 #  We don't want to clutter things too much, so we only build replacements for the most commonly used binaries.
@@ -1345,6 +1346,11 @@ llama-passkey: examples/passkey/passkey.cpp \
 	$(CXX) $(CXXFLAGS) $(filter-out %.h $<,$^) $(call GET_OBJ_FILE, $<) -o $@ $(LDFLAGS)
 
 llama-gbnf-validator: examples/gbnf-validator/gbnf-validator.cpp \
+	$(OBJ_ALL)
+	$(CXX) $(CXXFLAGS) -c $< -o $(call GET_OBJ_FILE, $<)
+	$(CXX) $(CXXFLAGS) $(filter-out %.h $<,$^) $(call GET_OBJ_FILE, $<) -o $@ $(LDFLAGS)
+
+llama-data-extraction: examples/data-extraction/data-extraction.cpp \
 	$(OBJ_ALL)
 	$(CXX) $(CXXFLAGS) -c $< -o $(call GET_OBJ_FILE, $<)
 	$(CXX) $(CXXFLAGS) $(filter-out %.h $<,$^) $(call GET_OBJ_FILE, $<) -o $@ $(LDFLAGS)
