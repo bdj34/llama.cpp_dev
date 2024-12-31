@@ -714,6 +714,14 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
+        {"--promptFormat"}, "PROMPTFORMAT",
+        "The prompt format for the corresponding model",
+        [](common_params & params, const std::string & value) {
+            // store the external file name in params
+            params.promptFormat = value;
+        }
+    ));
+    add_opt(common_arg(
         {"--saveInput"},
         string_format("Save the inputs to a txt file? (default: %s)", params.saveInput ? "yes" : "no"),
         [](common_params & params) {

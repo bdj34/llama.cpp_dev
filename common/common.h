@@ -241,6 +241,7 @@ struct common_params {
     std::string ID_file              = ""; // path to the file with patient/note IDs                        // Brian added
     std::string IDs                  = ""; // patient/note IDs from file                                    // Brian added
     std::string outDir               = ""; // path to the dir where output will be stored                   // Brian added
+    std::string promptFormat         = ""; // Prompt format matching the model used                         // Brian added
     bool saveInput                   = false; // Whether to save the full input txt file                     // Brian added
     std::string path_prompt_cache    = ""; // path to file for saving/loading prompt eval state             // NOLINT
     std::string input_prefix         = ""; // string to prefix user inputs with                             // NOLINT

@@ -14,7 +14,7 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
-
+std::string generatePreAnswer(const std::string& promptFormat);
 std::string escapeNewLines(const std::string& input);
 std::string convertEscapedNewlines(const std::string& input);
 
@@ -95,6 +95,23 @@ struct client {
 
     struct common_sampler * smpl = nullptr;
 };
+
+std::string generatePreAnswer(const std::string& promptFormat) {
+
+    std::string preAnswer;
+
+    if (promptFormat == "mistral") {
+        return " [/INST] ";
+    } else if (promptFormat == "llama3") {
+        return "<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\n\n";
+    } else if (promptFormat == "phi3") {
+        return "<|end|>\n<|assistant|>\n";
+    } else if (promptFormat == "gemma2") {
+        return "<end_of_turn>\n<start_of_turn>model\n" + preAnswer;
+    } else {
+        throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, phi3, llama3, mistral.");
+    }
+}
 
 static void print_date_time() {
     std::time_t current_time = std::time(nullptr);
@@ -195,7 +212,8 @@ int main(int argc, char ** argv) {
         std::string tmpPrompt;
         for (const auto& prompt : allPrompts) {
             k_prompts.resize(index + 1);
-            k_prompts[index] = prompt;
+                tmpPrompt = prompt + generatePreAnswer(params.promptFormat);
+                k_prompts[index] = tmpPrompt;
 
             // Write each prompt to the out file
             if(params.saveInput){
