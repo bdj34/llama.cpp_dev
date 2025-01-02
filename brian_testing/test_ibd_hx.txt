@@ -1,11 +1,22 @@
 
-
+# Gemma-2-9B-SPPO
 ./llama-data-extraction --systemPromptFile /Users/brianjohnson/VA_IBD/llama.cpp_2024_12_28/system_prompts/gemma2/IBD_hx.txt \
--m ~/Downloads/models_gguf/gemma2-9B_f16.gguf \
+-m ~/Downloads/models_gguf/gemma2-9B_SPPO_f16.gguf \
+--sequences 16 --parallel 1 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/ibd.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat gemma2 
+
+# Llama 3.3
+./llama-data-extraction --systemPromptFile /Users/brianjohnson/VA_IBD/llama.cpp_2024_12_28/system_prompts/llama3/IBD_hx.txt \
+-m ~/Downloads/models_gguf/Llama-3.3-70B-Instruct-Q6_K-00001-of-00002.gguf \
 --sequences 16 --parallel 1 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
 --temp 0 \
 --IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
 --grammar-file ./grammars/ibd.gbnf \
 --outDir ../llm_ibd_outDir \
 --file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
---promptFormat gemma2 
+--promptFormat llama3 

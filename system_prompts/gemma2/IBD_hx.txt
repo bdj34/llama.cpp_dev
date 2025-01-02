@@ -26,4 +26,4 @@ Exact date of original colitis diagnosis stated: {Yes or No}
 - When summarizing, include only the most relevant information related to the IBD diagnosis.
 - Use direct quotes from the notes wherever possible to support your answer.
 
-Excerpts:
+Excerpts:\n

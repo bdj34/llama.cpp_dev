@@ -195,13 +195,15 @@ int main(int argc, char ** argv) {
         size_t index = 0;
         printf("\n\033[32mNow processing the external prompts from %s\033[0m\n\n", params.prompt_file.c_str());
 
-        // Create and open a text file
-        std::ofstream outFile1(inputFile.c_str());
+        // Create and open a text file (if input is to be saved)
+        if(params.saveInput){
+            std::ofstream outFile1(inputFile.c_str());
 
-        // Check if the file was opened successfully
-        if (!outFile1) {
-            std::cerr << "Failed to open the input prompt out file." << std::endl;
-            return 1; // Return with error code
+            // Check if the file was opened successfully
+            if (!outFile1) {
+                std::cerr << "Failed to open the input prompt out file." << std::endl;
+                return 1; // Return with error code
+            }
         }
 
         allPrompts = split_string(params.prompt, '\n');
@@ -222,7 +224,9 @@ int main(int argc, char ** argv) {
         }
 
         // Close the file
-        outFile1.close();
+        if(params.saveInput){
+            outFile1.close();
+        }
     }
 
     LOG_INF("\n\n");
@@ -324,6 +328,8 @@ int main(int argc, char ** argv) {
         return 1; // Return with error code
     }
 
+    size_t promptNumber = 0;
+
     while (true) {
         if (dump_kv_cache) {
             llama_kv_cache_view_update(ctx, &kvc_view);
@@ -357,7 +363,6 @@ int main(int argc, char ** argv) {
         }
 
         // insert new sequences for decoding
-        size_t promptNumber = 0;
         if (cont_batching || batch.n_tokens == 0) {
             for (auto & client : clients) {
                 if (client.seq_id == -1 && g_seq_id < n_seq) {

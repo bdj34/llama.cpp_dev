@@ -28,4 +28,4 @@ Exact date of original colitis diagnosis stated: {Yes or No}
 - Use direct quotes from the notes wherever possible to support your answer.<|eot_id|>
 <|start_header_id|>user<|end_header_id|>
 
-Excerpts:
+Excerpts:\n
