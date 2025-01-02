@@ -651,7 +651,7 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
-        {"--system_prompt_file"}, "SYSTEM_PROMPT_FNAME",
+        {"--systemPromptFile"}, "SYSTEM_PROMPT_FNAME",
         "a file containing the system prompt",
         [](common_params & params, const std::string & value) {
             std::ifstream file(value);
@@ -690,7 +690,7 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ));
     add_opt(common_arg(
-        {"--ID_file"}, "FNAME",
+        {"--IDfile"}, "FNAME",
         "a file containing the note or patient IDs",
         [](common_params & params, const std::string & value) {
             std::ifstream file(value);
@@ -698,7 +698,7 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
                 throw std::runtime_error(string_format("error: failed to open ID file '%s'\n", value.c_str()));
             }
             // store the external file name in params
-            params.ID_file = value;
+            params.IDfile = value;
             std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.IDs));
             if (!params.IDs.empty() && params.IDs.back() == '\n') {
                 params.IDs.pop_back();

@@ -14,6 +14,7 @@
 #include <ctime>
 #include <iostream>
 #include <fstream>
+
 std::string generatePreAnswer(const std::string& promptFormat);
 std::string escapeNewLines(const std::string& input);
 std::string convertEscapedNewlines(const std::string& input);
@@ -98,8 +99,6 @@ struct client {
 
 std::string generatePreAnswer(const std::string& promptFormat) {
 
-    std::string preAnswer;
-
     if (promptFormat == "mistral") {
         return " [/INST] ";
     } else if (promptFormat == "llama3") {
@@ -107,7 +106,7 @@ std::string generatePreAnswer(const std::string& promptFormat) {
     } else if (promptFormat == "phi3") {
         return "<|end|>\n<|assistant|>\n";
     } else if (promptFormat == "gemma2") {
-        return "<end_of_turn>\n<start_of_turn>model\n" + preAnswer;
+        return "<end_of_turn>\n<start_of_turn>model\n";
     } else {
         throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, phi3, llama3, mistral.");
     }
@@ -212,8 +211,8 @@ int main(int argc, char ** argv) {
         std::string tmpPrompt;
         for (const auto& prompt : allPrompts) {
             k_prompts.resize(index + 1);
-                tmpPrompt = prompt + generatePreAnswer(params.promptFormat);
-                k_prompts[index] = tmpPrompt;
+            tmpPrompt = prompt + generatePreAnswer(params.promptFormat);
+            k_prompts[index] = tmpPrompt;
 
             // Write each prompt to the out file
             if(params.saveInput){
@@ -252,7 +251,7 @@ int main(int argc, char ** argv) {
     outFile2 << "Output file format (tab-separated): {Model answer, with newlines escaped}\t{Patient ID or SurgPathID}" << std::endl << std::endl;   
     outFile2 << "Model path: " << params.model << std::endl << std::endl;
     outFile2 << "Input file path: " << params.prompt_file << std::endl;
-    outFile2 << "Patient ID file path (if applicable): " << params.ID_file << std::endl;
+    outFile2 << "Patient ID file path (if applicable): " << params.IDfile << std::endl;
     outFile2 << "Reading until line" << n_seq << std::endl << std::endl;
     outFile2 << "Full prompt format (no escaping):" << std::endl; 
     outFile2 << fullPrompt_example << std::endl << std::endl << std::endl << "Prompt format tokenized (including BOS token):" << std::endl; // Adding newline for separation in file
@@ -368,7 +367,7 @@ int main(int argc, char ** argv) {
                     client.t_start_gen    = 0;
 
                     client.input    = convertEscapedNewlines(k_prompts[promptNumber]);
-                    if(!params.ID_file.empty()){
+                    if(!params.IDfile.empty()){
                         client.inputID = allIDs[promptNumber];
                     }
 
@@ -395,7 +394,7 @@ int main(int argc, char ** argv) {
                     client.n_decoded = 0;
                     client.i_batch   = batch.n_tokens - 1;
 
-                    if(params.ID_file.empty()){
+                    if(params.IDfile.empty()){
                         LOG_INF("\n\n\033[0mClient %3d, seq %4d, started decoding ...\033[0m\n", client.id, client.seq_id);
                     }else{
                         LOG_INF("\n\n\033[0mClient %3d, Patient %s, seq %4d, started decoding ...\033[0m\n", client.id, client.inputID.c_str(), client.seq_id);

@@ -236,9 +236,9 @@ struct common_params {
     std::string hf_file              = ""; // HF file                                                       // NOLINT
     std::string prompt               = "";                                                                  // NOLINT
     std::string prompt_file          = ""; // store the external prompt file name                           // NOLINT
-    std::string system_prompt_file   = ""; // store the system prompt file name                             // Brian added
+    std::string systemPromptFile   = ""; // store the system prompt file name                             // Brian added
     std::string system_prompt        = ""; // store the system prompt                                       // Brian added
-    std::string ID_file              = ""; // path to the file with patient/note IDs                        // Brian added
+    std::string IDfile              = ""; // path to the file with patient/note IDs                        // Brian added
     std::string IDs                  = ""; // patient/note IDs from file                                    // Brian added
     std::string outDir               = ""; // path to the dir where output will be stored                   // Brian added
     std::string promptFormat         = ""; // Prompt format matching the model used                         // Brian added
@@ -288,7 +288,7 @@ struct common_params {
     bool prompt_cache_all  = false; // save user input and generations to prompt cache
     bool prompt_cache_ro   = false; // open the prompt cache read-only and do not update it
 
-    bool escape            = true;  // escape "\n", "\r", "\t", "\'", "\"", and "\\"
+    bool escape            = false;  // escape "\n", "\r", "\t", "\'", "\"", and "\\"
     bool multiline_input   = false; // reverse the usage of `\`
     bool simple_io         = false; // improves compatibility with subprocesses and limited consoles
     bool cont_batching     = true;  // insert new sequences for decoding on-the-fly
