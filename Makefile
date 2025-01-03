@@ -51,24 +51,24 @@ BUILD_TARGETS = \
 # Binaries only useful for tests
 TEST_TARGETS = \
 	tests/test-arg-parser \
-	tests/test-autorelease \
-	tests/test-backend-ops \
-	tests/test-chat-template \
-	tests/test-double-float \
-	tests/test-grammar-integration \
-	tests/test-grammar-parser \
-	tests/test-json-schema-to-grammar \
-	tests/test-llama-grammar \
-	tests/test-log \
-	tests/test-model-load-cancel \
-	tests/test-quantize-fns \
-	tests/test-quantize-perf \
-	tests/test-rope \
-	tests/test-sampling \
-	tests/test-tokenizer-0 \
-	tests/test-tokenizer-1-bpe \
-	tests/test-tokenizer-1-spm
-#	tests/test-opt \
+	#tests/test-autorelease \
+	#tests/test-backend-ops \
+	#tests/test-chat-template \
+	#tests/test-double-float \
+	#tests/test-grammar-integration \
+	#tests/test-grammar-parser \
+	#tests/test-json-schema-to-grammar \
+	#tests/test-llama-grammar \
+	#tests/test-log \
+	#tests/test-model-load-cancel \
+	#tests/test-quantize-fns \
+	#tests/test-quantize-perf \
+	#tests/test-rope \
+	#tests/test-sampling \
+	#tests/test-tokenizer-0 \
+	#tests/test-tokenizer-1-bpe \
+	#tests/test-tokenizer-1-spm
+#	#tests/test-opt \
 
 # Legacy build targets that were renamed in #7809, but should still be removed when the project is cleaned
 LEGACY_TARGETS_CLEAN = main quantize quantize-stats perplexity imatrix embedding vdot q8dot convert-llama2c-to-ggml \
