@@ -145,6 +145,25 @@ int main(int argc, char ** argv) {
 
     common_init();
 
+    // Get current time
+    std::time_t now = std::time(nullptr);
+    std::tm* now_tm = std::localtime(&now);
+    // Buffer to hold the date-time format
+    char dateTimeBuffer[60];  // Ensure the buffer is large enough for the format
+    // Format the date and time with strftime
+    strftime(dateTimeBuffer, sizeof(dateTimeBuffer), "%Y-%m-%d_%H-%M-%S", now_tm);
+    // Convert to string for use in filenames or other outputs
+    std::string dateTimeOutFile = dateTimeBuffer;
+
+    // Set file names
+    std::string dirPath = params.outDir;
+    std::string inputFile = dirPath + "/inputTextNoFormatting_" + dateTimeOutFile + ".txt";
+    std::string metadataFile = dirPath + "/metadata_" + dateTimeOutFile + ".txt";
+    std::string outputFile = dirPath + "/output_" + dateTimeOutFile + ".txt";
+    std::string log_file = dirPath + "/log_" + dateTimeOutFile + ".txt";
+    struct common_log *log = common_log_main();
+    common_log_set_file(log, log_file.c_str());
+
     // number of simultaneous "clients" to simulate
     const int32_t n_clients = params.n_parallel;
 
@@ -159,16 +178,6 @@ int main(int argc, char ** argv) {
 
     const bool dump_kv_cache = params.dump_kv_cache;
 
-    // Get current time
-    std::time_t now = std::time(nullptr);
-    std::tm* now_tm = std::localtime(&now);
-    // Buffer to hold the date-time format
-    char dateTimeBuffer[60];  // Ensure the buffer is large enough for the format
-    // Format the date and time with strftime
-    strftime(dateTimeBuffer, sizeof(dateTimeBuffer), "%Y-%m-%d_%H-%M-%S", now_tm);
-    // Convert to string for use in filenames or other outputs
-    std::string dateTimeOutFile = dateTimeBuffer;
-
     // init llama.cpp
     llama_backend_init();
     llama_numa_init(params.numa);
@@ -179,14 +188,11 @@ int main(int argc, char ** argv) {
     llama_model * model = llama_init.model;
     llama_context * ctx = llama_init.context;
 
-    // Set file names
-    std::string dirPath = params.outDir;
-    std::string inputFile = dirPath + "/inputTextNoFormatting_" + dateTimeOutFile + ".txt";
-    std::string metadataFile = dirPath + "/metadata_" + dateTimeOutFile + ".txt";
-    std::string outputFile = dirPath + "/output_" + dateTimeOutFile + ".txt";
 
     std::vector<std::string> allPrompts;
     std::vector<std::string> allIDs;
+    std::ofstream outFile1(inputFile.c_str());
+
     // load the prompts from an external file if there are any
     if (params.prompt.empty()) {
         throw std::runtime_error("Error: No prompts given");
@@ -197,13 +203,14 @@ int main(int argc, char ** argv) {
 
         // Create and open a text file (if input is to be saved)
         if(params.saveInput){
-            std::ofstream outFile1(inputFile.c_str());
 
             // Check if the file was opened successfully
             if (!outFile1) {
                 std::cerr << "Failed to open the input prompt out file." << std::endl;
                 return 1; // Return with error code
             }
+        }else{
+            outFile1 << "Input prompts not written to outfile because saveInput = false" << std::endl;
         }
 
         allPrompts = split_string(params.prompt, '\n');
