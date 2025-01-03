@@ -1,7 +1,7 @@
-root ::= "Summary from notes:" untilNewline typeConf "\nPathology or endoscopy confirmed: " yesNo "\nExact date of original colitis diagnosis stated: " yesNoYear
+root ::= "Summary:" untilNewline typeConf "\nPathology or endoscopy confirmed: " yesNo "\nExact date of original colitis diagnosis stated: " yesNoYear
 
-typeConf ::= "Answer: " ("Crohn's with confirmed colitis" | "Crohn's with possible colitis" | 
-"Crohn's colitis" | "Unspecified colitis" | "Ulcerative proctitis" | "Ulcerative colitis" |
+typeConf ::= "Diagnosis: " ("Crohn's with confirmed colitis" | "Crohn's with possible colitis" | 
+"Crohn's colitis" | "Unspecified colitis" | "Ulcerative proctitis" | "Ulcerative colitis" | "IBD colitis" |
 "Colitis, not otherwise specified" | "Proctitis, not otherwise specified" | "Radiation proctitis" | "Ischemic colitis" |
 "Infectious colitis" | "C diff colitis" | "Clostridioides difficile colitis" | "C. difficile colitis" |
 "Collagenous colitis" | "Lymphocytic colitis" |
