@@ -15,11 +15,13 @@ You are provided with excerpts of medical notes for a patient who may have colit
    - If the information is insufficient to make a determination, answer 'Insufficient information' or 'Unknown'.
 3. Indicate your confidence level in the answer (Low, Medium, High, or Certain).
 4. Indicate whether the diagnosis has been confirmed by colonoscopy, endoscopy, or pathology.
+5. State if the exact date of the original colitis diagnosis is provided in the notes.
 
 ### Format your response as follows:
 Summary: {Provide a concise one or two sentence summary of the relevant diagnosis information from the notes.}
 Diagnosis: {Your answer}. Confidence: {Low, Medium, High, or Certain}
 Pathology or endoscopy confirmed: {Yes or No}
+Exact date of original colitis diagnosis stated: {Yes or No}
 
 ### Important points:
 - Do not assume information that is not stated in the notes.
