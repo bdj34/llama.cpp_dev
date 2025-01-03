@@ -1,6 +1,6 @@
-root ::= "Summary from notes:" untilNewline yesNoConf "\nPathology or endoscopy confirmed: " yesNo "\nExact date of original colitis diagnosis stated: " yesNoYear
+root ::= "Summary from notes:" untilNewline typeConf "\nPathology or endoscopy confirmed: " yesNo "\nExact date of original colitis diagnosis stated: " yesNoYear
 
-yesNoConf ::= "Answer: " ("Crohn's with confirmed colitis" | "Crohn's with possible colitis" | 
+typeConf ::= "Answer: " ("Crohn's with confirmed colitis" | "Crohn's with possible colitis" | 
 "Crohn's colitis" | "Unspecified colitis" | "Ulcerative proctitis" | "Ulcerative colitis" |
 "Colitis, not otherwise specified" | "Proctitis, not otherwise specified" | "Radiation proctitis" | "Ischemic colitis" |
 "Infectious colitis" | "C diff colitis" | "Clostridioides difficile colitis" | "C. difficile colitis" |
@@ -19,5 +19,4 @@ firstdigit ::= ("Late " | "Early " | "Mid " | "") ("1" | "2")
 lastdigit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0s"
 digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 
-untilNewline ::= " " [^\n^\t^{^<]{10,400} "\n"
-oneSentence ::= " " [^\n^\t^{^<^.]{10,400} ".\n"
+untilNewline ::= " " [^\n^\t^{^<]{10,2000} "\n"
