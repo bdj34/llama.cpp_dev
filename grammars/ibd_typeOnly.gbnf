@@ -13,4 +13,4 @@ yesNo ::= ("Yes" | "No" )
 
 confidence ::= "Low" | "Medium" | "High" | "Certain"
 
-untilNewline ::= " " [^\n^\t^{^<]{10,2000} "\n"
+untilNewline ::= " " [^\n^\t^{^<]{10,400} "\n"

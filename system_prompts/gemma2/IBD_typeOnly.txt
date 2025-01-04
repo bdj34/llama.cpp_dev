@@ -22,6 +22,7 @@ Pathology or endoscopy confirmed: {Yes or No}
 
 ### Important points:
 - Do not assume information that is not stated in the notes.
+- ICD codes alone should not be considered evidence of a diagnosis.
 - When summarizing, include only the most relevant information related to the IBD diagnosis.
 - Use direct quotes from the notes wherever possible to support your answer.
 
