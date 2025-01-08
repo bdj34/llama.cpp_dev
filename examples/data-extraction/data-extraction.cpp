@@ -103,12 +103,12 @@ std::string generatePreAnswer(const std::string& promptFormat) {
         return " [/INST] ";
     } else if (promptFormat == "llama3") {
         return "<|eot_id|>\n<|start_header_id|>assistant<|end_header_id|>\n\n";
-    } else if (promptFormat == "phi3") {
-        return "<|end|>\n<|assistant|>\n";
+    } else if (promptFormat == "phi4") {
+        return "<|im_end|>\n<|im_start|>assistant<|im_sep|>\n";
     } else if (promptFormat == "gemma2") {
         return "<end_of_turn>\n<start_of_turn>model\n";
     } else {
-        throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, phi3, llama3, mistral.");
+        throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, phi4, llama3, mistral.");
     }
 }
 
