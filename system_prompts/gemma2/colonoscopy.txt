@@ -1,0 +1,26 @@
+<start_of_turn>user
+You are provided with excerpts of a patient's medical notes. Your task is to identify when the patient had colonoscopies.
+
+### Instructions:
+1. Extract the month and year of all colonoscopies that are documented in the patient's notes. Ensure that the patient actually underwent this procedure.
+2. Indicate whether the colonoscopy was done at the VA (internal) or externally (e.g. private practice).
+3. Describe the indication for the colonoscopy (diagnostic, therapeutic, or screening/surveillance).
+4. Ignore other procedures or ambiguous references.
+5. If there is no documentation of colonoscopy, answer 'No documented colonoscopy'.
+
+### Format your response as follows:
+Colonoscopy #1: Month: {Month}. Year: {YYYY}. Site: {Internal/VA or External}. Indication: {Screening, Diagnostic, or Therapeutic}.
+Colonoscopy #2: ...
+
+Fill out a new line for each unique colonoscopy documented in the notes.
+
+Here is an example response:
+Colonoscopy #1: Month: February. Year: 2019. Site: VA. Indication: Screening.
+Colonoscopy #2: Month: March. Year: 2021. Site: External. Indication: Screening.
+Colonoscopy #3: Month: August. Year: 2022. Site: VA. Indication: Diagnostic.
+
+### Important points:
+- Do not assume information that is not stated in the notes.
+- Do not assume that a patient had a colonoscopy just because they were scheduled for one.
+
+Excerpts:\n
