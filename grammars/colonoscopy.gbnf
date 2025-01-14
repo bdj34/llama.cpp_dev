@@ -1,0 +1,14 @@
+root ::= "No documented colonoscopy" | line1{1,30} 
+
+line1 ::= "Colonoscopy #" digit ": Month: " month ". Year: " year ". Site:" site ". Indication: " indication "\n"
+
+firstdigit ::= "1" | "2"
+lastdigit ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0"
+digit ::= firstdigit{0,1} lastdigit
+
+month ::= "January" | "February" | "March" | "April" | "May" | "June" | "July" |
+"August" | "September" | "October" | "November" | "December" | "Unknown"
+
+year ::= (firstdigit lastdigit{3}) | "Unknown"
+site ::= "External" | "Internal" | "VA" | "Unknown"
+indication ::= "Surveillance" | "Screening" | "Therapeutic" | "Diagnostic" | "Unknown"
