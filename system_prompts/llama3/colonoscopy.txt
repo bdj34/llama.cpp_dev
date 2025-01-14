@@ -22,7 +22,8 @@ Colonoscopy #3: Month: August. Year: 2022. Site: VA. Indication: Diagnostic.
 
 ### Important points:
 - Do not assume information that is not stated in the notes.
-- Do not assume that a patient had a colonoscopy just because they were scheduled for one.<|eot_id|>
+- Do not assume that a patient had a colonoscopy just because they were scheduled for one.
+- If you are not sure about some of the information, feel free to answer 'Unknown'.<|eot_id|>
 <|start_header_id|>user<|end_header_id|>
 
 Excerpts:\n
