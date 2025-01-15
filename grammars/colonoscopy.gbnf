@@ -1,4 +1,4 @@
-root ::= "No documented colonoscopy" | line1{1,30} 
+root ::= "No documented colonoscopy" | (line1){1,30} 
 
 line1 ::= "Colonoscopy #" digit ": Month: " month ". Year: " year ". Site: " site ". Indication: " indication "." ("\n")?
 
