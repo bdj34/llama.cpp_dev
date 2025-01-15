@@ -22,6 +22,7 @@ Colonoscopy year: 2022. Site: VA.
 ### Important points:
 - Do not assume information that is not stated in the notes.
 - Do not assume that a patient had a colonoscopy just because they were scheduled for one.
+- The same colonoscopy may be referenced in multiple notes.
 - If you are not sure about the site, feel free to answer 'Unknown'.<|eot_id|>
 <|start_header_id|>user<|end_header_id|>
 
