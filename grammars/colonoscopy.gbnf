@@ -1,6 +1,6 @@
 root ::= "No documented colonoscopy" | (line1){1,30} 
 
-line1 ::= "Colonoscopy #" digit ": Month: " month ". Year: " year ". Site: " site ". Indication: " indication "." ("\n")?
+line1 ::= "Colonoscopy year: " year ". Site: " site "." ("\n")?
 
 firstdigit ::= "1" | "2"
 lastdigit ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "0"
