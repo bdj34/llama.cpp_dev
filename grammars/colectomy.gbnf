@@ -1,0 +1,23 @@
+root ::= ("Summary: " untilNewLine "Procedure: " procedure ".\nProcedure month: " month ". Procedure year: " year ".\n Confidence: " confidence ".") | "No colectomy"
+
+procedure ::= ("Colectomy" | "Proctocolectomy" | "Hemicolectomy" |
+"Ileocecectomy" | "Hartmann's procedure" | "Sigmoidectomy" | "Proctosigmoidectomy" |
+"Proctectomy" | "Rectal resection" | "Rectosigmoidectomy" | 
+"Transverse colectomy" | "Descending colectomy" | "Left hemicolectomy" |
+"Sigmoid colectomy" | "Right hemicolectomy" | "Right colon resection" |
+"Ileocecal resection" | "Right colon removal" | "Left colon resection" |
+"Left colon removal" | "Partial colectomy" | "Subtotal colectomy" |
+"Total colectomy" | "Complete colectomy" |
+"Colon resection" | "Colon removal")
+
+month ::= ("January" | "February" | "March" | "April" | "May" | "June" |
+"July" | "August" | "September" | "October" | "November" | "December")
+
+year ::= firstDigit digit{3}
+
+firstDigit ::= ("1" | "2")
+digit ::= ("1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"|"0")
+
+confidence ::= "Low" | "Medium" | "High" | "Certain"
+
+untilNewline ::= " " [^\n^\t^{^<]{10,400} "\n"
