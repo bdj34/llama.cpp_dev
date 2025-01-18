@@ -1,14 +1,17 @@
-root ::= "Answer: " ("Yes.\n"  ("Procedure type: " procedure ". Procedure month: " month ". Procedure year: " year "." ("\n")?){1,3}) | "No."
+root ::= "Answer: " ("Yes.\n"  ("Procedure type: " procedure ". Procedure month: " month ". Procedure year: " year "." ("\n")?){1,3} | ("Procedure type: " procedureEnd ". Procedure month: " month ". Procedure year: " year ".")) | "No."
 
-procedure ::= ("Colectomy" | "Proctocolectomy" | "Hemicolectomy" |
+procedureEnd ::= ("Proctocolectomy" | "Total colectomy" |
+"Complete colectomy")
+
+procedure ::= ("Colectomy" | "Hemicolectomy" |
 "Ileocecectomy" | "Hartmann's procedure" | "Sigmoidectomy" | "Proctosigmoidectomy" |
 "Proctectomy" | "Rectal resection" | "Rectosigmoidectomy" | 
 "Transverse colectomy" | "Descending colectomy" | "Left hemicolectomy" |
 "Sigmoid colectomy" | "Right hemicolectomy" | "Right colon resection" |
 "Ileocecal resection" | "Right colon removal" | "Left colon resection" |
 "Left colon removal" | "Partial colectomy" | "Subtotal colectomy" |
-"Total colectomy" | "Complete colectomy" |
-"Colon resection" | "Colon removal")
+"Colon resection" | "Colon removal" |
+"Removal of " openEnded | "Resection of " openEnded)
 
 month ::= ("January" | "February" | "March" | "April" | "May" | "June" |
 "July" | "August" | "September" | "October" | "November" | "December")
@@ -20,4 +23,4 @@ digit ::= ("1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"|"0")
 
 confidence ::= "Low" | "Medium" | "High" | "Certain"
 
-untilNewline ::= " " [^\n^\t^{^<]{10,400} "\n"
+openEnded ::= [^\n^\t^{^<]{3,100} 
