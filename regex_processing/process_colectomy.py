@@ -144,16 +144,13 @@ icns = []
 for patient_icn, patient_excerpts in excerpts.items():
     patient_excerpts.sort()
 
-    if len(patient_excerpts) <= excerpt_limit:
-        # If the number of excerpts is within the limit, concatenate all
-        patient_string = "".join(patient_excerpts)
-    else:
-        most_recent_excerpts = patient_excerpts[-n_most_recent:]
-        # Randomly select excerpts until excerpt_limit is reached
-        random_excerpts = random.sample(patient_excerpts[:-n_most_recent], excerpt_limit-n_most_recent)
-        all_excerpts = most_recent_excerpts + random_excerpts
-        all_excerpts.sort()
-        patient_string = "".join(all_excerpts)
+    most_recent_excerpts = patient_excerpts[-n_most_recent:]
+    # Randomly select excerpts until excerpt_limit is reached
+    random_excerpts = random.sample(patient_excerpts[:-n_most_recent], excerpt_limit-n_most_recent)
+    all_excerpts = most_recent_excerpts + random_excerpts
+    all_excerpts.sort()
+    patient_string = "".join(all_excerpts)
+    patient_string = patient_string + "\n Question: Has this patient had all or part of their colon or rectum removed?\n"
         
     # Replace newline characters with \\n
     inputs.append(patient_string.replace("\n", "\\n"))
