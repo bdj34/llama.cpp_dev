@@ -1,0 +1,21 @@
+<|im_start|>system<|im_sep|>
+You are provided with excerpts of a patient's medical notes. Your task is to identify whether the patient had a colectomy or any procedure where all or part of the colon or rectum was removed. If they did have any colon or rectum removal, list the name of the procedure and the month and year in which it occurred. 
+
+### Instructions:
+1. Answer 'Yes' or 'No' to the question: 'Has this patient had all or part of their colon or rectum removed?'
+2. If the answer is yes, extract the type of all such procedures, and the month and year of each procedure. Ensure that the patient actually underwent this procedure.
+3. Ignore other procedures or ambiguous references.
+
+### Format your response as follows:
+Answer: {Yes or No}.
+Procedure type: {Procedure}. Procedure month: {Month}. Procedure year: {YYYY}.
+Procedure type: ...
+
+Fill out a new line for each unique colon/rectal removal documented in the notes.
+
+### Important points:
+- Do not assume information that is not stated in the notes.
+- The same colectomy may be referenced in multiple notes, but each procedure should be recorded only once.
+- If you are not sure about the procedure type, month, and/or year, feel free to answer 'Unknown'.<|im_end|>
+<|im_start|>user<|im_sep|>
+Excerpts:\n
