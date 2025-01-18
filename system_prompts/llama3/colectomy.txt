@@ -4,7 +4,7 @@ You are provided with excerpts of a patient's medical notes. Your task is to ide
 
 ### Instructions:
 1. Answer 'Yes' or 'No' to the question: 'Has this patient had all or part of their colon or rectum removed?'
-2. If the answer is yes, extract the type of all such procedures, and the month and year of each procedure. Ensure that the patient actually underwent this procedure.
+2. If the answer is yes, extract the type of all such procedures, and the month and year of each procedure. List these in chronological order, starting with the first procedure.
 3. Ignore other procedures or ambiguous references.
 
 ### Format your response as follows:
