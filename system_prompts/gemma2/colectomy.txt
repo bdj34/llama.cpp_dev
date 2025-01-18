@@ -9,7 +9,6 @@ You are provided with excerpts of a patient's medical notes. Your task is to ide
 ### Format your response as follows:
 Answer: {Yes or No}.
 Procedure type: {Procedure}. Procedure month: {Month}. Procedure year: {YYYY}.
-Procedure type: ...
 
 Fill out a new line for each unique colon/rectal removal documented in the notes.
 

@@ -1,4 +1,4 @@
-root ::= "Answer: " ("Yes."  ("\nProcedure type: " procedure ". Procedure month: " month ". Procedure year: " year "."){1,5}) | "No."
+root ::= "Answer: " ("Yes.\n"  ("Procedure type: " procedure ". Procedure month: " month ". Procedure year: " year "." ("\n")?){1,5}) | "No."
 
 procedure ::= ("Colectomy" | "Proctocolectomy" | "Hemicolectomy" |
 "Ileocecectomy" | "Hartmann's procedure" | "Sigmoidectomy" | "Proctosigmoidectomy" |
