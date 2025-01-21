@@ -12,18 +12,19 @@ notes_file = 'colectomy_notes.csv'
 
 # Parameters
 myregex = (
-    r"(?i)ectomy|"
-    r"(remov|resect).{0,50}?(colo|rect|cecum|sigmoid)|"
-    r"(colo|rect|cecum|sigmoid).{0,50}?(remov|resect)|"
-    r"hartmann|ostomy|anastomosis"
+    r"(?i)colectomy|proctectomy|"
+    r"(remov|resect).{0,20}?(colo|rect|cecum|sigmoid)|"
+    r"(colo|rect|cecum|sigmoid).{0,20}?(remov|resect)|"
+    r"hartmann"
 )
 
 lines_before_max = 2 # Don't change context based on # of notes
 lines_before_min = 2
 lines_after = 2
 notes_threshold = 0
-excerpt_limit = 15
+excerpt_limit = 20
 n_most_recent = 5
+n_most_distant = 5
 max_excerpts_per_note = 15
 
 # Define headers for CSVs
@@ -149,9 +150,10 @@ for patient_icn, patient_excerpts in excerpts.items():
         patient_string = patient_string + "\nQuestion: Has this patient had all or part of their colon or rectum removed?\n"
     else:
         most_recent_excerpts = patient_excerpts[-n_most_recent:]
+        most_distant_excerpts = patient_excerpts[:n_most_distant]
         # Randomly select excerpts until excerpt_limit is reached
-        random_excerpts = random.sample(patient_excerpts[:-n_most_recent], excerpt_limit-n_most_recent)
-        all_excerpts = most_recent_excerpts + random_excerpts
+        random_excerpts = random.sample(patient_excerpts[n_most_distant:-n_most_recent], excerpt_limit-n_most_recent-n_most_distant)
+        all_excerpts = most_recent_excerpts + random_excerpts + most_distant_excerpts
         all_excerpts.sort()
         patient_string = "".join(all_excerpts)
         patient_string = patient_string + "\nQuestion: Has this patient had all or part of their colon or rectum removed?\n"
