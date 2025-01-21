@@ -1,4 +1,4 @@
-root ::= "Answer: " ("Yes.\n"  ((upToThree){0,3} | (upToThree){0,2} final | final)) | "No."
+root ::= "Answer: " (("Yes.\n"  ((upToThree){0,3} | (upToThree){0,2} final | final)) | "No.\n")
 
 final ::= "Procedure type: " procedureEnd ". Procedure month: " month ". Procedure year: " year "."
 upToThree ::= "Procedure type: " procedure ". Procedure month: " month ". Procedure year: " year "." ("\n")?
