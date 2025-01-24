@@ -14,8 +14,8 @@ notes_file = 'ibdYear_notes.csv'
 myregex = (
     r"(?i)((crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bcuc\b|\bc\.u\.c\.\b|"
     r"inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
-    r"chronic\s+proct).{0,30}?((19|20)\d{2}|\d{2}))|"
-    r"(((19|20)\d{2}|\d{2}).{0,30}?(crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bc\.u\.c\.\b|"
+    r"chronic\s+proct).{0,30}?((19|20)\d{2}))|"
+    r"(((19|20)\d{2}).{0,30}?(crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bc\.u\.c\.\b|"
     r"\bcuc\b|inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
     r"chronic\s+proct))"
 )
