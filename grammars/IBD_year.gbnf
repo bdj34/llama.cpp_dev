@@ -1,6 +1,6 @@
 root ::= "Summary:" untilNewline "Thoughts:" untilNewline "Original diagnosis year: " yr ". Confidence: " conf
 
-conf ::= "Low" | "Medium" | "High" | "Certain"
+conf ::= ("Low" | "Medium" | "High" | "Certain") (".")?
 
 yr ::= fourDigitYr | (fourDigitYr "-" fourDigitYr) | "Unknown" | "unknown"
 fourDigitYr ::= firstdigit (digit){3}

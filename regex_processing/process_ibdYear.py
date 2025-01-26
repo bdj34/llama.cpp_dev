@@ -14,16 +14,25 @@ notes_file = 'ibdYear_notes.csv'
 myregex = (
     r"(?i)((crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bcuc\b|\bc\.u\.c\.\b|"
     r"inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
+    r"chronic\s+proct).{0,30}?((\b\d{2}\b)|(\b\d{4}\b)))|"
+    r"(((\b\d{2}\b)|(\b\d{4}\b)).{0,30}?(crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bc\.u\.c\.\b|"
+    r"\bcuc\b|inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
+    r"chronic\s+proct))"
+)
+priorityregex = (
+    r"(?i)((crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bcuc\b|\bc\.u\.c\.\b|"
+    r"inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
     r"chronic\s+proct).{0,30}?((19|20)\d{2}))|"
     r"(((19|20)\d{2}).{0,30}?(crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bc\.u\.c\.\b|"
     r"\bcuc\b|inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
     r"chronic\s+proct))"
+) 
+icdIgnore = (
+    r"(?i)(556|555|K52|K51|K50|ICD|snomed)"
 )
 
-lines_before_max = 2 # Don't change context based on # of notes
-lines_before_min = 2
+lines_before = 2 # Don't change context based on # of notes
 lines_after = 2
-notes_threshold = 0
 excerpt_limit = 30
 n_most_recent = 3
 n_most_distant = 15
@@ -68,6 +77,7 @@ def merge_indices(indices, last_line, expand_before, expand_after):
 
 excerpts = {}
 seen_text = {}
+priority_matches = {} # Save the patient's priority matches
 counter = 1
 for note in notes:
     patient_icn = note["PatientICN"]
@@ -107,7 +117,7 @@ for note in notes:
     blocks = merge_indices(
         sorted(match_lines),
         len(lines),
-        lines_before_max if notes_count[patient_icn] <= notes_threshold else lines_before_min,
+        lines_before,
         lines_after
     )
     
@@ -115,24 +125,44 @@ for note in notes:
     if patient_icn not in excerpts:
         excerpts[patient_icn] = []
         seen_text[patient_icn] = set()
+        priority_matches[patient_icn] = 0
     
     # Add an excerpt to the patient dict
     for start, end in blocks[:max_excerpts_per_note]:  # Limit excerpts per note, prioritize beginning of note
         
         # Get excerpt
         excerptText = "\n".join(lines[start:end+1])
+
+        # Check if its an ICD code
+        excludeMatch = bool(re.search(icdIgnore, excerptText, flags=re.IGNORECASE)) 
         
+        # Check if its a priority match
+        priorityMatch = bool(re.search(priorityregex, excerptText, flags=re.IGNORECASE))
+
         # Don't add if exact excerpt is already included
         if excerptText.strip().lower() in seen_text[patient_icn]:
+            continue
+        
+        # Don't add if its text from ICD/SNOMED
+        if excludeMatch:
             continue
 
         seen_text[patient_icn].add(excerptText.strip().lower())
 
-        excerpts[patient_icn].append(
-            f"\n<<<\nNote date (YYYY-MM): {entry_date}\nNote text:\n"
-            + excerptText
-            + "\n>>>\n"
-        )
+        # If priority match, insert in front and increment priority_matches count
+        if priorityMatch:
+            priority_matches[patient_icn] += 1
+            excerpts[patient_icn].insert(0, 
+                f"\n<<<\nNote date (YYYY-MM): {entry_date}\nNote text:\n"
+                + excerptText
+                + "\n>>>\n"
+            )
+        else:
+            excerpts[patient_icn].append(
+                f"\n<<<\nNote date (YYYY-MM): {entry_date}\nNote text:\n"
+                + excerptText
+                + "\n>>>\n"
+            )
 
     counter += 1
     if counter % 100000 == 0:
@@ -145,17 +175,27 @@ for note in notes:
 inputs = []
 icns = []
 for patient_icn, patient_excerpts in excerpts.items():
-    patient_excerpts.sort()
 
     if len(patient_excerpts) <= excerpt_limit:
+        patient_excerpts.sort()
         patient_string = "".join(patient_excerpts)
-        patient_string = patient_string + "\nQuestion: Has this patient had all or part of their colon or rectum removed?\n"
+        patient_string = patient_string + "\nQuestion: When was this patient originally diagnosed with IBD (Ulcerative colitis or Crohn's disease)?\n"
     else:
-        most_recent_excerpts = patient_excerpts[-n_most_recent:]
+        priority_matches = patient_excerpts[0:priority_matches[patient_icn]]
+        patient_excerpts = patient_excerpts[priority_matches[patient_icn]:]
+        patient_excerpts.sort()
+        most_recent_excerpts = patient_excerpts[-n_most_recent]
         most_distant_excerpts = patient_excerpts[:n_most_distant]
-        # Randomly select excerpts until excerpt_limit is reached
-        random_excerpts = random.sample(patient_excerpts[n_most_distant:-n_most_recent], excerpt_limit-n_most_recent-n_most_distant)
-        all_excerpts = most_recent_excerpts + random_excerpts + most_distant_excerpts
+        n_included = len(set(priority_matches + most_recent_excerpts + most_distant_excerpts))
+
+        if n_included < excerpt_limit:
+            # Randomly select excerpts until excerpt_limit is reached
+            random_excerpts = random.sample(patient_excerpts[n_most_distant:-n_most_recent], 
+                    excerpt_limit-n_included)
+        else:
+            random_excerpts = []
+            
+        all_excerpts = priority_matches + most_recent_excerpts + random_excerpts + most_distant_excerpts
         all_excerpts.sort()
         patient_string = "".join(all_excerpts)
         patient_string = patient_string + "\nQuestion: When was this patient originally diagnosed with IBD (Ulcerative colitis or Crohn's disease)?\n"
