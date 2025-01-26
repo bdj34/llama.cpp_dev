@@ -15,7 +15,7 @@ Original diagnosis year: {YYYY, YYYY-YYYY, or Unknown}. Confidence: {Low, Medium
 
 ### Important points:
 - Do not assume information that is not stated in the notes.
-- ICD or any other codes alone should NOT be used as evidence of the original diagnosis date or year.
+- Medical codes (e.g., ICD, SNOMED) should not be used as evidence of the original diagnosis date or year.
 - When summarizing, include only the most relevant information related to the IBD diagnosis year.<|im_end|>
 <|im_start|>user<|im_sep|>
 Excerpts:\n
