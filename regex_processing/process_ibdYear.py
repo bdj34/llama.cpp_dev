@@ -181,21 +181,22 @@ for patient_icn, patient_excerpts in excerpts.items():
         patient_string = "".join(patient_excerpts)
         patient_string = patient_string + "\nQuestion: When was this patient originally diagnosed with IBD (Ulcerative colitis or Crohn's disease)?\n"
     else:
-        priority_matches = patient_excerpts[0:priority_matches[patient_icn]]
+        priority_excerpts = patient_excerpts[0:priority_matches[patient_icn]]
         patient_excerpts = patient_excerpts[priority_matches[patient_icn]:]
         patient_excerpts.sort()
         most_recent_excerpts = patient_excerpts[-n_most_recent]
         most_distant_excerpts = patient_excerpts[:n_most_distant]
         n_included = len(set(priority_matches + most_recent_excerpts + most_distant_excerpts))
 
-        if n_included < excerpt_limit:
+        if n_included < excerpt_limit and len(patient_excerpts[n_most_distant:-n_most_recent]) > 0:
             # Randomly select excerpts until excerpt_limit is reached
             random_excerpts = random.sample(patient_excerpts[n_most_distant:-n_most_recent], 
                     excerpt_limit-n_included)
         else:
             random_excerpts = []
             
-        all_excerpts = priority_matches + most_recent_excerpts + random_excerpts + most_distant_excerpts
+        all_excerpts = list(set(priority_excerpts + most_recent_excerpts + 
+            random_excerpts + most_distant_excerpts))
         all_excerpts.sort()
         patient_string = "".join(all_excerpts)
         patient_string = patient_string + "\nQuestion: When was this patient originally diagnosed with IBD (Ulcerative colitis or Crohn's disease)?\n"
