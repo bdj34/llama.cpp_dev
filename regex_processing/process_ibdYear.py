@@ -184,16 +184,27 @@ for patient_icn, patient_excerpts in excerpts.items():
         priority_excerpts = patient_excerpts[0:priority_matches[patient_icn]]
         patient_excerpts = patient_excerpts[priority_matches[patient_icn]:]
         patient_excerpts.sort()
-        most_recent_excerpts = patient_excerpts[-n_most_recent]
+        most_recent_excerpts = patient_excerpts[-n_most_recent:]
         most_distant_excerpts = patient_excerpts[:n_most_distant]
-        n_included = len(set(priority_matches + most_recent_excerpts + most_distant_excerpts))
+        n_included = len(set(priority_excerpts + most_recent_excerpts + most_distant_excerpts))
 
+        # Adjust what is included based on number of priority excerpts
         if n_included < excerpt_limit and len(patient_excerpts[n_most_distant:-n_most_recent]) > 0:
             # Randomly select excerpts until excerpt_limit is reached
             random_excerpts = random.sample(patient_excerpts[n_most_distant:-n_most_recent], 
                     excerpt_limit-n_included)
-        else:
+        elif n_included == excerpt_limit: # Don't add ranom excerpts (perfect amount as is)
             random_excerpts = []
+        elif len(priority_excerpts) < excerpt_limit: # Choose randomly from most recent and distant
+            recent_distant = list(set(most_recent_excerpts + most_distant_excerpts))
+            random_excerpts = random.sample(recent_distant, 
+                    min(excerpt_limit - len(priority_excerpts), len(recent_distant)))
+            most_recent_excerpts = []
+            most_distant_excerpts = []
+        else: # Priority excerpts >= excerpt limit
+            random_excerpts = []
+            most_recent_excerpts = []
+            most_distant_excerpts = []
             
         all_excerpts = list(set(priority_excerpts + most_recent_excerpts + 
             random_excerpts + most_distant_excerpts))
