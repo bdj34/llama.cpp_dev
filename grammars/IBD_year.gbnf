@@ -2,7 +2,8 @@ root ::= "Summary:" untilNewline "Thoughts:" untilNewline "Original diagnosis ye
 
 conf ::= ("Low" | "Medium" | "High" | "Certain") (".")?
 
-yr ::= fourDigitYr | (fourDigitYr "-" fourDigitYr) | "Unknown" | "unknown"
+yr ::= fourDigitYr | (fourDigitYr "-" fourDigitYr) | "Unknown" | "unknown" |
+("During or before " fourDigitYr)
 fourDigitYr ::= firstdigit (digit){3}
 firstdigit ::= ("1" | "2")
 digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
