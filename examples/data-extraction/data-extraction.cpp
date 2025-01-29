@@ -577,7 +577,7 @@ int main(int argc, char ** argv) {
 
     llama_batch_free(batch);
 
-    llama_free(ctx);
+    //llama_free(ctx);
     // Keep model in RAM/VRAM? Maybe we won't have to load again (for VA)??
     //llama_free_model(model);
 
