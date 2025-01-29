@@ -20,3 +20,14 @@
 --outDir ../llm_ibd_outDir \
 --file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
 --promptFormat llama3 
+
+# Qwen2.5 R1
+./llama-data-extraction --systemPromptFile /Users/brianjohnson/VA_IBD/llama.cpp_2024_12_28/system_prompts/llama3/IBD_hx.txt \
+-m ~/Downloads/models_gguf/DeepSeek-R1-Distill-Qwen-32B-Q6_K_L.gguf \
+--sequences 16 --parallel 1 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/ibd.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat llama3 
