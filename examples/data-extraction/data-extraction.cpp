@@ -185,8 +185,10 @@ int main(int argc, char ** argv) {
     // load the target model
     common_init_result llama_init = common_init_from_params(params);
 
-    llama_model * model = llama_init.model;
-    llama_context * ctx = llama_init.context;
+    llama_model * model = llama_init.model.get();
+    llama_context * ctx = llama_init.context.get();
+
+    const llama_vocab * vocab = llama_model_get_vocab(model);
 
 
     std::vector<std::string> allPrompts;
@@ -391,7 +393,7 @@ int main(int argc, char ** argv) {
 
                     // do not prepend BOS because we have a system prompt!
                     std::vector<llama_token> tokens_prompt;
-                    tokens_prompt = ::common_tokenize(ctx, client.prompt, false);
+                    tokens_prompt = common_tokenize(ctx, client.prompt, false);
 
                     for (size_t i = 0; i < tokens_prompt.size(); ++i) {
                         common_batch_add(batch, tokens_prompt[i], i + n_tokens_system, { client.id + 1 }, false);
@@ -498,7 +500,7 @@ int main(int argc, char ** argv) {
 
                 // Determine when to stop generating
                 if (client.n_decoded > 0 &&
-                        (llama_token_is_eog(model, id) ||
+                        (llama_vocab_is_eog(vocab, id) ||
                         foundStop ||
                          (params.n_predict > 0 && client.n_decoded >= params.n_predict))) {
                     
