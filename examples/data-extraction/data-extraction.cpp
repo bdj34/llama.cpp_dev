@@ -490,45 +490,11 @@ int main(int argc, char ** argv) {
                 client.response += token_str;
                 client.sampled = id;
 
-                bool foundStop = false;
-                for (const auto& item : params.antiprompt) {
-                    if (client.response.find(item) != std::string::npos) {
-                        foundStop = true;
-                        break;
-                    }
-                }
-
                 // Determine when to stop generating
                 if (client.n_decoded > 0 &&
                         (llama_vocab_is_eog(vocab, id) ||
-                        foundStop ||
                          (params.n_predict > 0 && client.n_decoded >= params.n_predict))) {
-                    
-                    // Brian edit: basic reverse prompt identifying the EOT or EOS tokens
-                    const std::string eos_str = common_token_to_piece(ctx, llama_token_eos(model));
-                    int32_t eot_token = llama_token_eot(model);
 
-                    size_t pos;
-                    if (eot_token == -1) {
-                        pos = client.response.rfind(eos_str);
-                    } else{
-                        const std::string eot_str = common_token_to_piece(ctx, llama_token_eot(model));
-                        const size_t pos_eos = client.response.rfind(eos_str);
-                        const size_t pos_eot = client.response.rfind(eot_str);
-                        if (pos_eos == std::string::npos && pos_eot == std::string::npos) {
-                            pos = std::string::npos;
-                        } else if (pos_eos == std::string::npos) {
-                            pos = pos_eot;
-                        } else if (pos_eot == std::string::npos) {
-                            pos = pos_eos;
-                        } else {
-                            pos = (pos_eos > pos_eot) ? pos_eos : pos_eot;
-                        }
-                    }
-
-                    if (pos != std::string::npos) {
-                        client.response = client.response.substr(0, pos);
-                    }
 
                     // Copy the client response and the ptID to the output file
                     if(!client.inputID.empty()){
