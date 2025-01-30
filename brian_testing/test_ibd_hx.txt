@@ -21,12 +21,44 @@
 --file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
 --promptFormat llama3 
 
-# Qwen2.5 R1 (need to add prompt format etc.)
-./build/bin/llama-data-extraction --systemPromptFile ./system_prompts/gemma2/IBD_typeOnly.txt \
+# Qwen2.5 R1
+./build/bin/llama-data-extraction --systemPromptFile ./system_prompts/R1/IBD_typeOnly.txt \
 -m ~/Downloads/models_gguf/DeepSeek-R1-Distill-Qwen-32B-Q6_K_L.gguf  \
 --sequences 4 --parallel 1 --n-predict 1000 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
 --temp 0 --saveInput \
 --IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
 --outDir ../llm_ibd_outDir \
 --file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
---promptFormat gemma2 
+--promptFormat R1
+
+# Llama 3 8B R1
+./build/bin/llama-data-extraction --systemPromptFile ./system_prompts/R1/IBD_typeOnly.txt \
+-m ~/Downloads/models_gguf/DeepSeek-R1-Distill-Llama-8B-Q4_K_M.gguf  \
+--sequences 4 --parallel 1 --n-predict 1000 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat R1
+
+./build/bin/llama-data-extraction --systemPromptFile ./system_prompts/mistral/IBD_typeOnly.txt \
+-m ~/Downloads/models_gguf/Mistral-Small-24B-Instruct-2501-Q8_0.gguf \
+--sequences 4 --parallel 1 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/ibd_typeOnly.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat mistral
+
+
+./build/bin/llama-data-extraction --systemPromptFile ./system_prompts/qwen/IBD_typeOnly.txt \
+-m ~/Downloads/models_gguf/qwen2.5-14b-instruct-q4_0-00001-of-00003.gguf \
+--sequences 4 --parallel 1 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/ibd_typeOnly.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat qwen
+
