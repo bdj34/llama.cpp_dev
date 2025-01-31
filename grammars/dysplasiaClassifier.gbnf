@@ -47,7 +47,7 @@ shape ::= q ("pedunculated"| "sessile"| "flat"| "flat elevated"| "flat depressed
     "invisible"| "mass"| "polypoid"| "nonpolypoid"| "other"| "unknown") q
 
 
-dys ::= q ("no dysplasia"| "indefinite for dysplasia"| "low grade dysplasia"| "high grade dysplasia"| "adenocarcinoma"| "unknown") q
+dys ::= q ("no dysplasia"| "indefinite for dysplasia"| "dysplasia" | "low grade dysplasia"| "high grade dysplasia"| "adenocarcinoma"| "unknown") q
 sev ::= q ("none"| "mild"| "moderate"| "severe"| "unknown") q
 
 infType ::= q ("acute"| "chronic"| "quiescent"| "inactive"| "granulomatous"| "non-specific"| "unknown") q
