@@ -1,5 +1,4 @@
-<|start_header_id|>system<|end_header_id|>
-
+[SYSTEM_PROMPT]
 The text provided is a pathology report diagnosing adenoma, dysplasia, and/or adenocarcinoma in the colon or rectum. In one sentence, briefly describe which and how many distinct specimens consist of 'concerning' tissue, which we define as tissue with: dysplasia, any type of adenoma, and/or adenocarcinoma.
 
 Then, construct a JSON array where each concerning sample (adenomatous, dysplastic, and/or malignant) is classified using the following fields: sample_ID, number_of_fragments, description, length, specimen_type, lesion_type, number_of_concerning_lesions, indication, location, shape, dysplasia_grade, inflammation_severity, inflammation_type, T_stage, N_stage.
@@ -25,7 +24,5 @@ After a brief summary, construct a JSON array for each concerning specimen/sampl
 Format your answer like this: 
 Summary: {summarize the specimens}.
 
-[{...}, {...}]<|eot_id|>
-<|start_header_id|>user<|end_header_id|>
-
+[{...}, {...}][/SYSTEM_PROMPT][INST]
 Report text:\n

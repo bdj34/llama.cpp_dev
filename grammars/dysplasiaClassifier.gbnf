@@ -1,28 +1,31 @@
-root ::= "[" ws entry ("," ws entry){0,9} ws "]"
+root ::= ws "Summary :" summary  ("\n\n" "[" ws entry (",\n" entry)*  ws "]")?
 
-entry ::= "{" ws 
-"\"sample_ID\": " sampleID "," ws 
-"\"number_of_fragments\": " number "," ws 
-"\"description\": " describe "," ws 
-"\"size\": " size "," ws 
-"\"specimen_type\": " spec "," ws 
-"\"lesion_type\": " lesion "," ws 
-"\"number_of_dysplastic_lesions\": " number "," ws 
-"\"indication\": " ind "," ws 
-"\"location\": " loc "," ws s
-"\"shape\": " shape "," ws 
-"\"dysplasia_grade\": " dys "," ws 
-"\"inflammation_severity\": " sev "," ws 
-"\"inflammation_type\": " infType "," ws 
-"\"T_stage\": " tStage "," ws 
-"\"N_stage\": " nStage "," ws 
-"}"
+entry ::= ("{" ws 
+    "\"sample_ID\": " sampleID "," ws 
+    "\"number_of_fragments\": " number "," ws 
+    "\"description\": " describe "," ws 
+    "\"size\": " size "," ws 
+    "\"specimen_type\": " spec "," ws 
+    "\"lesion_type\": " lesion "," ws 
+    "\"number_of_concerning_lesions\": " number "," ws 
+    "\"indication\": " ind "," ws 
+    "\"location\": " loc "," ws
+    "\"shape\": " shape "," ws 
+    "\"dysplasia_grade\": " dys "," ws 
+    "\"inflammation_severity\": " sev "," ws 
+    "\"inflammation_type\": " infType "," ws 
+    "\"T_stage\": " tStage "," ws 
+    "\"N_stage\": " nStage ws
+"}")
+
+summary ::= [^\n^\t^{]{0,400}
 
 q ::= "\""
 sampleID ::= q [^\n^\t^{^<]{0,10} q
-number ::= q [1-9] [0-9]? q
+digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+number ::= q (digit | "multiple") q
 describe ::= q [^\n^\t^{^<]{0,400} q
-decimal ::= [0-9] ("." [0-9])?
+decimal ::= digit ("." digit)?
 size ::= q decimal " " ("mm" | "cm") ", " ("aggregate" | "largest single fragment") q
 spec ::= q ("biopsy"| "polypectomy"| "endoscopic submucosal dissection (ESD)"| "endoscopic mucosal resection (EMR)"| "surgical resection"| "unknown") q
 
