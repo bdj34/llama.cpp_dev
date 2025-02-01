@@ -41,7 +41,7 @@ ind ::= q ("polyp"| "lesion"| "mass"| "random biopsy"| "visible dysplasia"| "nod
     "other"| "unknown") q
     
 loc ::= q ("cecum"| "ascending"| "transverse"| "descending"| "sigmoid"| "rectum"| "appendix" |
-    "hepatic flexure"| "splenic flexure" | "rectosigmoid"| "ileocecal valve"| "unknown" | number " cm") q
+    "hepatic flexure"| "splenic flexure" | "rectosigmoid"| "ileocecal valve"| "unknown" | (digit){1,2} " cm") q
 
 shape ::= q ("pedunculated"| "sessile"| "flat"| "flat elevated"| "flat depressed"| 
     "invisible"| "mass"| "polypoid"| "nonpolypoid"| "other"| "unknown") q

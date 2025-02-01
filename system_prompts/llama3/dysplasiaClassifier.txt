@@ -15,7 +15,7 @@ Then, construct a JSON array where each concerning sample (adenomatous, dysplast
 "indication": The reason that the biopsy was taken. Choose from: "polyp", "lesion", "mass", "random biopsy", "visible dysplasia", "nodularity", "ulceration", "abnormal mucosa", "stricture", "erosions", "bleeding site", "thickened folds", "surveillance biopsy", "surveillance of known lesion", "other", "unknown".
 "location": Where in the colon/rectum was this specimen? Choose from "cecum", "ascending", "transverse", "descending", "sigmoid", "rectum", "rectosigmoid", "hepatic flexure", "splenic flexure", "ileocecal valve", "unknown", or provide a distance from the anal verge (e.g. "20 cm").
 "shape": Choose from: "pedunculated", "sessile", "flat", "flat elevated", "flat depressed", "invisible", "mass", "polypoid", "nonpolypoid", "other", "unknown".
-"dysplasia_grade": Choose from: "no dysplasia", "indefinite for dysplasia", "low grade dysplasia", "high grade dysplasia", "adenocarcinoma", "unknown".
+"dysplasia_grade": Choose from: "no dysplasia", "indefinite for dysplasia", "dysplasia", "low grade dysplasia", "high grade dysplasia", "adenocarcinoma", "unknown".
 "inflammation_severity": Describe the level of inflammation near the lesion, if stated. Choose from: "none", "mild", "moderate", "severe", "unknown".
 "inflammation_type": Choose from: "acute", "chronic", "quiescent", "inactive", "granulomatous", "non-specific", "unknown".
 "T_stage": If the specimen is adenocarcinoma, respond with the T stage of the TNM staging. Choose from: "Tis", "T1", "T2", "T3", "T4", "T4a", "T4b", "unknown", "NA".
