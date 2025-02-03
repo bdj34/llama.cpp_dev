@@ -1,4 +1,4 @@
-root ::= "Summary:" summary (("[" ws entry (",\n" entry)*  ws "]") | ("[]") | ("No concerning samples."))?
+root ::= "Summary:" summary (("[\n" (entry (",\n" entry)*)? "]") | ("[]") | ("No concerning samples."))?
 
 entry ::= ("{" ws 
     "\"sample_ID\": " sampleID "," ws 
@@ -16,7 +16,7 @@ entry ::= ("{" ws
     "\"inflammation_type\": " infType "," ws 
     "\"T_stage\": " tStage "," ws 
     "\"N_stage\": " nStage ws
-"}")
+"}" ws)
 
 summary ::= [^\n.\r\x0b\x0c\x85\u2028\u2029\t{\[]{0,2000} ".\n" 
 
@@ -55,5 +55,5 @@ tStage ::= q ("Tis"| "T1"| "T2"| "T3"| "T4"| "T4a"| "T4b"| "unknown"| "NA") q
 nStage ::= q ("N0"| "N1"| "N1a"| "N1b"| "N1c"| "N2"| "N2a"| "N2b"| "unknown"| "NA") q
 
 
-ws ::= ("\n"|" "|"\t"){0,3}
+ws ::= | " " | "\n" [ \t]{0,20}
 
