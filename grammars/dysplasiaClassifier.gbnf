@@ -1,4 +1,4 @@
-root ::= "Summary:" summary  ("\n\n" "[" ws entry (",\n" entry)*  ws "]")?
+root ::= "Summary:" summary  (("\n\n" "[" ws entry (",\n" entry)*  ws "]") | "\n\n[]")
 
 entry ::= ("{" ws 
     "\"sample_ID\": " sampleID "," ws 
