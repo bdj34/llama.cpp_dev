@@ -18,7 +18,7 @@ entry ::= ("{" ws
     "\"N_stage\": " nStage ws
 "}")
 
-summary ::= [^\n\r\x0b\x0c\x85\u2028\u2029\t{\[]{0,2000} "\n" 
+summary ::= [^\n.\r\x0b\x0c\x85\u2028\u2029\t{\[]{0,2000} ".\n" 
 
 q ::= "\""
 sampleID ::= q [^\n\t{<]{0,10} q
