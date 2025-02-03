@@ -55,4 +55,3 @@ tStage ::= q ("Tis"| "T1"| "T2"| "T3"| "T4"| "T4a"| "T4b"| "unknown"| "NA") q
 nStage ::= q ("N0"| "N1"| "N1a"| "N1b"| "N1c"| "N2"| "N2a"| "N2b"| "unknown"| "NA") q
 
 nl ::= "\n    "
-
