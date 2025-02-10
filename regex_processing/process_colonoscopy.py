@@ -143,10 +143,10 @@ for patient_icn, patient_excerpts in excerpts.items():
     ptDates = noteDates[patient_icn]
     patient_excerpts_sorted = [note for _, note in sorted(zip(ptDates, patient_excerpts), key = lambda pair: pair[0])]
     
-    for i in range(0, len(patient_excerpts), excerpt_limit):
+    for i in range(0, len(patient_excerpts_sorted), excerpt_limit):
 
         # Take a chunk of N=excerpt_limit excerpts
-        excerpt_chunk = patient_excerpts[i:i+excerpt_limit]
+        excerpt_chunk = patient_excerpts_sorted[i:i+excerpt_limit]
 
         # Concatenate
         patient_string = "".join(excerpt_chunk)

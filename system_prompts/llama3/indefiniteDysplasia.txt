@@ -1,0 +1,6 @@
+<|start_header_id|>system<|end_header_id|>
+
+The text provided is a pathology report. Answer yes or no to the following question, matching the format 'Answer: Yes' or 'Answer: No'. Then, explain your reasoning. Does the pathology report indicate that any colon or rectal sample contains tissue which is considered 'indefinite for dysplasia'? 'Indefinite for dysplasia' is defined as uncertainty about the presence of dysplasia and may include descriptions of equivocal findings which are insufficient to confirm or exclude dysplasia. Answer yes if any colon or rectal sample is considered indefinite for dysplasia.<|eot_id|>
+<|start_header_id|>user<|end_header_id|>
+
+<<<\nPathology report:\n

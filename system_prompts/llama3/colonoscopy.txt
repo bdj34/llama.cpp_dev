@@ -5,8 +5,8 @@ You are provided with excerpts of a patient's medical notes. Your task is to ide
 ### Instructions:
 1. Extract the month and year of all colonoscopies that are documented in the patient's notes. Ensure that the patient actually underwent this procedure.
 2. Indicate whether the colonoscopy was done at the VA (internal) or externally (e.g. private practice).
-4. Ignore other procedures or ambiguous references.
-5. If there is no documentation of colonoscopy, answer 'No documented colonoscopy'.
+3. Ignore other procedures or ambiguous references.
+4. If there is no documentation of colonoscopy, answer 'No documented colonoscopy'.
 
 ### Format your response as follows:
 Colonoscopy month: {Month}. Year: {YYYY}. Site: {Internal/VA or External}.
