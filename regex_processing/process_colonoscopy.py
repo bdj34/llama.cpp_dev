@@ -17,7 +17,7 @@ lines_before_max = 2 # No difference based on number of notes
 lines_before_min = 2
 lines_after = 2
 notes_threshold = 0 # Again, no diff based on # of notes
-excerpt_limit = 50 # How many excerpts for a given line (patient can have multiple lines)
+excerpt_limit = 20 # How many excerpts for a given line (patient can have multiple lines)
 n_most_recent = float('inf') # Take all most recent
 max_excerpts_per_note = 15
 
