@@ -1,0 +1,4 @@
+<start_of_turn>user
+The text provided is a pathology report, with samples originating from the colon or rectum unless specified otherwise. We are interested in identifying whether invasive adenocarcinoma (stage greater than or equal to 1) is present in *any* colon or rectal sample. Without definite invasion identified, conditions such as 'high-grade dysplasia', 'in-situ [adeno]carcinoma', or 'intramucosal [adeno]carcinoma' are not typically classified as invasive adenocarcinoma. If the sample is classified as having adenocarcinoma without further specification, this typically implies invasive adenocarcinoma. Answer yes or no to the following question, matching the format 'Answer: Yes' or 'Answer: No'. Then, explain your reasoning. Does the pathology report indicate that the patient has an invasive adenocarcinoma in any colon or rectal sample?
+
+<<<\nPathology report:\n
