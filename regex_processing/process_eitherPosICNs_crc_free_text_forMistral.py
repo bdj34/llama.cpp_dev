@@ -22,11 +22,11 @@ myregex = (
 )
 
 # Expand context for this search
-lines_before = 20 # Don't change context based on # of notes
-lines_after = 15
-excerpt_limit = 40
-n_most_recent = 10
-n_most_distant = 5
+lines_before = 15 # Don't change context based on # of notes
+lines_after = 10
+excerpt_limit = 30
+n_most_recent = 5
+n_most_distant = 3
 max_excerpts_per_note = 10
 
 # Define headers for CSVs
@@ -180,8 +180,8 @@ for patient_icn, patient_excerpts in excerpts.items():
     icns.append(patient_icn)
 
 # Write outputs
-with open("ptIDs_eitherPos.txt", "w", encoding="utf-8") as f:
+with open("ptIDs_eitherPos_forMistral.txt", "w", encoding="utf-8") as f:
     f.writelines(f"{icn}\n" for icn in icns)
 
-with open("input_eitherPos.txt", "w", encoding="utf-8") as f:
+with open("input_eitherPos_forMistral.txt", "w", encoding="utf-8") as f:
     f.writelines(f"{input_str}\n" for input_str in inputs)
