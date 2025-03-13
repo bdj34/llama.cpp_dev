@@ -311,6 +311,20 @@ static bool encode_image_with_clip(clip_ctx * ctx_clip, int n_threads, const cli
         img_res_v.size = 0;
         img_res_v.data = nullptr;
     }
+    else if (clip_is_glm(ctx_clip)){
+        struct clip_image_size * load_image_size = clip_image_size_init();
+        load_image_size->width = img_res_v.data[0].nx;
+        load_image_size->height = img_res_v.data[0].ny;
+        clip_add_load_image_size(ctx_clip, load_image_size);
+
+        bool encoded = clip_image_encode(ctx_clip, n_threads, &img_res_v.data[0], image_embd);
+        int pos = int(load_image_size->width/clip_patch_size(ctx_clip)/2);
+        *n_img_pos = (pos * pos + 2);
+        if (!encoded){
+            LOG_ERR("Unable to encode image \n");
+            return false;
+        }
+    }
     else if (strcmp(mm_patch_merge_type, "spatial_unpad") != 0) {
         // flat / default llava-1.5 type embedding
         *n_img_pos = clip_n_patches(ctx_clip);
@@ -339,9 +353,10 @@ static bool encode_image_with_clip(clip_ctx * ctx_clip, int n_threads, const cli
         LOG_INF("%s: %d segments encoded in %8.2f ms\n", __func__, (int)img_res_v.size, (t_img_enc_batch_us - t_img_enc_start_us) / 1000.0);
 
         const int32_t * image_grid = clip_image_grid(ctx_clip);
+        const size_t num_gridpoints = get_clip_image_grid_size(ctx_clip);
 
         std::vector<std::pair<int, int>> grid_pinpoints;
-        for (int i = 0; i < 32 && image_grid[i] != 0; i += 2) {
+        for (size_t i = 0; i < num_gridpoints; i += 2) {
             grid_pinpoints.push_back({image_grid[i], image_grid[i+1]});
         }
 
@@ -391,9 +406,13 @@ bool llava_validate_embed_size(const llama_context * ctx_llama, const clip_ctx *
 }
 
 bool llava_image_embed_make_with_clip_img(clip_ctx * ctx_clip, int n_threads, const clip_image_u8 * img, float ** image_embd_out, int * n_img_pos_out) {
-    int num_max_patches = 6;
+    // Granite vision uses up to 10 patches + base patch
+    int num_max_patches = 11;
     if (clip_is_minicpmv(ctx_clip)) {
         num_max_patches = 10;
+    }
+    if (clip_is_glm(ctx_clip)) {
+        num_max_patches = 1;
     }
     float * image_embd;
     if (clip_is_qwen2vl(ctx_clip)) {
