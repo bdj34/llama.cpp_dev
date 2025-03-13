@@ -274,7 +274,6 @@ struct common_params {
     std::string hf_repo              = ""; // HF repo                                                       // NOLINT
     std::string hf_file              = ""; // HF file                                                       // NOLINT
     std::string prompt               = "";                                                                  // NOLINT
-    std::string system_prompt        = "";                                                                  // NOLINT
     std::string prompt_file          = ""; // store the external prompt file name                           // NOLINT
     std::string systemPromptFile   = ""; // store the system prompt file name                             // Brian added
     std::string system_prompt        = ""; // store the system prompt                                       // Brian added
