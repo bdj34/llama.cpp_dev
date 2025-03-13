@@ -6,7 +6,7 @@ import random
 import time
 import os
 
-os.chdir("/home/vhasdcjohnsb2/nonIBD_crc_free_text")
+os.chdir("/home/vhasdcjohnsb2/nonIBD_crc_free_text/addControls")
 
 notes_file = 'crc_notes.csv'
 

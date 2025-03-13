@@ -6,7 +6,7 @@ import random
 import time
 import os
 
-os.chdir("/home/vhasdcjohnsb2/colonoscopy")
+os.chdir("/home/vhasdcjohnsb2/colonoscopy/lateAddIBD")
 
 notes_file = 'colonoscopy_notes.csv'
 
