@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 #include <ctime>
-#include <algorithm>
+//#include <algorithm>
 
 // trim whitespace from the beginning and end of a string
 static std::string trim(const std::string & str) {
