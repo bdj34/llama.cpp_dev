@@ -29,6 +29,7 @@
 
 #include "ggml-vulkan-shaders.hpp"
 
+#define ROUNDUP_POW2(M, N) (((M) + (N) - 1) & ~((N) - 1))
 #define CEIL_DIV(M, N) (((M) + (N)-1) / (N))
 
 #define VK_VENDOR_ID_AMD 0x1002
@@ -149,6 +150,66 @@ static void ggml_vk_destroy_buffer(vk_buffer& buf);
 
 static constexpr uint32_t mul_mat_vec_max_cols = 8;
 
+enum vk_device_architecture {
+    OTHER,
+    AMD_GCN,
+    AMD_RDNA1,
+    AMD_RDNA2,
+    AMD_RDNA3,
+};
+
+static vk_device_architecture get_device_architecture(const vk::PhysicalDevice& device) {
+    vk::PhysicalDeviceProperties props = device.getProperties();
+
+    if (props.vendorID == VK_VENDOR_ID_AMD) {
+        const std::vector<vk::ExtensionProperties> ext_props = device.enumerateDeviceExtensionProperties();
+
+        bool amd_shader_core_properties = false;
+        bool integer_dot_product = false;
+        bool subgroup_size_control = false;
+
+        for (const auto& properties : ext_props) {
+            if (strcmp("VK_AMD_shader_core_properties", properties.extensionName) == 0) {
+                amd_shader_core_properties = true;
+            } else if (strcmp("VK_KHR_shader_integer_dot_product", properties.extensionName) == 0) {
+                integer_dot_product = true;
+            } else if (strcmp("VK_EXT_subgroup_size_control", properties.extensionName) == 0) {
+                subgroup_size_control = true;
+            }
+        }
+
+        if (!amd_shader_core_properties || !integer_dot_product || !subgroup_size_control) {
+            return vk_device_architecture::OTHER;
+        }
+
+        vk::PhysicalDeviceProperties2 props2;
+        vk::PhysicalDeviceShaderCorePropertiesAMD shader_core_props_amd;
+        vk::PhysicalDeviceShaderIntegerDotProductPropertiesKHR integer_dot_props;
+        vk::PhysicalDeviceSubgroupSizeControlPropertiesEXT subgroup_size_control_props;
+
+        props2.pNext = &shader_core_props_amd;
+        shader_core_props_amd.pNext = &integer_dot_props;
+        integer_dot_props.pNext = &subgroup_size_control_props;
+
+        device.getProperties2(&props2);
+
+        if (subgroup_size_control_props.maxSubgroupSize == 64 && subgroup_size_control_props.minSubgroupSize == 64) {
+            return vk_device_architecture::AMD_GCN;
+        }
+        if (subgroup_size_control_props.maxSubgroupSize == 64 && subgroup_size_control_props.minSubgroupSize == 32) {
+            // RDNA
+            if (shader_core_props_amd.wavefrontsPerSimd == 20) {
+                return vk_device_architecture::AMD_RDNA1;
+            }
+            if (integer_dot_props.integerDotProduct4x8BitPackedMixedSignednessAccelerated) {
+                return vk_device_architecture::AMD_RDNA3;
+            }
+            return vk_device_architecture::AMD_RDNA2;
+        }
+    }
+    return vk_device_architecture::OTHER;
+}
+
 struct vk_device_struct {
     std::mutex mutex;
 
@@ -161,6 +222,7 @@ struct vk_device_struct {
     bool pipeline_robustness;
     vk::Device device;
     uint32_t vendor_id;
+    vk_device_architecture architecture;
     vk_queue compute_queue;
     vk_queue transfer_queue;
     bool single_queue;
@@ -368,6 +430,7 @@ struct vk_mat_mat_push_constants {
     uint32_t batch_stride_a; uint32_t batch_stride_b; uint32_t batch_stride_d;
     uint32_t k_split;
     uint32_t ne02; uint32_t ne12; uint32_t broadcast2; uint32_t broadcast3;
+    uint32_t padded_N;
 };
 struct vk_mat_vec_push_constants {
     uint32_t ncols; uint32_t stride_a; uint32_t stride_b; uint32_t stride_d;
@@ -380,6 +443,7 @@ struct vk_mat_mat_id_push_constants {
     uint32_t stride_a; uint32_t stride_b; uint32_t stride_d;
     uint32_t batch_stride_a; uint32_t batch_stride_b; uint32_t batch_stride_d;
     uint32_t nei0; uint32_t nei1; uint32_t nbi1; uint32_t ne11;
+    uint32_t padded_N;
 };
 struct vk_mat_vec_id_push_constants {
     uint32_t ncols; uint32_t stride_a; uint32_t stride_b; uint32_t stride_d;
@@ -1445,6 +1509,73 @@ static bool ggml_vk_matmul_shmem_support(const vk_device& device, const std::vec
     return supported;
 }
 
+struct GpuPipelineConfig {
+    // GPU architecture identifier.
+    // Example: vk_device_architecture::AMD_GCN
+    vk_device_architecture arch;
+
+    // Mapping of pipeline names to their specific subgroup sizes.
+    // Example: {"soft_max_f32", 64}
+    std::unordered_map<std::string, uint32_t> pipelines;
+
+    // Default subgroup size for this GPU.
+    // Defaults to 0 if not explicitly provided.
+    uint32_t default_subgroup_size = 0;
+};
+
+// Pipeline configuration for RDNA1 GPUs.
+static const std::unordered_map<std::string, uint32_t> rdna1_pipelines = {
+    {"soft_max", 64}, {"im2col", 64},
+    {"argmax", 64}, {"mul_mat_vec", 64},
+    {"mul_mat_vec_f16", 32}, {"mul_mat_vec_f32_f16", 32}
+};
+
+// Pipeline configuration for RDNA2 GPUs.
+static const std::unordered_map<std::string, uint32_t> rdna2_pipelines = {
+    {"soft_max", 64}, {"im2col", 64},
+};
+
+static constexpr uint32_t RDNA_DEFAULT_SUBGROUP_SIZE = 32;
+
+// Define configurations for different GPUs.
+static std::vector<GpuPipelineConfig> gpu_pipeline_configs = {
+    {
+        vk_device_architecture::AMD_RDNA1,
+        {
+            rdna1_pipelines,
+        },
+        RDNA_DEFAULT_SUBGROUP_SIZE
+    },
+    {
+        vk_device_architecture::AMD_RDNA2,
+        {
+            rdna2_pipelines,
+        },
+        RDNA_DEFAULT_SUBGROUP_SIZE
+    },
+};
+
+static uint32_t get_subgroup_size(const std::string &pipeline_name, const vk_device_architecture &arch) {
+    for (const auto &config : gpu_pipeline_configs) {
+        if (config.arch == arch) {
+            auto pipIt = config.pipelines.find(pipeline_name);
+            if (pipIt != config.pipelines.end()) {
+                return pipIt->second;
+            }
+            std::vector<std::pair<std::string, uint32_t>> sorted_pipelines(config.pipelines.begin(), config.pipelines.end());
+            std::sort(sorted_pipelines.begin(), sorted_pipelines.end(),
+                      [](const auto &a, const auto &b) { return a.first.size() > b.first.size(); });
+            for (const auto &entry : sorted_pipelines) {
+                if (pipeline_name.find(entry.first) != std::string::npos) {
+                    return entry.second;
+                }
+            }
+            return config.default_subgroup_size;
+        }
+    }
+    return 0; // If no matching configuration is found
+}
+
 static void ggml_vk_load_shaders(vk_device& device) {
     VK_LOG_DEBUG("ggml_vk_load_shaders(" << device->name << ")");
 
@@ -1466,36 +1597,36 @@ static void ggml_vk_load_shaders(vk_device& device) {
     uint32_t l_align, m_align, s_align;
     if (device->coopmat2) {
         // spec constants and tile sizes for non-quant matmul/matmul_id
-        l_warptile = { 256, 128, 256, 64 };
-        m_warptile = { 256, 128, 128, 64 };
-        s_warptile = { 128,  64,  64, 64 };
+        l_warptile = { 256, 128, 256, 64, 1 };
+        m_warptile = { 256, 128, 128, 64, 0 };
+        s_warptile = { 128,  64,  64, 64, 0 };
         l_wg_denoms = {128, 256, 1 };
         m_wg_denoms = {128, 128, 1 };
         s_wg_denoms = { 64,  64, 1 };
 
         // spec constants and tile sizes for quant matmul (non-Qi_K)
-        l_warptile_mmq = { 256, 128, 256, 64 };
-        m_warptile_mmq = { 256, 128, 128, 64 };
-        s_warptile_mmq = { 256, 128, 128, 64 };
+        l_warptile_mmq = { 256, 128, 256, 64, 1 };
+        m_warptile_mmq = { 256, 128, 128, 64, 1 };
+        s_warptile_mmq = { 256, 32,  64, 128, 0 };
         l_mmq_wg_denoms = { 128, 256, 1 };
         m_mmq_wg_denoms = { 128, 128, 1 };
-        s_mmq_wg_denoms = { 128, 128, 1 };
+        s_mmq_wg_denoms = { 32,  64,  1 };
 
         // spec constants and tile sizes for quant matmul (Qi_K)
-        l_warptile_mmq_k = { 256, 128, 512, 16 };
-        m_warptile_mmq_k = { 256, 128, 256, 16 };
-        s_warptile_mmq_k = { 256, 32, 128, 64 };
-        l_mmq_wg_denoms_k = { 128, 512, 1 };
-        m_mmq_wg_denoms_k = { 128, 256, 1 };
-        s_mmq_wg_denoms_k = { 32, 128, 1 };
+        l_warptile_mmq_k = { 256, 64, 128, 64,  1 };
+        m_warptile_mmq_k = { 256, 32,  64, 64,  0 };
+        s_warptile_mmq_k = { 256, 32,  32, 128, 0 };
+        l_mmq_wg_denoms_k = { 64, 128, 1 };
+        m_mmq_wg_denoms_k = { 32,  64, 1 };
+        s_mmq_wg_denoms_k = { 32,  32, 1 };
 
         // spec constants and tile sizes for quant matmul_id
-        l_warptile_mmqid = { 256, 128, 128, 16 };
-        m_warptile_mmqid = { 256, 128, 64, 16 };
-        s_warptile_mmqid = { 256, 64, 64, 16 };
-        l_mmqid_wg_denoms = { 128, 128, 1 };
+        l_warptile_mmqid = { 256, 128, 64, 16, 0 };
+        m_warptile_mmqid = { 256, 128, 64, 16, 0 };
+        s_warptile_mmqid = { 256, 128, 64, 16, 0 };
+        l_mmqid_wg_denoms = { 128, 64, 1 };
         m_mmqid_wg_denoms = { 128, 64, 1 };
-        s_mmqid_wg_denoms = { 64, 64, 1 };
+        s_mmqid_wg_denoms = { 128, 64, 1 };
 
         l_align = 128;
         m_align =  64;
@@ -1570,6 +1701,10 @@ static void ggml_vk_load_shaders(vk_device& device) {
     auto const &ggml_vk_create_pipeline = [&](vk_device& device, vk_pipeline& pipeline, const std::string &name, size_t spv_size, const void* spv_data, const std::string &entrypoint,
                                               uint32_t parameter_count, uint32_t push_constant_size, std::array<uint32_t, 3> wg_denoms, const std::vector<uint32_t>& specialization_constants,
                                               uint32_t align, bool disable_robustness = false, bool require_full_subgroups = false, uint32_t required_subgroup_size = 0) {
+
+        if (!require_full_subgroups && required_subgroup_size == 0) {
+            required_subgroup_size = get_subgroup_size(name, device->architecture);
+        }
 
         if (!pipeline) {
             pipeline = std::make_shared<vk_pipeline_struct>();
@@ -2247,7 +2382,7 @@ static void ggml_vk_load_shaders(vk_device& device) {
     device->need_compiles = false;
 }
 
-static bool ggml_vk_khr_cooperative_matrix_support(const vk::PhysicalDeviceProperties& props, const vk::PhysicalDeviceDriverProperties& driver_props);
+static bool ggml_vk_khr_cooperative_matrix_support(const vk::PhysicalDeviceProperties& props, const vk::PhysicalDeviceDriverProperties& driver_props, vk_device_architecture arch);
 
 static vk_device ggml_vk_get_device(size_t idx) {
     VK_LOG_DEBUG("ggml_vk_get_device(" << idx << ")");
@@ -2276,6 +2411,8 @@ static vk_device ggml_vk_get_device(size_t idx) {
         device->physical_device = physical_devices[dev_num];
         const std::vector<vk::ExtensionProperties> ext_props = device->physical_device.enumerateDeviceExtensionProperties();
 
+        device->architecture = get_device_architecture(device->physical_device);
+
         const char* GGML_VK_PREFER_HOST_MEMORY = getenv("GGML_VK_PREFER_HOST_MEMORY");
         device->prefer_host_memory = GGML_VK_PREFER_HOST_MEMORY != nullptr;
 
@@ -2288,7 +2425,6 @@ static vk_device ggml_vk_get_device(size_t idx) {
         bool coopmat2_support = false;
         device->coopmat_support = false;
 
-        // Check if maintenance4 is supported
         for (const auto& properties : ext_props) {
             if (strcmp("VK_KHR_maintenance4", properties.extensionName) == 0) {
                 maintenance4_support = true;
@@ -2401,7 +2537,7 @@ static vk_device ggml_vk_get_device(size_t idx) {
 
         device->fp16 = !force_disable_f16 && fp16_storage && fp16_compute;
 
-        if (!ggml_vk_khr_cooperative_matrix_support(device->properties, driver_props)) {
+        if (!ggml_vk_khr_cooperative_matrix_support(device->properties, driver_props, device->architecture)) {
             device->coopmat_support = false;
         }
 
@@ -2779,7 +2915,10 @@ static void ggml_vk_print_gpu_info(size_t idx) {
     subgroup_props.pNext = &driver_props;
     physical_device.getProperties2(&props2);
 
-    const size_t subgroup_size = subgroup_props.subgroupSize;
+    vk_device_architecture arch = get_device_architecture(physical_device);
+    uint32_t default_subgroup_size = get_subgroup_size("", arch);
+    const size_t subgroup_size = (default_subgroup_size != 0) ? default_subgroup_size : subgroup_props.subgroupSize;
+
     const bool uma = props2.properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu;
 
     bool fp16_storage = false;
@@ -2805,7 +2944,9 @@ static void ggml_vk_print_gpu_info(size_t idx) {
         }
     }
 
-    if (!ggml_vk_khr_cooperative_matrix_support(props2.properties, driver_props)) {
+    const vk_device_architecture device_architecture = get_device_architecture(physical_device);
+
+    if (!ggml_vk_khr_cooperative_matrix_support(props2.properties, driver_props, device_architecture)) {
         coopmat_support = false;
     }
 
@@ -3850,10 +3991,14 @@ static vk_pipeline ggml_vk_guess_matmul_pipeline(ggml_backend_vk_context * ctx, 
     VK_LOG_DEBUG("ggml_vk_guess_matmul_pipeline(" << m << ", " << n << ", " << aligned << ", " << ggml_type_name(src0_type) << ")");
 
     if (ctx->device->coopmat2) {
-        if ((ctx->device->mul_mat_l[src0_type] && (m % mmp->l->wg_denoms[0]) == 0 && (n % mmp->l->wg_denoms[1]) == 0) || (!ctx->device->mul_mat_m[src0_type] && !ctx->device->mul_mat_s[src0_type])) {
+        // Use large shader when the N dimension is greater than the medium shader's tile size
+        uint32_t crossover_large = mmp->m->wg_denoms[1];
+        if ((ctx->device->mul_mat_l[src0_type] && (n > crossover_large)) || (!ctx->device->mul_mat_m[src0_type] && !ctx->device->mul_mat_s[src0_type])) {
             return aligned ? mmp->a_l : mmp->l;
         }
-        if ((ctx->device->mul_mat_m[src0_type] && (m % mmp->m->wg_denoms[0]) == 0 && (n % mmp->m->wg_denoms[1]) == 0) || !ctx->device->mul_mat_s[src0_type]) {
+        // Use medium shader when the N dimension is greater than the small shader's tile size
+        uint32_t crossover_medium = mmp->s->wg_denoms[1];
+        if ((ctx->device->mul_mat_m[src0_type] && (n > crossover_medium)) || !ctx->device->mul_mat_s[src0_type]) {
             return aligned ? mmp->a_m : mmp->m;
         }
         return aligned ? mmp->a_s : mmp->s;
@@ -3878,18 +4023,19 @@ static void ggml_vk_matmul(
         vk_subbuffer&& a, vk_subbuffer&& b, vk_subbuffer&& d, vk_subbuffer&& split_k_buffer,
         uint32_t m, uint32_t n, uint32_t k, uint32_t stride_a, uint32_t stride_b, uint32_t stride_d,
         uint32_t batch_stride_a, uint32_t batch_stride_b, uint32_t batch_stride_d,
-        uint32_t split_k, uint32_t batch, uint32_t ne02, uint32_t ne12, uint32_t broadcast2, uint32_t broadcast3) {
+        uint32_t split_k, uint32_t batch, uint32_t ne02, uint32_t ne12, uint32_t broadcast2, uint32_t broadcast3,
+        uint32_t padded_n) {
         VK_LOG_DEBUG("ggml_vk_matmul(a: (" << a.buffer->buffer << ", " << a.offset << ", " << a.size << "), b: (" << b.buffer->buffer << ", " << b.offset << ", " << b.size << "), d: (" << d.buffer->buffer << ", " << d.offset << ", " << d.size << "), split_k: (" << (split_k_buffer.buffer != nullptr ? split_k_buffer.buffer->buffer : VK_NULL_HANDLE) << ", " << split_k_buffer.offset << ", " << split_k_buffer.size << "), m: " << m << ", n: " << n << ", k: " << k << ", stride_a: " << stride_a << ", stride_b: " << stride_b << ", stride_d: " << stride_d << ", batch_stride_a: " << batch_stride_a << ", batch_stride_b: " << batch_stride_b << ", batch_stride_d: " << batch_stride_d << ", split_k: " << split_k << ", batch: " << batch << ", ne02: " << ne02 << ", ne12: " << ne12 << ", broadcast2: " << broadcast2 << ", broadcast3: " << broadcast3 << ")");
     ggml_vk_sync_buffers(subctx);
     if (split_k == 1) {
-        const vk_mat_mat_push_constants pc = { m, n, k, stride_a, stride_b, stride_d, batch_stride_a, batch_stride_b, batch_stride_d, k, ne02, ne12, broadcast2, broadcast3 };
+        const vk_mat_mat_push_constants pc = { m, n, k, stride_a, stride_b, stride_d, batch_stride_a, batch_stride_b, batch_stride_d, k, ne02, ne12, broadcast2, broadcast3, padded_n };
         ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { a, b, d }, sizeof(vk_mat_mat_push_constants), &pc, { m, n, batch });
         return;
     }
 
     GGML_ASSERT(batch_stride_d == m * n);
 
-    const vk_mat_mat_push_constants pc1 = { m, n, k, stride_a, stride_b, stride_d, batch_stride_a, batch_stride_b, batch_stride_d, CEIL_DIV(k, split_k), ne02, ne12, broadcast2, broadcast3 };
+    const vk_mat_mat_push_constants pc1 = { m, n, k, stride_a, stride_b, stride_d, batch_stride_a, batch_stride_b, batch_stride_d, CEIL_DIV(k, split_k), ne02, ne12, broadcast2, broadcast3, padded_n };
     // Make sure enough workgroups get assigned for split k to work
     ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { a, b, split_k_buffer }, sizeof(vk_mat_mat_push_constants), &pc1, { (CEIL_DIV(m, pipeline->wg_denoms[0]) * pipeline->wg_denoms[0]) * split_k, n, batch });
     ggml_vk_sync_buffers(subctx);
@@ -3898,13 +4044,17 @@ static void ggml_vk_matmul(
 }
 
 static vk_pipeline ggml_vk_guess_matmul_id_pipeline(ggml_backend_vk_context * ctx, vk_matmul_pipeline& mmp, int m, int n, bool aligned, ggml_type src0_type) {
-    VK_LOG_DEBUG("ggml_vk_guess_matmul_pipeline(" << m << ", " << n << ", " << aligned << ", " << ggml_type_name(src0_type) << ")");
+    VK_LOG_DEBUG("ggml_vk_guess_matmul_id_pipeline(" << m << ", " << n << ", " << aligned << ", " << ggml_type_name(src0_type) << ")");
 
     if (ctx->device->coopmat2) {
-        if ((ctx->device->mul_mat_id_l[src0_type] && (m % mmp->l->wg_denoms[0]) == 0 && (n % mmp->l->wg_denoms[1]) == 0) || (!ctx->device->mul_mat_id_m[src0_type] && !ctx->device->mul_mat_id_s[src0_type])) {
+        // Use large shader when the N dimension is greater than the medium shader's tile size
+        uint32_t crossover_large = mmp->m->wg_denoms[1];
+        if ((ctx->device->mul_mat_id_l[src0_type] && (n > crossover_large)) || (!ctx->device->mul_mat_id_m[src0_type] && !ctx->device->mul_mat_id_s[src0_type])) {
             return aligned ? mmp->a_l : mmp->l;
         }
-        if ((ctx->device->mul_mat_id_m[src0_type] && (m % mmp->m->wg_denoms[0]) == 0 && (n % mmp->m->wg_denoms[1]) == 0) || !ctx->device->mul_mat_id_s[src0_type]) {
+        // Use medium shader when the N dimension is greater than the small shader's tile size
+        uint32_t crossover_medium = mmp->s->wg_denoms[1];
+        if ((ctx->device->mul_mat_id_m[src0_type] && (n > crossover_medium)) || !ctx->device->mul_mat_id_s[src0_type]) {
             return aligned ? mmp->a_m : mmp->m;
         }
         return aligned ? mmp->a_s : mmp->s;
@@ -3929,14 +4079,15 @@ static void ggml_vk_matmul_id(
         vk_subbuffer&& a, vk_subbuffer&& b, vk_subbuffer&& d, vk_subbuffer&& ids,
         uint32_t m, uint32_t n, uint32_t k, uint32_t stride_a, uint32_t stride_b, uint32_t stride_d,
         uint32_t batch_stride_a, uint32_t batch_stride_b, uint32_t batch_stride_d,
-        uint32_t n_as, uint32_t nei0, uint32_t nei1, uint32_t nbi1, uint32_t ne11) {
+        uint32_t n_as, uint32_t nei0, uint32_t nei1, uint32_t nbi1, uint32_t ne11,
+        uint32_t padded_n) {
     VK_LOG_DEBUG("ggml_vk_matmul_id(a: (" << a.buffer->buffer << ", " << a.offset << ", " << a.size << "), b: (" << b.buffer->buffer << ", " << b.offset << ", " << b.size << "), d: (" << d.buffer->buffer << ", " << d.offset << ", " << d.size << "), ids: (" << ids.buffer->buffer << ", " << ids.offset << ", " << ids.size << "), " <<
         "m: " << m << ", n: " << n << ", k: " << k << ", stride_a: " << stride_a << ", stride_b: " << stride_b << ", stride_d: " << stride_d << ", " <<
         "batch_stride_a: " << batch_stride_a << ", batch_stride_b: " << batch_stride_b << ", batch_stride_d: " << batch_stride_d << ", " <<
         "n_as: " << n_as << ", nei0: " << nei0 << ", nei1: " << nei1 << ", nbi1: " << nbi1 << ", ne11: " << ne11 << ")");
     ggml_vk_sync_buffers(subctx);
     const vk_mat_mat_id_push_constants pc = { m, n, k, stride_a, stride_b, stride_d, batch_stride_a, batch_stride_b, batch_stride_d,
-                                              nei0, nei1, nbi1, ne11 };
+                                              nei0, nei1, nbi1, ne11, padded_n };
     ggml_vk_dispatch_pipeline(ctx, subctx, pipeline, { a, b, d, ids }, sizeof(vk_mat_mat_id_push_constants), &pc, { m, nei1, n_as });
 }
 
@@ -4098,14 +4249,16 @@ static void ggml_vk_mul_mat_q_f16(ggml_backend_vk_context * ctx, vk_context& sub
     // Not implemented
     GGML_ASSERT(y_non_contig || !qy_needs_dequant);  // NOLINT
 
-    const int x_ne = ne01 * ne00;
-    const int y_ne = ne11 * ne10;
-    const int d_ne = ne11 * ne01;
-
     const uint32_t kpad = ggml_vk_align_size(ne10, ggml_vk_guess_matmul_pipeline_align(ctx, mmp, ne01, ne11, qx_needs_dequant ? GGML_TYPE_F16 : src0->type));
     const bool aligned = ne10 == kpad && ne01 > 8 && ne11 > 8;
 
     vk_pipeline pipeline = ggml_vk_guess_matmul_pipeline(ctx, mmp, ne01, ne11, aligned, qx_needs_dequant ? GGML_TYPE_F16 : src0->type);
+
+    // Reserve extra storage in the N dimension for the Y matrix, so we can avoid bounds-checking
+    uint32_t padded_n = qy_needs_dequant ? ROUNDUP_POW2(ne11, pipeline->wg_denoms[1]) :ne11;
+    const int x_ne = ne01 * ne00;
+    const int y_ne = padded_n * ne10;
+    const int d_ne = ne11 * ne01;
 
     const uint32_t split_k = ggml_vk_guess_split_k(ctx, ne01, ne11, ne10, pipeline);
 
@@ -4229,7 +4382,7 @@ static void ggml_vk_mul_mat_q_f16(ggml_backend_vk_context * ctx, vk_context& sub
         { d_D, d_buf_offset, d_sz * ne12 * ne13 }, { ctx->prealloc_split_k, 0, d_sz * ne12 * ne13 * split_k },
         ne01, ne11, ne10,
         ne10, ne10, ne01, stride_batch_x, stride_batch_y, ne20*ne21,
-        split_k, ne12*ne13, ne02, ne12, r2, r3
+        split_k, ne12*ne13, ne02, ne12, r2, r3, padded_n
     );  // NOLINT
 }
 
@@ -4680,14 +4833,16 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context& 
     // Not implemented
     GGML_ASSERT(y_non_contig || !qy_needs_dequant);  // NOLINT
 
-    const uint64_t x_ne = ne01 * ne00;
-    const uint64_t y_ne = ne11 * ne10;
-    const uint64_t d_ne = ne21 * ne20;
-
     const uint32_t kpad = ggml_vk_align_size(ne10, ggml_vk_guess_matmul_id_pipeline_align(ctx, mmp, ne01, nei1, qx_needs_dequant ? GGML_TYPE_F16 : src0->type));
     const bool aligned = ne10 == kpad && ne01 > 8 && nei1 > 8;
 
     vk_pipeline pipeline = ggml_vk_guess_matmul_id_pipeline(ctx, mmp, ne01, nei1, aligned, qx_needs_dequant ? GGML_TYPE_F16 : src0->type);
+
+    // Reserve extra storage in the N dimension for the Y matrix, so we can avoid bounds-checking
+    uint32_t padded_n = qy_needs_dequant ? ROUNDUP_POW2(ne11, pipeline->wg_denoms[1]) :ne11;
+    const uint64_t x_ne = ne01 * ne00;
+    const uint64_t y_ne = padded_n * ne10;
+    const uint64_t d_ne = ne21 * ne20;
 
     const uint64_t qx_sz = ggml_type_size(src0->type) * x_ne / ggml_blck_size(src0->type);
     const uint64_t qy_sz = ggml_type_size(src1->type) * y_ne / ggml_blck_size(src1->type);
@@ -4807,7 +4962,7 @@ static void ggml_vk_mul_mat_id_q_f16(ggml_backend_vk_context * ctx, vk_context& 
         { d_D, d_buf_offset, d_sz * ne22 * ne23 }, { d_ids, ids_buf_offset, ids_sz },
         ne01, ne21, ne10, ne10, ne10, ne01,
         stride_batch_x, stride_batch_y, ne20*ne21,
-        n_as, nei0, nei1, nbi1 / ggml_type_size(ids->type), ne11
+        n_as, nei0, nei1, nbi1 / ggml_type_size(ids->type), ne11, padded_n
     );  // NOLINT
 }
 
@@ -6767,7 +6922,7 @@ static void ggml_vk_test_matmul(ggml_backend_vk_context * ctx, size_t m, size_t 
             ctx, subctx, p, ggml_vk_subbuffer(d_X), ggml_vk_subbuffer(d_Y), ggml_vk_subbuffer(d_D), ggml_vk_subbuffer(ctx->prealloc_split_k),
             m, n, k,
             k, k, m, k*m, k*n, m*n,
-            split_k, batch, batch, batch, 1, 1
+            split_k, batch, batch, batch, 1, 1, n
         );
     }
     ggml_vk_ctx_end(subctx);
@@ -7112,7 +7267,7 @@ static void ggml_vk_test_dequant_matmul(ggml_backend_vk_context * ctx, size_t m,
             ctx, subctx, p, ggml_vk_subbuffer(qx_buf), ggml_vk_subbuffer(y_buf), ggml_vk_subbuffer(d_buf), ggml_vk_subbuffer(ctx->prealloc_split_k),
             m, n, k,
             k, k, m, k*m, k*n, m*n,
-            split_k, batch, batch, batch, 1, 1
+            split_k, batch, batch, batch, 1, 1, n
         );
     }
     ggml_vk_ctx_end(subctx);
@@ -8826,7 +8981,7 @@ static bool ggml_vk_instance_portability_enumeration_ext_available(const std::ve
     UNUSED(instance_extensions);
 }
 
-static bool ggml_vk_khr_cooperative_matrix_support(const vk::PhysicalDeviceProperties& props, const vk::PhysicalDeviceDriverProperties& driver_props) {
+static bool ggml_vk_khr_cooperative_matrix_support(const vk::PhysicalDeviceProperties& props, const vk::PhysicalDeviceDriverProperties& driver_props, vk_device_architecture arch) {
     switch (props.vendorID) {
     case VK_VENDOR_ID_INTEL:
         // Intel drivers don't support coopmat properly yet
@@ -8834,10 +8989,7 @@ static bool ggml_vk_khr_cooperative_matrix_support(const vk::PhysicalDevicePrope
     case VK_VENDOR_ID_AMD:
         if (driver_props.driverID == vk::DriverId::eAmdProprietary || driver_props.driverID == vk::DriverId::eAmdOpenSource) {
             // Workaround for AMD proprietary driver reporting support on all GPUs
-            const std::string name = props.deviceName;
-            return name.rfind("AMD Radeon RX 7", 0) == 0   || name.rfind("AMD Radeon(TM) RX 7", 0) == 0   || // RDNA 3 consumer GPUs
-                   name.rfind("AMD Radeon PRO W7", 0) == 0 || name.rfind("AMD Radeon(TM) PRO W7", 0) == 0 || // RDNA 3 workstation GPUs
-                   name.rfind("AMD Radeon 7", 0) == 0      || name.rfind("AMD Radeon(TM) 7", 0) == 0;        // RDNA 3 APUs
+            return arch == vk_device_architecture::AMD_RDNA3;
         }
         return true;
     default:
