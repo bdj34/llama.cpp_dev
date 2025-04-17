@@ -6,12 +6,12 @@ import random
 import time
 import os
 
-os.chdir("/home/vhasdcjohnsb2/nonIBD_colonoscopyReport/yesNo")
+os.chdir("/home/vhasdcjohnsb2/nonIBD_colonoscopyReport/linked")
 
-notes_file = 'colonoscopyReports.csv'
+notes_file = 'colo_path_linked.csv'
 
 # Define headers for CSVs
-notes_headers = ["PatientICN", "EntryDateTime", "TIUDocumentSID", "ReportText"]
+notes_headers = ["SurgicalPathologySID", "InputText"]
 
 # Load notes
 csv.field_size_limit(sys.maxsize)
@@ -22,8 +22,6 @@ with open(notes_file, "r", encoding="utf-8-sig") as f:
         note = dict(zip(notes_headers, row))
         notes.append(note)
 
-
-print(notes[0])
 start_time = time.time()
 
 inputs = []
@@ -31,10 +29,9 @@ sids = []
 
 counter = 1
 for note in notes:
-    sid = note["TIUDocumentSID"]
-    report_text = note["ReportText"].replace("\r\n", "\n").replace("\r", "\n")
-    full_text = report_text + "\n>>>\n\nIs the text above a colonoscopy report?"
-    inputs.append(full_text.replace("\n", "\\n"))
+    sid = note["SurgicalPathologySID"]
+    report_text = note["InputText"].replace("\r\n", "\n").replace("\r", "\n")
+    inputs.append(report_text.replace("\n", "\\n"))
     sids.append(sid)
 
 
@@ -46,7 +43,7 @@ for note in notes:
 
 
 # Write outputs
-with open("TIUDocSIDs.txt", "w", encoding="utf-8") as f:
+with open("SurgPathSIDs.txt", "w", encoding="utf-8") as f:
     f.writelines(f"{sid}\n" for sid in sids)
 
 with open("input.txt", "w", encoding="utf-8") as f:

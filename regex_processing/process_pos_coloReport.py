@@ -6,12 +6,18 @@ import random
 import time
 import os
 
-os.chdir("/home/vhasdcjohnsb2/nonIBD_colonoscopyReport/yesNo")
+os.chdir("/home/vhasdcjohnsb2/nonIBD_colonoscopyReport/pos")
 
 notes_file = 'colonoscopyReports.csv'
 
 # Define headers for CSVs
 notes_headers = ["PatientICN", "EntryDateTime", "TIUDocumentSID", "ReportText"]
+
+# Read in the positive whitelisted TIUDocSIDs
+whitelist_sids = set()
+with open("pos_TIUDocSIDs.txt", "r", encoding = "utf-8") as f:
+    for line in f:
+        whitelist_sids.add(line.strip())
 
 # Load notes
 csv.field_size_limit(sys.maxsize)
@@ -20,10 +26,14 @@ with open(notes_file, "r", encoding="utf-8-sig") as f:
     reader = csv.reader(f)
     for row in reader:
         note = dict(zip(notes_headers, row))
-        notes.append(note)
+        if note["TIUDocumentSID"] in whitelist_sids:
+            notes.append(note)
 
-
-print(notes[0])
+if notes:
+    print(notes[0])
+else: 
+    print("No matching SIDs found")
+    
 start_time = time.time()
 
 inputs = []
@@ -33,8 +43,7 @@ counter = 1
 for note in notes:
     sid = note["TIUDocumentSID"]
     report_text = note["ReportText"].replace("\r\n", "\n").replace("\r", "\n")
-    full_text = report_text + "\n>>>\n\nIs the text above a colonoscopy report?"
-    inputs.append(full_text.replace("\n", "\\n"))
+    inputs.append(report_text.replace("\n", "\\n"))
     sids.append(sid)
 
 
