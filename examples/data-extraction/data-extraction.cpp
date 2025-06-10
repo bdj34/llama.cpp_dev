@@ -182,7 +182,7 @@ int main(int argc, char ** argv) {
     // insert new requests as soon as the previous one is done
     const bool cont_batching = params.cont_batching;
 
-    // is the system prompt shared in the cache
+    // is the system prompt shared in the cache. Always TRUE for this case
     const bool is_sp_shared = true;
 
     // init llama.cpp

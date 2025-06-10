@@ -1,14 +1,20 @@
-# llama.cpp/example/parallel
+# llama.cpp/example/data-extraction
 
-Simplified simulation of serving incoming requests in parallel
+Simplified processing of clinical notes for extracting structured data
 
 ## Example
 
-Generate 128 client requests (`-ns 128`), simulating 8 concurrent clients (`-np 8`). The system prompt is shared (`-pps`), meaning that it is computed once at the start. The client requests consist of up to 10 junk questions (`--junk 10`) followed by the actual question.
+Structure data on IBD type from 128 patients (`-ns 128`), processing 2 patients at a time (`-np 8`). The system prompt is always shared, saving compute.
 
 ```bash
-llama-parallel -m model.gguf -np 8 -ns 128 --top-k 1 -pps --junk 10 -c 16384
+./build/bin/llama-data-extraction --systemPromptFile ./system_prompts/gemma2/IBD_typeOnly.txt \
+-m ./model.gguf \
+--sequences 128 --parallel 2 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 --saveInput \
+--IDfile ./ptIDs.txt \
+--grammar-file ./grammars/ibd_typeOnly.gbnf \
+--outDir ../llm_ibd_outDir \
+--file ./notes.txt \
+--promptFormat gemma2 
 ```
 
-> [!NOTE]
-> It's recommended to use base models with this example. Instruction tuned models might not be able to properly follow the custom chat template specified here, so the results might not be as expected.
