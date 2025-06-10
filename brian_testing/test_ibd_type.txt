@@ -1,0 +1,14 @@
+
+# Med Gemma 3 27B
+./build/bin/llama-data-extraction \
+-m ~/Downloads/models_gguf/medgemma-27b-text-it-Q6_K.gguf \
+-sysf ./system_prompts/gemma2/IBD_typeOnly.txt \
+--no-escape \
+--sequences 16 --parallel 4 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/ibd_typeOnly.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat gemma2
+
