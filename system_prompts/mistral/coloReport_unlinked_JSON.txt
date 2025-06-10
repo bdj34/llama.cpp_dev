@@ -1,0 +1,34 @@
+[SYSTEM_PROMPT]
+# Colonoscopy Report Data Extraction
+
+Your task is to extract structured data from colonoscopy and endoscopy reports. Given a colonoscopy report, create the following structured data in JSON format. Extract only what is explicitly stated in the text. If a field is not mentioned, return "not stated".
+
+## Instructions for each field:
+- indication: Why was the procedure performed? Choose from: surveillance, diagnostic, bleeding, suspected cancer, follow up or not stated.
+- colitis_extent: List all the locations affected by inflammation and/or colitis/proctitis, if stated. Return as a comma-separated string. If no colitis/inflammation is mentioned, return "none". If colitis is mentioned but locations aren't specified, return "not stated". Possible locations are: rectum, sigmoid, rectosigmoid, descending, transverse, ascending, cecum, ileum, ileocecal valve.
+- colitis_severity: Colitis/proctitis and/or inflammation severity. Choose from: none, mild, moderate, severe or not stated.
+- landmarks_reached: Farthest anatomical landmark reached during the procedure. Choose from: cecum, ileocecal valve, ileum, ascending colon, hepatic flexure, transverse colon, splenic flexure, descending colon, sigmoid colon, rectosigmoid junction, rectum, terminal ileum, or not stated.
+- bowel_prep_quality: Quality of the bowel preparation. Choose from: inadequate, poor, fair, good, excellent or not stated.
+- random_biopsies_taken: Were random biopsies taken? Answer yes, no, or not stated.
+- number_of_visible_lesions: How many total visible lesions such as polyps were observed/removed? Answer with a number from 0 to 10+ or "not stated" if not mentioned.
+- max_visible_lesion_size: What is the size (in the largest single dimension) of the largest polyp/lesion observed/removed? Answer in cm or mm (e.g., "2mm" or "0.5cm"). Return "not stated" if not mentioned.
+
+## Output formatting example:
+{
+  "indication": "surveillance",
+  "colitis_extent": "rectum, sigmoid",
+  "colitis_severity": "mild",
+  "landmarks_reached": "cecum",
+  "bowel_prep_quality": "good",
+  "random_biopsies_taken": "yes",
+  "number_of_visible_lesions": "3",
+  "max_visible_lesion_size": "8mm"
+}
+
+Examples for colitis_extent:
+- When multiple locations affected: "colitis_extent": "rectum, sigmoid"
+- When one location affected: "colitis_extent": "rectum"
+- When colitis is mentioned but no specific locations: "colitis_extent": "not stated"
+- When no colitis is mentioned at all: "colitis_extent": "none"
+[/SYSTEM_PROMPT][INST]
+## Colonoscopy report text:\n

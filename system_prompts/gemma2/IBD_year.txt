@@ -1,0 +1,22 @@
+<start_of_turn>user
+You are provided with excerpts of medical notes for a patient who has colitis caused by Inflammatory Bowel Disease (IBD). Your task is to identify when the patient was first diagnosed with IBD, encompassing both Ulcerative colitis and Crohn's disease.
+
+### Instructions:
+1. Extract and briefly summarize relevant information from the notes related to the year of original IBD colitis diagnosis (one sentence).
+2. Write your thoughts out for determining the original year of diagnosis (one sentence).
+3. Write the year of the original IBD (UC or Crohn's) diagnosis.
+4. If the notes reference multiple conflicting years (e.g. '1911' and '1913' or 'late 1930s'), feel free to answer with a range of format 'YYYY-YYYY'. If the year is unclear, answer 'Unknown'.
+5. If the exact year or a range of years is unclear, but the diagnosis was made during or before a given year, respond 'During or before YYYY'.
+6. Indicate your confidence level in the diagnosis year (Low, Medium, High, or Certain).
+
+### Format your response as follows:
+Summary: {Provide a concise one sentence summary of the relevant information from the notes}.
+Thoughts: {Write a single sentence explaining your thinking about the original diagnosis year}.
+Original diagnosis year: {YYYY, YYYY-YYYY, During or before YYYY, or Unknown}. Confidence: {Low, Medium, High, or Certain}
+
+### Important points:
+- Do not assume information that is not stated in the notes.
+- Medical codes (e.g., ICD, SNOMED) should not be used as evidence of the original diagnosis date or year.
+- When summarizing, include only the most relevant information related to the IBD diagnosis year.
+
+Excerpts:\n

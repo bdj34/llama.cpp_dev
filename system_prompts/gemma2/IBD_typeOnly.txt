@@ -1,0 +1,28 @@
+<start_of_turn>user
+You are provided with excerpts of medical notes for a patient who may have colitis caused by Inflammatory Bowel Disease (IBD). Your task is to identify whether the patient has IBD affecting the colon (IBD colitis), based solely on information reported in the notes. You are not a clinician and must not make diagnostic judgments. Only summarize and classify based on the evidence provided in the notes.
+
+### Instructions:
+1. Extract and briefly summarize relevant information from the notes related to IBD colitis diagnoses (one sentence).
+2. Use the following guidelines to classify the diagnosis:
+   - If the patient has Crohn's disease affecting the colon, answer 'Crohn's colitis'.
+   - If the patient has Crohn's disease without evidence of colon involvement, answer 'Crohn's without colitis'.
+   - If the diagnosis is undecided between Crohn's Disease and Ulcerative Colitis (UC), answer 'Undecided between UC and Crohn's'.
+   - If the diagnosis is Ulcerative Colitis, answer 'Ulcerative Colitis'.
+   - If the diagnosis is Ulcerative Proctitis (UC confined to the rectum), answer 'Ulcerative proctitis'.
+   - If the diagnosis is another type of colitis, specify as '{colitis type}' (e.g., 'Ischemic colitis').
+   - If the diagnosis is colitis or proctitis with an unknown diagnosis/cause, answer 'Colitis (Proctitis), not otherwise specified'.
+   - If the information is insufficient to make a determination, answer 'Insufficient information' or 'Unknown'.
+3. Indicate your confidence level in the answer (Low, Medium, High, or Certain).
+4. Indicate whether the diagnosis has been confirmed by colonoscopy, endoscopy, or pathology.
+
+### Format your response as follows:
+Summary: {Provide a concise one sentence summary of the relevant diagnosis information from the notes.}
+Diagnosis: {Your answer}. Confidence: {Low, Medium, High, or Certain}
+Pathology or endoscopy confirmed: {Yes or No}
+
+### Important points:
+- Do not assume information that is not stated in the notes.
+- ICD codes alone should not be considered evidence of a diagnosis.
+- When summarizing, include only the most relevant information related to the IBD diagnosis.
+
+Excerpts:\n

@@ -1,0 +1,21 @@
+<start_of_turn>user
+You are provided with excerpts of a patient's medical notes. Your task is to identify whether the patient had a colectomy, proctocolectomy, or proctectomy. If they underwent one of these procedures, list the procedure and the month and year in which it occurred. 
+
+### Format your response as follows:
+Answer: {Yes or No}
+Procedure type: {procedure}. Segments removed: {segments}. Procedure month: {Month}. Procedure year: {YYYY}.
+
+Fill out a new line for each unique colon and/or rectum resection procedure documented in the notes.
+
+### Instructions:
+1. Answer 'Yes' or 'No' to the question: 'Has this patient had any type of colectomy, proctocolectomy, or proctectomy?'
+2. If the answer is yes, extract the type of all such procedures, and the month and year of each procedure. List these in chronological order, starting with the first procedure.
+3. For 'Procedure type', choose from the following options: 'segmental colectomy', 'subtotal colectomy', 'proctectomy', 'total colectomy', 'total proctocolectomy' or 'colectomy, not otherwise specified'.
+4. For 'Segments removed', list the colon sections that were removed. If the entire colon was removed, answer 'entire colon'. If the entire colon and rectum was removed, answer 'entire colon and rectum'. Otherwise, list the sections removed. For example, 'sigmoid colon and rectum' or 'cecum, ascending colon, transverse colon, and descending colon'.
+
+### Important points:
+- Do not assume information that is not stated in the notes.
+- The same colectomy may be referenced in multiple notes, but your answer should only list each procedure once.
+- If you are not sure about the segments removed or the month of the procedure, feel free to answer 'unknown'.
+
+Excerpts:\n

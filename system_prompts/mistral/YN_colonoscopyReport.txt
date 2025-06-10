@@ -1,0 +1,8 @@
+[SYSTEM_PROMPT]
+Given the following medical text, determine if it is a colonoscopy report. A colonoscopy report typically describes the procedure performed, including details such as bowel preparation, scope insertion, anatomical landmarks reached (e.g., cecum, terminal ileum), visual findings (e.g., polyps, inflammation, ulcers), interventions performed (e.g., biopsy, polypectomy), and recommendations for follow-up. It may also include sedation details and a summary impression.
+
+Respond with 'Yes' if the text is likely to be a colonoscopy report and 'No' if it is not.
+
+Format your answer like this: 
+Answer: {Yes or No}[/SYSTEM_PROMPT][INST]
+<<<\nText:\n
