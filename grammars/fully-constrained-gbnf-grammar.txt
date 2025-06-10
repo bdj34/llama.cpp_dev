@@ -1,0 +1,100 @@
+# Fully Constrained GBNF Grammar for Colonoscopy Report Data Extraction
+
+root ::= "[" ws lesionlist ws "]"
+
+lesionlist ::= lesion (ws "," ws lesion)*
+             | 
+
+lesion ::= "{" ws lesionprops (ws "," ws lesionprops)* ws "}"
+
+lesionprops ::= sampleidprop
+              | sizeprop
+              | locationprop
+              | shapeprop
+              | removalmethodprop
+              | completenesspropprop
+              | interventiontypeprop
+
+# Sample ID - not constrained as it varies by lab
+sampleidprop ::= "\"sampleId\":" ws (string | "null")
+
+# Size in mm with null option
+sizeprop ::= "\"size\":" ws (number ws "\"mm\"" | "null")
+
+# Location options in the colon
+locationprop ::= "\"location\":" ws location
+location ::= "\"rectum\""
+          | "\"sigmoid colon\""
+          | "\"descending colon\""
+          | "\"splenic flexure\""
+          | "\"transverse colon\""
+          | "\"hepatic flexure\""
+          | "\"ascending colon\""
+          | "\"cecum\""
+          | "\"terminal ileum\""
+          | "\"ileocecal valve\""
+          | "\"anus\""
+          | "\"anal canal\""
+          | "\"right colon\""
+          | "\"left colon\""
+          | "null"
+
+# Shape/morphology options
+shapeprop ::= "\"shape\":" ws shape
+shape ::= "\"pedunculated\""
+       | "\"sessile\""
+       | "\"flat\""
+       | "\"depressed\""
+       | "\"flat elevated\""
+       | "\"laterally spreading\""
+       | "\"ulcerated\""
+       | "\"pseudopolyp\""
+       | "\"serrated\""
+       | "null"
+
+# Removal method options
+removalmethodprop ::= "\"removalMethod\":" ws removalmethod
+removalmethod ::= "\"cold forceps biopsy\""
+                | "\"hot forceps biopsy\""
+                | "\"cold snare polypectomy\""
+                | "\"hot snare polypectomy\""
+                | "\"EMR\""
+                | "\"ESD\""
+                | "\"piecemeal EMR\""
+                | "\"underwater EMR\""
+                | "\"hybrid ESD\""
+                | "\"full-thickness resection\""
+                | "\"avulsion technique\""
+                | "\"APC\""
+                | "\"biopsy sampling\""
+                | "null"
+
+# Completeness of resection options
+completenesspropprop ::= "\"completeness\":" ws completeness
+completeness ::= "\"complete\""
+              | "\"incomplete\""
+              | "\"piecemeal\""
+              | "\"unclear\""
+              | "\"not applicable\""
+              | "null"
+
+# Intervention type options
+interventiontypeprop ::= "\"interventionType\":" ws interventiontype
+interventiontype ::= "\"random biopsy\""
+                  | "\"visible lesion\""
+                  | "\"surveillance biopsy\""
+                  | "\"targeted biopsy\""
+                  | "null"
+
+string ::= "\"" chars "\""
+chars ::= char*
+char ::= [^"\\] | "\\" (["\\/bfnrt] | "u" hex hex hex hex)
+hex ::= [0-9a-fA-F]
+
+number ::= int frac? exp?
+int ::= "-"? ([1-9] digit* | "0")
+frac ::= "." digit+
+exp ::= [eE] [+-]? digit+
+digit ::= [0-9]
+
+ws ::= [ \t\n\r]*

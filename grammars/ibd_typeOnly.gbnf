@@ -1,0 +1,16 @@
+root ::= "Summary:" untilNewline typeConf "\nPathology or endoscopy confirmed: " yesNo
+
+typeConf ::= "Diagnosis: " ("Crohn's with confirmed colitis" | "Crohn's with possible colitis" | 
+"Crohn's colitis" | "Unspecified colitis" | "Ulcerative proctitis" | "Ulcerative colitis" | "IBD colitis" |
+"Colitis, not otherwise specified" | "Proctitis, not otherwise specified" | "Radiation proctitis" | "Ischemic colitis" |
+"Infectious colitis" | "C diff colitis" | "Clostridioides difficile colitis" | "C. difficile colitis" |
+"Collagenous colitis" | "Lymphocytic colitis" | 
+"Microscopic colitis" | "Drug-induced colitis" | "Chemical colitis" | "Diversion colitis" | "Unspecified colitis" |
+"Undecided between UC and Crohn's" | "Neither Crohn's nor UC" | "Crohn's without colitis" | 
+"UC" | "Insufficient information" | "insufficient information" | "Unknown" | "'Unknown'" | "unknown") ". Confidence: " confidence
+
+yesNo ::= ("Yes" | "No" )
+
+confidence ::= "Low" | "Medium" | "High" | "Certain"
+
+untilNewline ::= " " [^\n^\t^{^<]{10,400} "\n"

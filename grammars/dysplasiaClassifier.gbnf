@@ -1,0 +1,58 @@
+root ::= "Summary:" summary (("[\n" (entry (",\n" entry)*)? "\n]") | ("No concerning samples."))
+
+entry ::= ("  {" nl 
+    "\"sample_ID\": " sampleID "," nl 
+    "\"number_of_fragments\": " number "," nl 
+    "\"description\": " describe "," nl 
+    "\"length\": " length "," nl 
+    "\"specimen_type\": " spec "," nl 
+    "\"lesion_type\": " lesion "," nl 
+    "\"number_of_concerning_lesions\": " number "," nl 
+    "\"indication\": " ind "," nl 
+    "\"location\": " loc "," nl
+    "\"shape\": " shape "," nl 
+    "\"dysplasia_grade\": " dys "," nl 
+    "\"inflammation_severity\": " sev "," nl 
+    "\"inflammation_type\": " infType "," nl 
+    "\"T_stage\": " tStage "," nl 
+    "\"N_stage\": " nStage "\n  "
+"}")
+
+summary ::= [^\n.\r\x0b\x0c\x85\u2028\u2029\t{\[]{0,2000} ".\n" 
+
+q ::= "\""
+sampleID ::= q [^\n\t{<]{0,10} q
+digit ::= ("0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9")
+number ::= q (digit | "multiple") q
+describe ::= q [^\n\t{<]{0,400} q
+decimal ::= digit (digit)? ("." digit)?
+length ::= q decimal ("-" decimal)? " " ("mm" | "cm") ", " ("aggregate" | "largest single fragment") q
+spec ::= q ("biopsy"| "polypectomy"| "endoscopic submucosal dissection (ESD)"| "endoscopic mucosal resection (EMR)"| "surgical resection"| "unknown") q
+
+lesion ::= q ("tubular adenoma"| "sessile serrated adenoma"| "traditional serrated adenoma"| "tubulovillous adenoma"| 
+    "polyp"| "hyperplastic polyp"| "inflammatory polyp"| "hyperplasia"| "villous adenoma"| "low grade dysplasia"| 
+    "high grade dysplasia"| "inflammation"| "dysplasia"| "polyp with dysplasia"| "adenoma"| "sessile serrated polyp with dysplasia"| 
+    "indefinite for dysplasia"| "dysplasia-associated lesion or mass (dalm)"| "adenocarcinoma"| "adenocarcinoma in-situ"| 
+    "intramucosal adenocarcinoma"| "invasive adenocarcinoma"| "other"| "unknown") q
+    
+ind ::= q ("polyp"| "lesion"| "mass"| "random biopsy"| "visible dysplasia"| "nodularity"| 
+    "ulceration"| "abnormal mucosa"| "stricture"| "erosions"| "bleeding site"| 
+    "thickened folds"| "surveillance biopsy"| "surveillance of known lesion"| 
+    "other"| "unknown") q
+    
+loc ::= q ("cecum"| "ascending"| "transverse"| "descending"| "sigmoid"| "rectum"| "appendix" |
+    "hepatic flexure"| "splenic flexure" | "rectosigmoid"| "ileocecal valve"| "unknown" | (digit){1,2} " cm") q
+
+shape ::= q ("pedunculated"| "sessile"| "flat"| "flat elevated"| "flat depressed"| 
+    "invisible"| "mass"| "polypoid"| "nonpolypoid"| "other"| "unknown") q
+
+
+dys ::= q ("no dysplasia"| "indefinite for dysplasia"| "dysplasia" | "low grade dysplasia"| "high grade dysplasia"| "adenocarcinoma"| "unknown") q
+sev ::= q ("none"| "mild"| "moderate"| "severe"| "unknown") q
+
+infType ::= q ("acute"| "chronic"| "quiescent"| "inactive"| "granulomatous"| "non-specific"| "unknown") q
+tStage ::= q ("Tis"| "T1"| "T2"| "T3"| "T4"| "T4a"| "T4b"| "unknown"| "NA") q
+nStage ::= q ("N0"| "N1"| "N1a"| "N1b"| "N1c"| "N2"| "N2a"| "N2b"| "unknown"| "NA") q
+
+nl ::= "\n    "
+

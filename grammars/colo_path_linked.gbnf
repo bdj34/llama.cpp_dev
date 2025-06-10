@@ -1,0 +1,69 @@
+root ::= "\n[" ws lesionlist ws "]"
+
+lesionlist ::= lesion (ws "," ws lesion)* 
+
+lesion ::= "{" ws lesionprops ws "}"
+
+q ::= "\""
+bt ::= ws "," ws
+
+lesionprops ::= sampleidprop bt sizeprop bt locationprop bt shapeprop bt completenessprop bt randomprop
+
+
+# Sample ID - not constrained as it varies by lab
+sampleidprop ::= "\"sample_ID\":" ws "\"" [^\n\t{<]{0,10} "\""
+
+# Size in mm or cm with unknown option
+sizeprop ::= "\"size\":" ws size
+size ::= ((q decimal ("mm" | "cm") q) | (q "unknown" q))
+decimal ::= digit (digit)? ("." digit)?
+digit ::= ("0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9")
+
+# Location options in the colon
+locationprop ::= "\"location\":" ws location
+location ::= ("\"rectum\""
+          | "\"sigmoid\""
+          | "\"rectosigmoid\""
+          | "\"descending\""
+          | "\"splenic flexure\""
+          | "\"transverse\""
+          | "\"hepatic flexure\""
+          | "\"ascending\""
+          | "\"cecum\""
+          | "\"ileum\""
+          | "\"ileocecal valve\""
+          | "\"other\""
+          | "\"not stated\""
+          | "\"unknown\"")
+
+# Shape/morphology options
+shapeprop ::= "\"morphology\":" ws shape
+shape ::= ("\"pedunculated\""
+       | "\"sessile\""
+       | "\"flat\""
+       | "\"flat depressed\""
+       | "\"depressed\""
+       | "\"flat elevated\""
+       | "\"laterally spreading\""
+       | "\"ulcerated\""
+       | "\"pseudopolyp\""
+       | "\"serrated\""
+       | "\"invisible\""
+       | "\"not stated\""
+       | "\"unknown\"")
+
+# Completeness of resection options
+completenessprop ::= "\"completeness_of_resection\":" ws completeness
+completeness ::= ("\"complete\""
+              | "\"incomplete\""
+              | "\"piecemeal\""
+              | "\"unclear\""
+              | "\"not stated\""
+              | "\"unknown\"")
+
+# Intervention type options
+randomprop ::= "\"random_bx\":" ws yesNoUnknown
+yesNoUnknown ::= q ("yes"|"no"|"unknown") q
+
+
+ws ::= [ \t\n]{0,5}

@@ -1,0 +1,27 @@
+root ::= "Answer: " (("Yes.\n"  (upToThree){0,3}) | "No.\n" | "No.")
+
+upToThree ::= "Procedure type: " procedure ". Segments removed: " sections ". Procedure month: " month ". Procedure year: " year "." ("\n")?
+
+procedure ::= ("segmental colectomy" | "partial colectomy" |
+"subtotal colectomy" |
+"colectomy, not otherwise specified" | "proctectomy" | 
+"proctocolectomy" | "total colectomy" | "total proctocolectomy")
+
+sections ::= ("entire colon" |
+"colon and rectum" | "entire colon and rectum") |
+(("splenic flexure" | "hepatic flexure" |
+"rectum" | "sigmoid colon" | "descending colon" |
+"transverse colon" | "ascending colon" | "cecum") (", "| ", and " | " and ")?){1,8} | "unknown"
+
+month ::= ("January" | "February" | "March" | "April" | "May" | "June" |
+"July" | "August" | "September" | "October" | "November" | "December" |
+"unknown")
+
+year ::= firstDigit digit{3}
+
+firstDigit ::= ("1" | "2")
+digit ::= ("1"|"2"|"3"|"4"|"5"|"6"|"7"|"8"|"9"|"0")
+
+confidence ::= "Low" | "Medium" | "High" | "Certain"
+
+openEnded ::= [^\n^\t^{^<]{3,100} 

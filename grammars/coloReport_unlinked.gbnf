@@ -1,0 +1,36 @@
+root ::= json
+
+json ::= ("{" ws
+  "\"indication\": " indication "," ws
+  "\"colitis_extent\": " colitisExtent "," ws
+  "\"colitis_severity\": " colitisSeverity "," ws
+  "\"landmarks_reached\": " landmarksReached "," ws
+  "\"bowel_prep_quality\": " bowelPrepQuality "," ws
+  "\"random_biopsies_taken\": " randomBiopsiesTaken "," ws
+  "\"number_of_visible_lesions\": " numberOfVisibleLesions "," ws
+  "\"max_visible_lesion_size\": " maxVisibleLesionSize ws
+"}")
+
+indication ::= "\"surveillance\"" | "\"diagnostic\"" | "\"bleeding\"" | "\"suspected cancer\"" | "\"follow up\"" | "\"not stated\""
+
+colitisExtent ::= "\"none\"" | "\"not stated\"" | "\"" colitisLocationCSV "\""
+colitisLocationCSV ::= colitisLocation (", " colitisLocation){0,8}
+colitisLocation ::= "rectum" | "sigmoid" | "rectosigmoid" | "descending" | "transverse" | "ascending" | "cecum" | "ileum" | "ileocecal valve"
+
+colitisSeverity ::= "\"none\"" | "\"mild\"" | "\"moderate\"" | "\"severe\"" | "\"not stated\""
+
+landmarksReached ::= "\"not stated\"" | "\"" anatomicalLandmark "\""
+anatomicalLandmark ::= "cecum" | "ileocecal valve" | "ileum" | "ascending colon" | "hepatic flexure" | "transverse colon" | "splenic flexure" | "descending colon" | "sigmoid colon" | "rectosigmoid junction" | "rectum" | "terminal ileum"
+
+bowelPrepQuality ::= "\"inadequate\"" | "\"poor\"" | "\"fair\"" | "\"good\"" | "\"excellent\"" | "\"not stated\""
+
+randomBiopsiesTaken ::= "\"yes\"" | "\"no\"" | "\"not stated\""
+
+numberOfVisibleLesions ::= "\"0\"" | "\"1\"" | "\"2\"" | "\"3\"" | "\"4\"" | "\"5\"" | "\"6\"" | "\"7\"" | "\"8\"" | "\"9\"" | "\"10+\"" | "\"not stated\""
+
+maxVisibleLesionSize ::= "\"not stated\"" | "\"" sizeValue sizeUnit "\""
+sizeValue ::= digit+ | (digit+ "." digit+)
+sizeUnit ::= "mm" | "cm"
+digit ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+
+ws ::= (" " | "\t" | "\n"){0,5}
