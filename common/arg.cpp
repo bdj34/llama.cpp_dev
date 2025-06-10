@@ -1534,6 +1534,45 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
         }
     ).set_examples({LLAMA_EXAMPLE_MAIN}));
     add_opt(common_arg(
+        {"--IDfile"}, "FNAME",
+        "a file containing the note or patient IDs",
+        [](common_params & params, const std::string & value) {
+            std::ifstream file(value);
+            if (!file) {
+                throw std::runtime_error(string_format("error: failed to open ID file '%s'\n", value.c_str()));
+            }
+            // store the external file name in params
+            params.IDfile = value;
+            std::copy(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>(), back_inserter(params.IDs));
+            if (!params.IDs.empty() && params.IDs.back() == '\n') {
+                params.IDs.pop_back();
+            }
+        }
+    ));
+    add_opt(common_arg(
+        {"--outDir"}, "OUTPUTDIR",
+        "a path to the directory where outputs will be written",
+        [](common_params & params, const std::string & value) {
+            // store the external file name in params
+            params.outDir = value;
+        }
+    ));
+    add_opt(common_arg(
+        {"--promptFormat"}, "PROMPTFORMAT",
+        "The prompt format for the corresponding model",
+        [](common_params & params, const std::string & value) {
+            // store the external file name in params
+            params.promptFormat = value;
+        }
+    ));
+    add_opt(common_arg(
+        {"--saveInput"},
+        string_format("Save the inputs to a txt file? (default: %s)", params.saveInput ? "yes" : "no"),
+        [](common_params & params) {
+            params.saveInput = true;
+        }
+    ));
+    add_opt(common_arg(
         {"--in-file"}, "FNAME",
         "an input file (repeat to specify multiple files)",
         [](common_params & params, const std::string & value) {
