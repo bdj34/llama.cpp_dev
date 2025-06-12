@@ -1,34 +1,42 @@
 <start_of_turn>user
-You are an expert medical report analyst. Your task is to carefully review a full pathology report and its corresponding colonoscopy report to determine the resection status of a specific lesion, using standard surgical margin terminology: R0, R1, R2, or Uncertain.
+You are an expert medical report analyst. Your task is to carefully review a full pathology report and corresponding colonoscopy report to determine the resection status of a specific lesion. Apply your expert judgment to interpret the findings, especially when reports are complex or ambiguous, and use the standard surgical margin terminology provided.
 
 You will be given:
 
-1.  The full text of the pathology report.
-2.  The full text of the colonoscopy report.
-3.  Sample ID or description: An identifier for the target lesion (e.g., "A", "Specimen 1", or "10 mm ascending sessile polyp").
+1. The full text of the pathology report.
+2. The full text of the colonoscopy report.
+3. Sample ID or description: An identifier for the target lesion (e.g., "A", "Specimen 1", or "10 mm ascending sessile polyp").
+
+Lesions of interest include adenomas and dysplastic polyps from screening or surveillance colonoscopies.
 
 Your goal is to assign one of the following labels based on a strict priority:
 
-- R2 (Macroscopic Residual Lesion): The colonoscopy report explicitly states that visible lesion remains after the resection attempt. This is the highest priority determination.
-- Uncertain: The pathology report indicates that margin status cannot be definitively assessed due to factors like piecemeal resection, fragmentation, or thermal artifact.
+- Insufficient information: The provided text is missing critical information required for a clinical assessment. For example, the pathology/colonoscopy results for the specified lesion are not included. This is distinct from "Uncertain."
+- R2 (Macroscopic Residual Lesion): The colonoscopy report explicitly states that visible lesion remains after the resection attempt.
+- Uncertain: The pathology report indicates that margin status cannot be definitively assessed due to clinical factors like piecemeal resection, fragmentation, or thermal artifact.
 - R1 (Microscopic Residual Lesion): The pathology report indicates that the lesion (dysplasia, adenomatous tissue) is present at the margin (a "positive" margin) or is within 1 mm of any margin.
 - R0 (Complete Resection): The pathology report indicates all relevant margins are negative for the lesion, and the distance to the nearest margin is 1 mm or greater.
+
+Relevant margins may include lateral, deep, or radial margins depending on specimen type.
 
 Steps to follow:
 
 Step 1: Identify the Target Lesion
-- Using the Sample ID or description, locate the corresponding analysis in the pathology report and in the colonoscopy report.
+- Using the Sample ID or description, locate the corresponding analysis in the pathology and colonoscopy reports.
 
-Step 2: Check for Macroscopic Residual Disease (Colonoscopy Report)
+Step 2: Verify Information Adequacy
+- Before proceeding, check if the provided text for both reports contains the necessary sections for the target lesion. If critical information is missing, making a clinical assessment impossible, your final answer is Insufficient information. Stop here.
+
+Step 3: Check for Macroscopic Residual Disease (Colonoscopy Report)
 - Review the colonoscopy report for the target lesion. If the endoscopist notes that the resection was "incomplete," that "visible polyp remains," or any other synonym for macroscopic residual disease, your final answer is R2. Stop here.
 
-Step 3: Assess Margin Status (Pathology Report)
+Step 4: Assess Margin Status (Pathology Report)
 - If the status is not R2, proceed to the pathology report.
 - Find the "Microscopic Description" and/or "Diagnosis" and/or "Comment" section for the target specimen.
 - Assess the margins based on the following statements:
     - If margins are described as "unassessable," "cannot be determined," "indeterminate," "obscured by cautery," or the specimen's fragmentation prevents margin evaluation, your final answer is Uncertain.
     - If any margin is described as "positive," "involved," or the lesion is "< 1 mm" from a margin, your final answer is R1.
-    - If all relevant margins are described as "negative," "uninvolved," "clear," and the distance is ">= 1 mm" (or not specified but stated as clear), your final answer is R0.
+    - If all relevant margins are "negative," "uninvolved," "clear," and the distance is ">= 1 mm" (or not specified but stated as clear), your final answer is R0.
 
 Format your answer as follows:
-Answer: {R0, R1, R2, or Uncertain}
+Answer: {R0, R1, R2, Uncertain, or Insufficient information}
