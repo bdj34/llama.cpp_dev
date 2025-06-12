@@ -1,0 +1,3 @@
+root ::= "Answer: " Rstatus
+
+Rstatus ::= "R0" | "R1" | "R2" | "Uncertain"
