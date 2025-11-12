@@ -1055,7 +1055,6 @@ common_params_context common_params_parser_init(common_params & params, llama_ex
             }
         }
     ).set_examples({LLAMA_EXAMPLE_MAIN, LLAMA_EXAMPLE_DIFFUSION}));
-    ));
     add_opt(common_arg(
         {"--IDfile"}, "FNAME",
         "a file containing the note or patient IDs",
