@@ -29,7 +29,7 @@ You must extract three specific binary predictors. You must output the result in
 Return a JSON object. For each predictor, you must provide the `evidence` and `reasoning` BEFORE the `value`.
 
 Structure:
-* `evidence`: string - The exact quote from the text supporting the finding (or null if none).
+* `evidence`: string - The most relevant exact quote from the text supporting the finding (or null if none).
 * `reasoning`: string - Step-by-step logic. This should be a single sentence.
 * `value`: boolean (true/false) - The final determination.
 
