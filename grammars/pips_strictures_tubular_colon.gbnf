@@ -1,26 +1,26 @@
-root ::= "{" ws stricture_kv "," ws pips_kv "," ws tubular_kv "}" ws
+root ::= "```json\n{" ws stricturekv "," ws pipskv "," ws tubularkv "}" ws "```"
 
 # --- Field Definitions ---
-stricture_kv ::= "\"stricture\"" ws ":" ws result_obj
-pips_kv      ::= "\"post_inflammatory_polyps\"" ws ":" ws result_obj
-tubular_kv   ::= "\"tubular_colon\"" ws ":" ws result_obj
+stricturekv ::= "\"stricture\"" ws ":" ws resultobj
+pipskv      ::= "\"post_inflammatory_polyps\"" ws ":" ws resultobj
+tubularkv   ::= "\"tubular_colon\"" ws ":" ws resultobj
 
 # --- Object Structure (Evidence -> Reasoning -> Value) ---
-result_obj ::= "{" ws evidence_kv "," ws reasoning_kv "," ws value_kv "}"
+resultobj ::= "{" ws evidencekv "," ws reasoningkv "," ws valuekv "}"
 
-evidence_kv  ::= "\"evidence\"" ws ":" ws string_or_null
-reasoning_kv ::= "\"reasoning\"" ws ":" ws string
-value_kv     ::= "\"value\"" ws ":" ws boolean
+evidencekv  ::= "\"evidence\"" ws ":" ws stringornull
+reasoningkv ::= "\"reasoning\"" ws ":" ws stringornull
+valuekv     ::= "\"value\"" ws ":" ws boolean
 
 # --- Primitives ---
 boolean        ::= "true" | "false"
-string_or_null ::= string | "null"
+stringornull ::= string | "null"
 
-# Standard JSON String definition (handles escapes)
+# Standard JSON String definition (handles escapes and disallows newlines \n and carriage returns \r)
 string ::= "\"" (
-    [^"\\] |
+    [^"\\\r\n] |
     "\\" (["\\/bfnrt] | "u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])
 )* "\""
 
-# Optional whitespace
-ws ::= [ \t\n]{0,5}
+# Optional space: by convention, applied in this grammar after literal chars when allowed
+ws ::= | " " | "\n" [ \t]{0,20}

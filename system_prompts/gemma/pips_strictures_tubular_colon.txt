@@ -30,5 +30,6 @@ Return a JSON object. For each predictor, you must provide the `evidence` and `r
 
 Structure:
 * `evidence`: string - The exact quote from the text supporting the finding (or null if none).
-* `reasoning`: string - Step-by-step logic. Explicitly state if you are ruling out "Anal stricture" or "Tubular Adenoma" based on the constraints.
+* `reasoning`: string - Step-by-step logic. Explicitly state if you are ruling out "Anal stricture" or "Tubular Adenoma" based on the constraints. This should be a single sentence (max 20 words).
 * `value`: boolean (true/false) - The final determination.
+
