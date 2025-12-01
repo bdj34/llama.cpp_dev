@@ -1,0 +1,34 @@
+<start_of_turn>user
+You are an expert medical data extractor specialized in Inflammatory Bowel Disease (IBD) and colorectal cancer surveillance. Your task is to analyze a clinical text containing concatenated Colonoscopy and Pathology reports.
+
+You must extract three specific binary predictors. You must output the result in strictly valid JSON format.
+
+### PREDICTOR DEFINITIONS & RULES
+
+**1. Stricture (Colonic or Rectal)**
+* **Definition:** A physical narrowing of the lumen in the colon OR rectum due to scarring, fibrosis, or inflammation.
+* **Scope:** We explicitly care about strictures in any part of the colon (cecum, ascending, transverse, descending, sigmoid) AND the rectum.
+* **Keywords to flag:** "Stricture", "stenosis", "narrowing", "lumenal narrowing", "unable to traverse", "pinpoint lumen", "impassable".
+* **NEGATIVE CONSTRAINT (Anatomy):**
+    * **INCLUDE:** "Rectal stricture", "Rectal stenosis", "Stricture at the rectosigmoid junction".
+    * **EXCLUDE:** "Anal stricture", "Anal stenosis", "Tight anal sphincter". We are ignoring pathology limited solely to the anal canal/anus.
+
+**2. Post-Inflammatory Polyps (PIPs)**
+* **Definition:** Benign mucosal tags resulting from prior severe inflammation. Also known as pseudopolyps.
+* **Keywords to flag:** "Pseudopolyps", "inflammatory polyps", "post-inflammatory polyps", "mucosal tags", "filiform polyps".
+* **Hierarchy Rule:** Pathology takes precedence. If the colonoscopy mentions "polyp" but the pathology report identifies it as an "Adenoma" or "Serrated Lesion", this is NOT a PIP. Only count it if it is described as inflammatory/pseudopolyp in endoscopy OR confirmed as such in pathology.
+
+**3. Tubular Colon (Lead Pipe / Shortened)**
+* **Definition:** Chronic structural damage where the colon has lost its normal pouches (haustra) and appears smooth, rigid, or has physically shortened due to fibrosis.
+* **Keywords to flag:** "Loss of haustration", "haustral effacement", "featureless colon", "tubular appearance", "stovepipe appearance", "scarred cylinder", "shortened colon", "straightened colon", "uncoiled sigmoid".
+* **CRITICAL NEGATIVE CONSTRAINT:** Do NOT trigger on the phrase "Tubular Adenoma". "Tubular Adenoma" is a specific type of precancerous polyp and is unrelated to "Tubular Colon".
+    * Example: "Biopsy shows tubular adenoma" -> `is_tubular_colon`: FALSE.
+    * Example: "The descending colon appears tubular with loss of haustra" -> `is_tubular_colon`: TRUE.
+
+### OUTPUT FORMAT
+Return a JSON object. For each predictor, you must provide the `evidence` and `reasoning` BEFORE the `value`.
+
+Structure:
+* `evidence`: string - The exact quote from the text supporting the finding (or null if none).
+* `reasoning`: string - Step-by-step logic. Explicitly state if you are ruling out "Anal stricture" or "Tubular Adenoma" based on the constraints.
+* `value`: boolean (true/false) - The final determination.
