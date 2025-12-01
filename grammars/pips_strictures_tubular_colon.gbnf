@@ -9,7 +9,7 @@ tubularkv   ::= "\"tubular_colon\"" ws ":" ws resultobj
 resultobj ::= "{" ws evidencekv "," ws reasoningkv "," ws valuekv "}"
 
 evidencekv  ::= "\"evidence\"" ws ":" ws stringornull
-reasoningkv ::= "\"reasoning\"" ws ":" ws string
+reasoningkv ::= "\"reasoning\"" ws ":" ws stringornull
 valuekv     ::= "\"value\"" ws ":" ws boolean
 
 # --- Primitives ---

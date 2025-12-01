@@ -30,6 +30,6 @@ Return a JSON object. For each predictor, you must provide the `evidence` and `r
 
 Structure:
 * `evidence`: string - The most relevant exact quote from the text supporting the finding (or null if none).
-* `reasoning`: string - Step-by-step logic. This should be a single sentence.
-* `value`: boolean (true/false) - The final determination.
+* `reasoning`: string - Step-by-step logic. This should be a single, short sentence. If there is no evidence (evidence is null), this can be null. 
+* `value`: boolean (true/false) - The final determination. If reasoning and/or evidence are null, the default value is false.
 
