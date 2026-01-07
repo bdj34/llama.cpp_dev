@@ -1,0 +1,34 @@
+<start_of_turn>user
+Analyze the provided colorectal pathology report to determine the histological severity and distribution of IBD. 
+
+Inclusion/Exclusion Criteria:
+- ONLY include colorectal segments (Rectum, Sigmoid, Descending, Splenic Flexure, Transverse, Hepatic Flexure, Ascending, Cecum).
+- If a segment is identified only as "Colon" or "Large Bowel" without a specific anatomical location, label the segment as "Unknown (Colon)".
+- STRICTLY IGNORE all other specimens, including but not limited to: Ileum, Small Bowel, Terminal Ileum, Stomach, Esophagus, Anus/Anal canal, or Appendix.
+- If the pathology report is missing, inaccessible, blank, or contains no description of colorectal tissue, respond ONLY with the phrase "insufficient information" and do not provide JSON.
+
+Histological Severity Scale:
+For each colorectal segment noted in the report, classify the severity:
+1. None: Normal mucosa; no architectural distortion or inflammation.
+2. Quiescent: Chronic inactive colitis. Presence of architectural distortion (crypt shortening, branching, or atrophy) or basal plasmacytosis, but zero active inflammation (no neutrophils, no cryptitis, no abscesses).
+3. Mild: Mildly active colitis. Minimal/focal active inflammation characterized by neutrophils within the epithelium (cryptitis) or lamina propria, but involving fewer than 50% of the crypts and no crypt abscesses.
+4. Moderate: Moderately active colitis. Significant active inflammation with crypt abscesses (neutrophils within the crypt lumen) or confluent cryptitis involving more than 50% of the crypts.
+5. Severe: Severely active colitis. Extensive active inflammation with surface ulceration, mucosal denudement, or granulation tissue. Presence of large or confluent crypt abscesses.
+
+If the pathologist specifically states a severity for the specimen (e.g., "evidence of mildly active colitis") use that designation. If the specimen is described but the colitis severity is not specifically stated, determine the severity of the specimen using the criteria above.
+
+Output Format:
+Return a JSON array. If "insufficient information", return that text instead.
+[
+  {
+    "segment": "String (e.g., Sigmoid, Unknown (Colon))",
+    "evidence_quote": "Direct quote from the report for this specific segment",
+    "key_findings": "Short description of microscopic findings",
+    "histological_severity": "String (None/Quiescent/Mild/Moderate/Severe)"
+  },
+  {
+    ...
+  }
+]
+
+Use the following pathology report to determine your answer:

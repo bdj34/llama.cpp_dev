@@ -1,0 +1,20 @@
+root ::= array | "insufficient information"
+
+array ::= "[" space (item (space "," space item)*)? space "]"
+
+item ::= "{" space 
+    "\"segment\":" space segmentvalue "," space 
+    "\"evidence-quote\":" space string "," space 
+    "\"key-findings\":" space string "," space 
+    "\"histological-severity\":" space severityvalue 
+    space "}"
+
+segmentvalue ::= "\"Rectum\"" | "\"Sigmoid\"" | "\"Descending\"" | "\"Splenic Flexure\"" | 
+                 "\"Transverse\"" | "\"Hepatic Flexure\"" | "\"Ascending\"" | "\"Cecum\"" | 
+                 "\"Unknown (Colon)\""
+
+severityvalue ::= "\"None\"" | "\"Quiescent\"" | "\"Mild\"" | "\"Moderate\"" | "\"Severe\""
+
+string ::= "\"" ([^"\\] | "\\" ["\\/bfnrt] | "\\u" [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F] [0-9a-fA-F])* "\""
+
+space ::= [ \t\n\r]*

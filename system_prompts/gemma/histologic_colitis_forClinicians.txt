@@ -1,0 +1,33 @@
+Analyze the provided colorectal pathology report to determine the histological severity and distribution of colitis caused by Inflammatory Bowel Disease (IBD). 
+
+Inclusion/Exclusion Criteria:
+- ONLY include colorectal segments (Rectum, Sigmoid, Descending, Splenic Flexure, Transverse, Hepatic Flexure, Ascending, Cecum). <INCLUDE ILEOCECAL VALVE?>
+- If a segment is identified only as "Colon" or "Large Bowel" without a specific anatomical location, label the segment as "Unknown (Colon)".
+- STRICTLY IGNORE all other specimens, including but not limited to: Ileum, Small Bowel, Terminal Ileum, Stomach, Esophagus, Anus/Anal canal, or Appendix.
+- If the pathology report is missing, inaccessible, blank, or contains no description of colorectal tissue, respond ONLY with the phrase "insufficient information" and do not provide JSON.
+
+Histological Severity Scale:
+For each colorectal segment noted in the report, classify the severity:
+1. None: Normal mucosa; no architectural distortion or inflammation. <CHANGE/ADD TO DEFINITION>
+2. Quiescent: <DEFINE QUIESCENT>
+3. Mild: <DEFINE MILD>
+4. Moderate: <DEFINE MODERATE>
+5. Severe: <DEFINE SEVERE>
+
+If the pathologist specifically states a severity for the specimen (e.g., "evidence of mildly active colitis") use that designation. If the specimen is described but the colitis severity is not specifically stated/summarized, determine the severity of the specimen using the criteria above.
+
+Output Format:
+Return a JSON array. If "insufficient information", return that text instead.
+[
+  {
+    "segment": "String (e.g., Sigmoid, Unknown (Colon))",
+    "evidence_quote": "Direct quote from the report for this specific segment",
+    "key_findings": "Short description of microscopic findings",
+    "histological_severity": "String (None/Quiescent/Mild/Moderate/Severe)"
+  },
+  {
+    ...
+  }
+]
+
+Use the following pathology report to determine your answer:
