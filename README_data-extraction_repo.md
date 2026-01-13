@@ -1,21 +1,25 @@
 # llama.cpp_data_extraction
 
 This is a fork of the main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp).  
-I have added a few command-line parameters and an example called `data-extraction` for the purpose of structuring electronic health record (EHR) unstructured note data using LLMs.
+I have added a few command-line parameters and an example called `data-extraction` for the purpose of structuring pathology reports using LLMs.
 
-This is the code we used for the work in our paper in press (DOI coming soon). For exact reproduction of our prior work ("Large language models for extracting histopathologic diagnoses of colorectal cancer and dysplasia from electronic health records" PMID: 40973184 DOI: 10.1136/bmjgast-2025-001896), see the old repo: https://github.com/bdj34/llama.cpp_data_extraction
+This is the code we used for the work in our preprint:  
+📄 https://www.medrxiv.org/content/10.1101/2024.11.27.24318083v2 
+
+To reproduce our calculation of performance metrics from the paper, see the directory "reproduce_paper_results".
 
 Create an issue on this repo or reach out to me at brian.d.johnson97@gmail.com or bdj001@ucsd.edu if you have questions!
 
-To reproduce our implementation and analysis from paper(s), see the directory "reproduce_results". These are broken down into separate directories for pre-processing, inference, post-processing, and calculate-metrics. The UC-CaRE validation paper (DOI coming soon) is under the UC-CaRE sub-directory. There are separate READMEs under each of these directories to make sense of the scripts and what we did. 
+**Supported/recommended models:**  
+This fork is up to date with the main `llama.cpp` GitHub as of **Nov 27, 2024** and exists primarily for exact reproduction of our work.  
+Any models released after that date will likely not work.
 
-**Supported/recommended models and updates:**  
-This fork is up to date with the main `llama.cpp` GitHub as of **Nov 11, 2025**. Any models released after that date will likely not work because the llama.cpp codebase usually has to make modifications to accomodate new models. I will try to keep this code update every few months to accomodate newer models and advancements in inference efficiency. Hopefully this repo can also serve as a guide for people to adapt the main llama.cpp GitHub to suit their needs. If something breaks with llama.cpp updates, I have tagged previous merges (see tags) so that we can go back to older versions of the code if necessary.
+For ongoing work and support for newer models, see my alternative fork:  
+https://github.com/bdj34/llama.cpp_dev
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ---
-
 
 ## Demo: Air-gapped Server Setup
 
