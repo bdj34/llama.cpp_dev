@@ -1,9 +1,9 @@
 # llama.cpp_dev
 
-This is a fork of the main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp).  
-I have added a few command-line parameters and an example called `data-extraction` for the purpose of structuring electronic health record (EHR) unstructured note data using LLMs.
+This is a fork of the main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp) which can be found at https://github.com/ggml-org/llama.cpp.
+I have added a few command-line parameters and an example called `data-extraction` (under examples/data-extraction) for the purpose of structuring electronic health record (EHR) note data using LLMs.
 
-This is the code we used for the work in our paper in press (DOI coming soon). For exact reproduction of our prior work ("Large language models for extracting histopathologic diagnoses of colorectal cancer and dysplasia from electronic health records" PMID: 40973184 DOI: 10.1136/bmjgast-2025-001896), see the old repo: https://github.com/bdj34/llama.cpp_data_extraction
+This is the code we used for the work in our paper in press (DOI coming soon). For exact reproduction of our prior work ("Large language models for extracting histopathologic diagnoses of colorectal cancer and dysplasia from electronic health records" [PMID: 40973184](https://pubmed.ncbi.nlm.nih.gov/40973184/) [DOI: 10.1136/bmjgast-2025-001896](https://bmjopengastro.bmj.com/content/12/1/e001896)), see the [old repo](https://github.com/bdj34/llama.cpp_data_extraction) at https://github.com/bdj34/llama.cpp_data_extraction. 
 
 Create an issue on this repo or reach out to me at brian.d.johnson97@gmail.com or bdj001@ucsd.edu if you have questions!
 
