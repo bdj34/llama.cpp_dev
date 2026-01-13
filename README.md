@@ -10,7 +10,7 @@ Create an issue on this repo or reach out to me at brian.d.johnson97@gmail.com o
 To reproduce our implementation and analysis from paper(s), see the directory "reproduce_results". These are broken down into separate directories for pre-processing, inference, post-processing, and calculate-metrics. The UC-CaRE validation paper (DOI coming soon) is under the UC-CaRE sub-directory. There are separate READMEs under each of these directories to make sense of the scripts and what we did. 
 
 **Supported/recommended models and updates:**  
-This fork is up to date with the main `llama.cpp` GitHub as of **Nov 11, 2025**. Any models released after that date will likely not work because the llama.cpp codebase usually has to make modifications to accomodate new models. I will try to keep this code update every few months to accomodate newer models and advancements in inference efficiency. Hopefully this repo can also serve as a guide for people to adapt the main llama.cpp GitHub to suit their needs. If something breaks with llama.cpp updates, I have tagged previous merges (see tags) so that we can go back to older versions of the code if necessary.
+This fork is up to date with the main `llama.cpp` GitHub as of **Nov 11, 2025**. Any models released after that date will likely not work because the main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp) usually has to make modifications to accomodate new models. I will try to keep this code update every few months to accomodate newer models and advancements in inference efficiency. Hopefully, this fork can also serve as a guide for people to adapt the main llama.cpp GitHub to suit their needs. If something breaks with updates, I have tagged previous merges (see tags) so that we can go back to older versions of the code if necessary.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -67,28 +67,7 @@ cmake --build build --config Release
 ## Compiling on Windows
 
 Unzip and expand the .tar.gz (using 7zip), then change directory into the expanded directory.  
-
-*(Untested by me — instructions copied from `llama.cpp`. Refer to the main repo for support.)*  
-- Building for Windows (x86, x64 and arm64) with MSVC or clang as compilers:
-    - Install Visual Studio 2022, e.g. via the [Community Edition](https://visualstudio.microsoft.com/vs/community/). In the installer, select at least the following options (this also automatically installs the required additional tools like CMake,...):
-    - Tab Workload: Desktop-development with C++
-    - Tab Components (select quickly via search): C++-_CMake_ Tools for Windows, _Git_ for Windows, C++-_Clang_ Compiler for Windows, MS-Build Support for LLVM-Toolset (clang)
-    - Please remember to always use a Developer Command Prompt / PowerShell for VS2022 for git, build, test
-    - For Windows on ARM (arm64, WoA) build with:
-    ```bash
-    cd PATH_TO_DIR/llama.cpp_data_extraction
-    cmake --preset arm64-windows-llvm-release -D GGML_OPENMP=OFF
-    cmake --build build-arm64-windows-llvm-release
-    ```
-    Building for arm64 can also be done with the MSVC compiler with the build-arm64-windows-MSVC preset, or the standard CMake build instructions. However, note that the MSVC compiler does not support inline ARM assembly code, used e.g. for the accelerated Q4_0_N_M CPU kernels.
-
-    For building with ninja generator and clang compiler as default:  
-      -set path:set LIB=C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22621.0\um\x64;C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.41.  34120\lib\x64\uwp;C:\Program Files (x86)\Windows Kits\10\Lib\10.0.22621.0\ucrt\x64  
-      ```bash
-      cmake --preset x64-windows-llvm-release
-      cmake --build build-x64-windows-llvm-release
-      ```
----
+Use windows build directions from main llama.cpp repo (https://github.com/ggml-org/llama.cpp/blob/master/docs/build.md).
 
 ## Compiling on macOS (Apple Silicon)
 
@@ -100,7 +79,7 @@ cmake --build build --config Release
 ```
 
 ## Compiling without cmake (linux and/or mac; deprecated by llama.cpp)
-*(I have tested this and it should work. Let me know if there are issues.)*
+*(I have tested this on older versions, but try to use cmake if possible. If this isn't working, try using older tagged versions of the code.)*
 ```bash
 cd PATH_TO_DIR/llama.cpp_data_extraction
 make
@@ -109,73 +88,64 @@ make
 ---
 
 ## Example running command (if compiled with cmake)
-```bash
-cd PATH_TO_DIR/llama.cpp_data_extraction
-mkdir -p ../testing_CRC_extraction_outDir
+```bash 
+cd ~/llama.cpp_dev
+mkdir -p ~/completeness/results
 
-./build/bin/data-extraction --extractionType crc \
--m PATH_TO_GGUF/Gemma-2-9B-It-SPPO-Iter3-fp16.gguf \
---sequences 16 --parallel 4 --n-predict 300 \
---batch-size 2048 --n-gpu-layers 99 --ctx-size 2000 \
+./build/bin/llama-data-extraction \
+-m ~/models_gguf/medGemma-27B.gguf \
+-sysf ./system_prompts/gemma2/completenessOfResection.txt \
+--no-escape --swa-full \
+--sequences $(wc -l < ~/completeness/inputs/inputs.txt) \
+--parallel 4 --n-predict 30 --batch-size 2048 --n-gpu-layers 0 --ctx-size 16384 \
 --temp 0 \
---promptStartingNumber 0 \
---patientFile ./example_data/fake_patientIDs.txt \
---grammar-file ./grammars/yesNo_grammar.gbnf \
---outDir ../testing_CRC_extraction_outDir \
---file ./example_data/pathMaybe.txt \
---promptFormat gemma2 
-```
+--IDfile ~/completeness/inputs/sid_and_sample.txt \
+--grammar-file ./grammars/completenessOfResection.gbnf \
+--outDir ~/completeness/results \
+--file ~/completeness/inputs/inputs.txt \
+--promptFormat gemma2
 
 ## Example running command (if compiled with make; officially deprecated)  
 
 The only difference is that the path to the binary "data-extraction" changes  
 
 ```bash
-cd PATH_TO_DIR/llama.cpp_data_extraction
-mkdir -p ../testing_CRC_extraction_outDir
+cd ~/llama.cpp_dev
+mkdir -p ~/completeness/results
 
-./data-extraction --extractionType crc \
--m PATH_TO_GGUF/Gemma-2-9B-It-SPPO-Iter3-fp16.gguf \
---sequences 16 --parallel 4 --n-predict 300 \
---batch-size 2048 --n-gpu-layers 99 --ctx-size 2000 \
+./llama-data-extraction \
+-m ~/models_gguf/medGemma-27B.gguf \
+-sysf ./system_prompts/gemma2/completenessOfResection.txt \
+--no-escape --swa-full \
+--sequences $(wc -l < ~/completeness/inputs/inputs.txt) \
+--parallel 4 --n-predict 30 --batch-size 2048 --n-gpu-layers 0 --ctx-size 16384 \
 --temp 0 \
---promptStartingNumber 0 \
---patientFile ./example_data/fake_patientIDs.txt \
---grammar-file ./grammars/yesNo_grammar.gbnf \
---outDir ../testing_CRC_extraction_outDir \
---file ./example_data/pathMaybe.txt \
---promptFormat gemma2 
+--IDfile ~/completeness/inputs/sid_and_sample.txt \
+--grammar-file ./grammars/completenessOfResection.gbnf \
+--outDir ~/completeness/results \
+--file ~/completeness/inputs/inputs.txt \
+--promptFormat gemma2
 ```
 
 ## Parameter Descriptions
 
 | Parameter | Description |
 |----------|-------------|
-| `--extractionType` | Type of extraction to perform; `crc` refers to colorectal cancer-specific extraction. Other options are indefinite for dysplasia (`ind`), any dysplasia (`lgd`), and high grade dysplasia and/or adenocarcinoma (`advNeo`). |
 | `-m <path>` | Path to the GGUF model file to use for inference. |
-| `--sequences <int>` | Number of input sequences (path reports) to process. |
+| `--sequences <int>` | Total number of input sequences (e.g., pathology reports) to process. |
 | `--parallel <int>` | Number of prompts to process in parallel. |
 | `--n-predict <int>` | Maximum number of tokens to generate for each prompt. Anything above 1 should be sufficient for a "yes"/"no" |
 | `--batch-size <int>` | Token batch size for inference. I recommend setting to 2048 because I sometimes observed errors for other values. |
-| `--n-gpu-layers <int>` | Number of model layers to offload to the GPU. Set to 99 for all if your entire model+context fits on your GPU. Set to 0 for CPU only inference. |
-| `--ctx-size <int>` | Context window size in tokens. Must be less than or equal to the model’s maximum context length multiplied by value given for `--parallel`. Also, must be low enough so that the model+context fits within your GPU VRAM (or CPU RAM, if only using CPU). |
+| `--n-gpu-layers <int>` | Number of model layers to offload to the GPU. Set to 99 for all if your entire model+context fits on your GPU. Set to 0 for CPU only inference. If you have a small GPU and want to do partial offloading, you can set this accordingly (see main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp) for more info). |
+| `--ctx-size <int>` | Context size in tokens. Must be less than or equal to the model’s maximum context length multiplied by value given for `--parallel`. Also, must be low enough so that the model+context fits within your GPU VRAM (or CPU+GPU RAM if doing partial offloading or CPU RAM if only using CPU). |
 | `--temp <float>` | Temperature for sampling; 0 means deterministic output. We always used 0. |
-| `--promptStartingNumber <int>` | Used for indexing or resuming prompts from a specific starting number. Helpful if you get an error somewhere in the middle and want to resume from there. |
-| `--patientFile <path>` | File containing path report (or patient) identifiers. Identifier will be save with LLM answer as tab separated txt file. |
+| `--sysf <path>` | Path to system prompt file. This must be a .txt file. Examples we used are found in `system_prompts` directory. |
+| `--IDFile <path>` | Path to txt file containing identifiers for each input (one line per identifier). This can be patient IDs, note IDs, or any other ID that is useful. Identifier will be saved with LLM answer as tab separated txt file. |
 | `--grammar-file <path>` | Path to the GBNF grammar file used to constrain output format. |
 | `--outDir <path>` | Directory where output files will be saved. |
-| `--file <path>` | Path to the input file containing text to process. Each path report should be on a new line, with new lines within each path report escaped "\n" -> "\\n" |
+| `--file <path>` | Path to the input file containing text to process. Each input should be on a new line, with new lines within each input escaped "\n" -> "\\n". The current logic converts the "\\n" to "\n" before inference. |
 | `--promptFormat <name>` | Prompt formatting to match with formatting model was trained on (Options: `gemma2`, `llama3`, `mistral` or `phi3`). |
+| `--no-escape` | Whether to process escape sequences. Must be included or the inputs will not be processed correctly. 
+| `--swa-full` | SWA = Sliding window attention. This may not be necessary but I've had errors when leaving it out that resolve when including it. See [main repo](https://github.com/ggml-org/llama.cpp) for details. 
 
-## Description (copied from main llama.cpp page)
-
-The main goal of `llama.cpp` is to enable LLM inference with minimal setup and state-of-the-art performance on a wide variety of hardware — locally and in the cloud.
-
-- Plain C/C++ implementation with zero dependencies
-- First-class support for Apple Silicon (ARM NEON, Accelerate, Metal)
-- AVX, AVX2, AVX512, and AMX support for x86 CPUs
-- Support for 1.5–8 bit quantization
-- CUDA kernels for NVIDIA GPUs; HIP support for AMD; MUSA for Moore Threads GPUs
-- Vulkan and SYCL backends
-- Hybrid CPU+GPU inference to enable running models larger than VRAM
 
