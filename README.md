@@ -1,4 +1,4 @@
-# llama.cpp_data_extraction
+# llama.cpp_dev
 
 This is a fork of the main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp).  
 I have added a few command-line parameters and an example called `data-extraction` for the purpose of structuring electronic health record (EHR) unstructured note data using LLMs.
