@@ -1,6 +1,6 @@
 # UC-CaRE
 
-This directory shows how we applied the original UC-CaRE model (Paper [PMID: 33990383](https://pubmed.ncbi.nlm.nih.gov/33990383/) [DOI: 10.1136/gutjnl-2020-323546](https://gut.bmj.com/content/71/4/705), Webtool: https://www.uc-care.uk/) in the Veterans Affairs (VA) electronic health record (EHR). We will show the full pipeline from pre-processing, inference, post-processing, and calculating metrics to assess the performance of these steps. 
+This directory shows how we applied the original [UC-CaRE model (PMID: 33990383](https://pubmed.ncbi.nlm.nih.gov/33990383/) [DOI: 10.1136/gutjnl-2020-323546](https://gut.bmj.com/content/71/4/705), Webtool: https://www.uc-care.uk/) in the Veterans Affairs (VA) electronic health record (EHR). This directory documents the details of the implementation in our work in press (DOI coming soon). We will show the full pipeline from pre-processing, inference, post-processing, and calculating metrics to assess the performance of these steps. 
 
 As an overview, applying the UC-CaRE model required many steps of phenotyping, as detailed below. Each of these is detailed under this directory, using publicly available LLMs and the code available in this GitHub repo:
 1. Build a cohort of individuals with Ulcerative Colitis (UC).
