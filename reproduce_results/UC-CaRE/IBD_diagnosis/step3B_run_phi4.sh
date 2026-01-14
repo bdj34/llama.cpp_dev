@@ -5,7 +5,7 @@ set -x # print command before executing
 
 cd ~
 
-# Run Gemma-2 on GPU 1 (-mg 1) and don't split onto the second GPU (-sm none)
+# Run Phi-4 on GPU 1 (-mg 1) and don't split onto the second GPU (-sm none)
 
 ~/llama.cpp_2024_12_28/build/bin/llama-data-extraction -m ./models_gguf/phi-4-Q6_K_L.gguf \
 --grammar-file ~/llama.cpp_2024_12_28/grammars/ibd_typeOnly.gbnf \
