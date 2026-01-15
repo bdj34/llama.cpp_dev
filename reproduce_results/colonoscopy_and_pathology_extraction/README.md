@@ -1,4 +1,4 @@
-# IBD Clinical Data Extraction Pipeline: Phase 1 (Steps 1–10)
+# IBD Clinical Data Extraction Pipeline
 
 This repository contains the pipeline designed to extract clinically relevant data from pathology and colonoscopy reports using SQL/R/python-based filtering and Large Language Models (LLMs). 
 
@@ -29,7 +29,7 @@ This repository contains the pipeline designed to extract clinically relevant da
 ### F. Path-Colo Report Linkage
 * **Temporal Linkage Logic (`step15_...R`):** Links validated colonoscopy reports to pathology dysplasia classifier results based on PatientID. It uses a ±30-day window and prioritizes the two reports closest to the specimen date if multiple notes exist. It then formats a "linked" input where the colonoscopy text is appended with structured JSON data from the pathology report.
 * **SQL Integration (`step16_...sql`):** Imports the linked dataset into the SQL environment for permanent storage and exports a final CSV (`colo_path_linked.csv`) for the high-fidelity extraction phase.
-* **Prepare Linked Inputs (`step17_...py`):** Processes the `colo_path_linked.csv` to format the integrated text for LLM inference by escaping newlines and organizing the data by `PathologyReportID`.
+* **Prepare Linked Inputs (`step17_...py`):** Processes the `colo_path_linked.csv` to format the integrated text for LLM inference by escaping newlines, organizing the data by `PathologyReportID`, and saving as .txt files.
 
 ### G. Linked Colonoscopy/Pathology Extraction
 * **Mistral Inference - Linked (`step18_...sh`):** Performs specimen-level extraction with Mistral-Small-24B for specimens identified in the pathology report extraction (**B**). This focuses on linking endoscopic findings (e.g., size, morphology, completeness of resection) directly to specific pathology samples.
