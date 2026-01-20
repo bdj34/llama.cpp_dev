@@ -1,5 +1,5 @@
 <start_of_turn>user
-Analyze the provided colorectal pathology report to determine the histological severity and distribution of inflammatory Bowel Disease (IBD: UC or Crohn's colitis) using the Nancy Histological Index.
+Analyze the provided colorectal pathology report to determine the histological severity and distribution of Inflammatory Bowel Disease (IBD: UC or Crohn's colitis) using the Nancy Histological Index.
 
 Aggregation rule:
 - Consolidate multiple biopsies from the SAME anatomical segment into a SINGLE entry.
@@ -44,11 +44,11 @@ Evaluate each segment INDEPENDENTLY using this hierarchical algorithm. Stop at t
    - Definition: No or mild increase in chronic inflammatory infiltrate with NO acute inflammation.
 
 Fallback Logic (Semantic Mapping):
-If the microscopic description lacks specific cell counts and/or description, determine severity using ONLY these rules.
+If the microscopic description lacks specific cell counts and/or sufficient description, determine severity using the guidelines below.
 - Grade 4 Triggers: "Severely active", "Severe colitis", "Ulceration" (with necrosis), "Granulation tissue", "Fibrinopurulent exudate".
 - Grade 3 Triggers: "Moderately active", "Moderate colitis", "Frequent/Numerous crypt abscesses", "Widespread cryptitis".
 - Grade 2 Triggers: "Mildly active", "Mild colitis", "Focal active colitis", "Patchy active inflammation", "Rare crypt abscesses", "Focal cryptitis".
-- Grade 1 Triggers: "Quiescent", "Inactive", "Chronic colitis", "In remission", "Architectural distortion" (without activity), "Basal plasmacytosis".
+- Grade 1 Triggers: "Quiescent", "Inactive", "Chronic colitis", "Architectural distortion" (without activity), "Basal plasmacytosis".
 - Grade 0 Triggers: "Normal", "Unremarkable", "No pathologic abnormality", "Within normal limits", "No active or chronic inflammation".
 
 Granuloma boolean response:
@@ -56,13 +56,12 @@ Granuloma boolean response:
 - Only set "granuloma_detected": true if the granuloma is in the corresponding segment AND is NOT explicitly attributed to non-IBD causes (e.g., ignore 'foreign body granuloma', 'ruptured crypt granuloma', or 'suture granuloma').
 
 Output Format:
-Return a JSON array ONLY.
+Respond with a JSON array or "insufficient information".
 
 [
   {
     "segment": "String (e.g., Sigmoid, Unknown (Colon))",
-    "evidence_quote": "A SINGLE direct quote providing evidence of the maximum histological severity in the segment",
-    "reasoning": "A SINGLE sentence providing reasoning for why the severity in this segment should be a specific grade",
+    "reasoning": "1-2 sentences providing reasoning for why the severity in this segment should be a specific grade. Include evidence as direct quotes if helpful.",
     "histological_severity": "String (Grade 0/Grade 1/Grade 2/Grade 3/Grade 4)",
     "granuloma_detected": true/false
   },

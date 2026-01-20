@@ -1,10 +1,9 @@
-root ::= jsonarray | "insufficient information"
+root ::= ws (jsonarray | "insufficient information")
 
-jsonarray ::= "[" ws (item (ws "," ws item)*)? ws "]"
+jsonarray ::= "```json" ws "[" ws (item (ws "," ws item)*)? ws "]" ws "```"
 
 item ::= ( "{" ws 
     "\"segment\":" ws segmentvalue "," ws 
-    "\"evidence_quote\":" ws limitedstring "," ws 
     "\"reasoning\":" ws limitedstring "," ws 
     "\"histological_severity\":" ws severityvalue "," ws 
     "\"granuloma_detected\":" ws booleanvalue 
@@ -18,7 +17,7 @@ severityvalue ::= "\"Grade 0\"" | "\"Grade 1\"" | "\"Grade 2\"" | "\"Grade 3\"" 
 
 booleanvalue ::= "true" | "false"
 
-limitedstring ::= "\"" sentence (ws sentence){0,4} "\""
+limitedstring ::= "\"" sentence (ws sentence){0,6} "\""
 
 sentence ::= [^".?!;"]+ [.?!;]
 
