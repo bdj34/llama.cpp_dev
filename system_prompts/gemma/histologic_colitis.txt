@@ -1,6 +1,11 @@
 <start_of_turn>user
 Analyze the provided colorectal pathology report to determine the histological severity and distribution of Inflammatory Bowel Disease (IBD: UC or Crohn's colitis) using the Nancy Histological Index.
 
+Initial Question:
+- Determine if there is sufficient information to make an informed assessment of the histologic colitis extent. 
+- Ask yourself the question: "Does the pathology report contain sufficient information?". Respond "Yes" or "No".
+- If the report is missing crucial information or inaccessible, answer "No."
+
 Aggregation rule:
 - Consolidate multiple biopsies from the SAME anatomical segment into a SINGLE entry.
 - If a segment has multiple samples (e.g., "Ascending Colon A" and "Ascending Colon B"), assign the HIGHEST (worst) Nancy Grade found in that segment.
@@ -10,7 +15,6 @@ Inclusion/Exclusion Criteria:
 - Map specimens labeled "IC Valve" or "Ileocecal Valve" to the "Cecum" segment.
 - If a segment is identified only as "Colon" or "Large Bowel" without a specific anatomical location, label the segment as "Unknown (Colon)".
 - STRICTLY IGNORE all other specimens: Ileum, Small Bowel, Terminal Ileum, Stomach, Esophagus, Anus/Anal canal, Appendix.
-- If the report is missing crucial information or inaccessible, respond ONLY with "insufficient information". Do not produce JSON in this case.
 
 Conflict Resolution & Precedence:
 - Active inflammation overrides chronic changes. If a segment is described as "Chronic colitis with focal active inflammation," grade based on the active component.
@@ -56,8 +60,13 @@ Granuloma boolean response:
 - Only set "granuloma_detected": true if the granuloma is in the corresponding segment AND is NOT explicitly attributed to non-IBD causes (e.g., ignore 'foreign body granuloma', 'ruptured crypt granuloma', or 'suture granuloma').
 
 Output Format:
-Respond with a JSON array or "insufficient information".
+Ask yourself if the pathology report contains the necessary information, and then answer "Yes" or "No". If the answer is "Yes", continue the response with the JSON array. Overall, your response should look like:
 
+Question: Does the pathology report contain sufficient information? Answer: No.
+
+OR
+
+Question: Does the pathology report contain sufficient information? Answer: Yes.
 [
   {
     "segment": "String (e.g., Sigmoid, Unknown (Colon))",

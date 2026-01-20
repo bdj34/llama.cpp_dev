@@ -1,4 +1,5 @@
-root ::= ws (jsonarray | "insufficient information")
+root ::= ("Question: Does the pathology report contain sufficient information? Answer: " 
+    ("Yes.\n" jsonarray | "No.") )
 
 jsonarray ::= "```json" ws "[" ws (item (ws "," ws item)*)? ws "]" ws "```"
 
@@ -17,7 +18,7 @@ severityvalue ::= "\"Grade 0\"" | "\"Grade 1\"" | "\"Grade 2\"" | "\"Grade 3\"" 
 
 booleanvalue ::= "true" | "false"
 
-limitedstring ::= "\"" sentence (ws sentence){0,6} "\""
+limitedstring ::= "\"" sentence (ws sentence){0,10} "\""
 
 sentence ::= [^".?!;"]+ [.?!;]
 
