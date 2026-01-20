@@ -1,34 +1,72 @@
 <start_of_turn>user
-Analyze the provided colorectal pathology report to determine the histological severity and distribution of IBD. 
+Analyze the provided colorectal pathology report to determine the histological severity and distribution of inflammatory Bowel Disease (IBD: UC or Crohn's colitis) using the Nancy Histological Index.
+
+Aggregation rule:
+- Consolidate multiple biopsies from the SAME anatomical segment into a SINGLE entry.
+- If a segment has multiple samples (e.g., "Ascending Colon A" and "Ascending Colon B"), assign the HIGHEST (worst) Nancy Grade found in that segment.
 
 Inclusion/Exclusion Criteria:
-- ONLY include colorectal segments (Rectum, Sigmoid, Descending, Splenic Flexure, Transverse, Hepatic Flexure, Ascending, Cecum).
+- ONLY include colorectal segments: Rectum, Sigmoid, Descending, Splenic Flexure, Transverse, Hepatic Flexure, Ascending, Cecum.
+- Map specimens labeled "IC Valve" or "Ileocecal Valve" to the "Cecum" segment.
 - If a segment is identified only as "Colon" or "Large Bowel" without a specific anatomical location, label the segment as "Unknown (Colon)".
-- STRICTLY IGNORE all other specimens, including but not limited to: Ileum, Small Bowel, Terminal Ileum, Stomach, Esophagus, Anus/Anal canal, or Appendix.
-- If the pathology report is missing, inaccessible, blank, or contains no description of colorectal tissue, respond ONLY with the phrase "insufficient information" and do not provide JSON.
+- STRICTLY IGNORE all other specimens: Ileum, Small Bowel, Terminal Ileum, Stomach, Esophagus, Anus/Anal canal, Appendix.
+- If the report is missing crucial information or inaccessible, respond ONLY with "insufficient information". Do not produce JSON in this case.
 
-Histological Severity Scale:
-For each colorectal segment noted in the report, classify the severity:
-1. None: Normal mucosa; no architectural distortion or inflammation.
-2. Quiescent: Chronic inactive colitis. Presence of architectural distortion (crypt shortening, branching, or atrophy) or basal plasmacytosis, but zero active inflammation (no neutrophils, no cryptitis, no abscesses).
-3. Mild: Mildly active colitis. Minimal/focal active inflammation characterized by neutrophils within the epithelium (cryptitis) or lamina propria, but involving fewer than 50% of the crypts and no crypt abscesses.
-4. Moderate: Moderately active colitis. Significant active inflammation with crypt abscesses (neutrophils within the crypt lumen) or confluent cryptitis involving more than 50% of the crypts.
-5. Severe: Severely active colitis. Extensive active inflammation with surface ulceration, mucosal denudement, or granulation tissue. Presence of large or confluent crypt abscesses.
+Conflict Resolution & Precedence:
+- Active inflammation overrides chronic changes. If a segment is described as "Chronic colitis with focal active inflammation," grade based on the active component.
+- If multiple conflicting descriptors exist for one segment, assign the highest applicable Nancy Grade.
 
-If the pathologist specifically states a severity for the specimen (e.g., "evidence of mildly active colitis") use that designation. If the specimen is described but the colitis severity is not specifically stated, determine the severity of the specimen using the criteria above.
+Nancy Histological Index Grading Criteria:
+Evaluate each segment INDEPENDENTLY using this hierarchical algorithm. Stop at the first grade that matches.
+
+- Grade 4 (Severely Active):
+   - Definition: Presence of ulceration (visible epithelial injury with replacement by fibrin, granulation tissue, or necrotic debris).
+   - NEGATIVE DEFINITION (Do NOT grade as 4): The following do NOT constitute ulceration unless explicitly accompanied by granulation tissue or necrosis:
+     * "Erosion" or "Surface erosion"
+     * "Epithelial denudation" or "Surface epithelial loss"
+     * "Mucosal sloughing"
+     * "Fibrin on the surface" (without tissue necrosis)
+
+- Grade 3 (Moderately Active):
+   - Definition: Moderate to severe acute inflammatory cell infiltrate (neutrophils).
+   - Criteria: Multiple clusters of neutrophils in the lamina propria and/or epithelium that are easily apparent.
+   - Crypt Abscess Rule: Presence of "Crypt Abscesses" defaults to Grade 3 unless explicitly described as "rare" or "isolated".
+
+- Grade 2 (Mildly Active):
+   - Definition: Mild acute inflammatory cell infiltrate (neutrophils).
+   - Criteria: Few or rare neutrophils in the lamina propria or epithelium that are difficult to see.
+   - DEFAULT RULE: If "neutrophils", "cryptitis", or "active colitis" are mentioned WITHOUT modifiers of extent (e.g., just "active colitis"), default to Grade 2. Only upgrade to Grade 3 if terms like "numerous", "marked", or "widespread" are present.
+
+- Grade 1 (Chronic Inflammation):
+   - Definition: Moderate to marked increase in chronic inflammatory infiltrate (lymphocytes, plasmacytes, eosinophils) with NO acute inflammation (no neutrophils).
+
+- Grade 0 (No Significant Disease):
+   - Definition: No or mild increase in chronic inflammatory infiltrate with NO acute inflammation.
+
+Fallback Logic (Semantic Mapping):
+If the microscopic description lacks specific cell counts and/or description, determine severity using ONLY these rules.
+- Grade 4 Triggers: "Severely active", "Severe colitis", "Ulceration" (with necrosis), "Granulation tissue", "Fibrinopurulent exudate".
+- Grade 3 Triggers: "Moderately active", "Moderate colitis", "Frequent/Numerous crypt abscesses", "Widespread cryptitis".
+- Grade 2 Triggers: "Mildly active", "Mild colitis", "Focal active colitis", "Patchy active inflammation", "Rare crypt abscesses", "Focal cryptitis".
+- Grade 1 Triggers: "Quiescent", "Inactive", "Chronic colitis", "In remission", "Architectural distortion" (without activity), "Basal plasmacytosis".
+- Grade 0 Triggers: "Normal", "Unremarkable", "No pathologic abnormality", "Within normal limits", "No active or chronic inflammation".
+
+Granuloma boolean response:
+- Look specifically for the word "Granuloma" or "Granulomatous".
+- Only set "granuloma_detected": true if the granuloma is in the corresponding segment AND is NOT explicitly attributed to non-IBD causes (e.g., ignore 'foreign body granuloma', 'ruptured crypt granuloma', or 'suture granuloma').
 
 Output Format:
-Return a JSON array. If "insufficient information", return that text instead.
+Return a JSON array ONLY.
+
 [
   {
     "segment": "String (e.g., Sigmoid, Unknown (Colon))",
-    "evidence_quote": "Direct quote from the report for this specific segment",
-    "key_findings": "Short description of microscopic findings",
-    "histological_severity": "String (None/Quiescent/Mild/Moderate/Severe)"
+    "evidence_quote": "A SINGLE direct quote providing evidence of the maximum histological severity in the segment",
+    "reasoning": "A SINGLE sentence providing reasoning for why the severity in this segment should be a specific grade",
+    "histological_severity": "String (Grade 0/Grade 1/Grade 2/Grade 3/Grade 4)",
+    "granuloma_detected": true/false
   },
-  {
-    ...
-  }
+  ...
 ]
 
 Use the following pathology report to determine your answer:
