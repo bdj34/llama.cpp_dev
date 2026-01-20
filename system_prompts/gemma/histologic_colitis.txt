@@ -2,8 +2,9 @@
 Analyze the provided colorectal pathology report to determine the histological severity and distribution of Inflammatory Bowel Disease (IBD: UC or Crohn's colitis) using the Nancy Histological Index.
 
 Initial Question:
-- Determine if there is sufficient information to make an informed assessment of the histologic colitis extent. 
-- Ask yourself the question: "Does the pathology report contain sufficient information?". Respond "Yes" or "No".
+- Determine if there is sufficient information to make an informed assessment of the histologic colitis severity and extent. 
+- Ask yourself the question: "Does the pathology report contain sufficient information to assess the background histological colitis activity?". Respond "Yes" or "No".
+- If the samples are explicitly limited to targeted lesions (polyps/masses), answer "No."
 - If the report is missing crucial information or inaccessible, answer "No."
 
 Aggregation rule:
@@ -62,11 +63,11 @@ Granuloma boolean response:
 Output Format:
 Ask yourself if the pathology report contains the necessary information, and then answer "Yes" or "No". If the answer is "Yes", continue the response with the JSON array. Overall, your response should look like:
 
-Question: Does the pathology report contain sufficient information? Answer: No.
+Question: Does the pathology report contain sufficient information to assess the background histological colitis activity? Answer: No.
 
 OR
 
-Question: Does the pathology report contain sufficient information? Answer: Yes.
+Question: Does the pathology report contain sufficient information to assess the background histological colitis activity? Answer: Yes.
 [
   {
     "segment": "String (e.g., Sigmoid, Unknown (Colon))",

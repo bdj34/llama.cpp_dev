@@ -1,4 +1,4 @@
-root ::= ("Question: Does the pathology report contain sufficient information? Answer: " 
+root ::= ("Question: Does the pathology report contain sufficient information to assess the background histological colitis activity? Answer: " 
     ("Yes.\n" jsonarray | "No.") )
 
 jsonarray ::= "```json" ws "[" ws (item (ws "," ws item)*)? ws "]" ws "```"
