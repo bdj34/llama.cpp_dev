@@ -2,29 +2,24 @@ root ::= jsonarray | "insufficient information"
 
 jsonarray ::= "[" ws (item (ws "," ws item)*)? ws "]"
 
-item ::= "{" ws 
+item ::= ( "{" ws 
     "\"segment\":" ws segmentvalue "," ws 
     "\"evidence_quote\":" ws limitedstring "," ws 
     "\"reasoning\":" ws limitedstring "," ws 
     "\"histological_severity\":" ws severityvalue "," ws 
     "\"granuloma_detected\":" ws booleanvalue 
-    ws "}"
+    ws "}" )
 
-segmentvalue ::= "\"Rectum\"" | "\"Sigmoid\"" | "\"Descending\"" | "\"Splenic Flexure\"" | 
+segmentvalue ::= ( "\"Rectum\"" | "\"Sigmoid\"" | "\"Descending\"" | "\"Splenic Flexure\"" | 
                  "\"Transverse\"" | "\"Hepatic Flexure\"" | "\"Ascending\"" | "\"Cecum\"" | 
-                 "\"Unknown (Colon)\""
+                 "\"Unknown (Colon)\"" )
 
 severityvalue ::= "\"Grade 0\"" | "\"Grade 1\"" | "\"Grade 2\"" | "\"Grade 3\"" | "\"Grade 4\""
 
 booleanvalue ::= "true" | "false"
 
-# DEFINING THE "LIMITED STRING" TO PREVENT INFINITE LOOPS
-# This allows for 1 to 5 "sentences" or phrases.
-# A "sentence" is defined as any sequence of characters (excluding quotes) 
-# followed by a punctuation mark (. ! ?) OR a semi-colon/comma to allow for clauses.
 limitedstring ::= "\"" sentence (ws sentence){0,4} "\""
 
-sentence ::= [^".?!,;"]+ [".?!,;"]
+sentence ::= [^".?!;"]+ [.?!;]
 
-# Standard whitespace
 ws ::= [ \t\n\r]*
