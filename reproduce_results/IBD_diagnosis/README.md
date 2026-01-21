@@ -4,7 +4,7 @@ This directory contains the end-to-end pipeline for determining Inflammatory Bow
 
 The LLM part of the process uses the following logic:
 * Two efficient smaller models (**Gemma-2-9B-SPPO** and **Phi-4-14B**) process the entire cohort.
-* Cases where the smaller models disagree are escalated to a larger model (**Llama-3.3-70B**) to act as the final arbiter.
+* Cases where the smaller models disagree are escalated to a larger model (**Llama-3.3-70B**).
 
 
 Including all pre- and post-processing, here's the step-by-step process we used for IBD diagnosis. 
@@ -22,8 +22,8 @@ Including all pre- and post-processing, here's the step-by-step process we used 
 
 | Component | Details |
 | :--- | :--- |
-| **Tier 1 Models** | [Phi-4-14B (Quantization: Q6_K_L)](https://huggingface.co/bartowski/phi-4-GGUF/blob/main/phi-4-Q6_K_L.gguf) & [Gemma-2-9B-SPPO (Quantization: F16)](https://huggingface.co/UCLA-AGI/Gemma-2-9B-It-SPPO-Iter3) |
-| **Tier 2 Model** | [Llama-3.3-70B (Quantization: Q6_K)](https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF/tree/main/Llama-3.3-70B-Instruct-Q6_K) |
+| **Small LLMs** | [Phi-4-14B (Quantization: Q6_K_L)](https://huggingface.co/bartowski/phi-4-GGUF/blob/main/phi-4-Q6_K_L.gguf) & [Gemma-2-9B-SPPO (Quantization: F16)](https://huggingface.co/UCLA-AGI/Gemma-2-9B-It-SPPO-Iter3) |
+| **Large LLM** | [Llama-3.3-70B (Quantization: Q6_K)](https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF/tree/main/Llama-3.3-70B-Instruct-Q6_K) |
 | **Environment** | MS SQL Server, R, Python, `llama.cpp` |
 | **Extraction Logic** | Regex-based snippet prioritization (most recent + random) |
 
