@@ -8,7 +8,7 @@ import os
 
 os.chdir("<SET_PATH>")
 
-notes_file = 'ibdType_notes_group1_of_3.csv'
+notes_file = 'ibdType_notes.csv'
 
 # Parameters
 myregex = (
@@ -28,7 +28,7 @@ n_most_recent = 5
 max_excerpts_per_note = 15
 
 # Define headers for CSVs
-notes_headers = ["PatientICN", "EntryDateTime", "TIUDocumentSID", "ReportText"]
+notes_headers = ["PatientID", "EntryDateTime", "NoteID", "ReportText"]
 
 # Load notes
 csv.field_size_limit(sys.maxsize)
@@ -39,11 +39,11 @@ with open(notes_file, "r", encoding="utf-8-sig") as f:
     for row in reader:
         note = dict(zip(notes_headers, row))
         notes.append(note)
-        patient_icn = note["PatientICN"]
-        if patient_icn in notes_count:
-            notes_count[patient_icn] += 1
+        patient_id = note["PatientID"]
+        if patient_id in notes_count:
+            notes_count[patient_id] += 1
         else:
-            notes_count[patient_icn]=1
+            notes_count[patient_id]=1
 
 print(notes[0])
 start_time = time.time()
@@ -67,7 +67,7 @@ def merge_indices(indices, last_line, expand_before, expand_after):
 excerpts = {}
 counter = 1
 for note in notes:
-    patient_icn = note["PatientICN"]
+    patient_id = note["PatientID"]
     report_text = note["ReportText"].replace("\r\n", "\n").replace("\r", "\n")
     if(note["EntryDateTime"] == "NULL"):
         counter += 1 
@@ -104,17 +104,17 @@ for note in notes:
     blocks = merge_indices(
         sorted(match_lines),
         len(lines),
-        lines_before_max if notes_count[patient_icn] <= notes_threshold else lines_before_min,
+        lines_before_max if notes_count[patient_id] <= notes_threshold else lines_before_min,
         lines_after
     )
     
     # Create patient dict if doesn't exist
-    if patient_icn not in excerpts:
-        excerpts[patient_icn] = []
+    if patient_id not in excerpts:
+        excerpts[patient_id] = []
     
     # Add an excerpt to the patient dict
     for start, end in blocks[:max_excerpts_per_note]:  # Limit excerpts per note, prioritize beginning of note
-        excerpts[patient_icn].append(
+        excerpts[patient_id].append(
             f"\n<<<\nNote date (YYYY-MM-DD): {entry_date}\nNote text:\n"
             + "\n".join(lines[start:end + 1])
             + "\n>>>\n"
@@ -125,12 +125,12 @@ for note in notes:
         print(f"Processed {counter} notes...")
         execution_time = time.time() - start_time
         print(f"Running time from start: {execution_time:.2f} seconds")
-        #print(excerpts[patient_icn])
+        #print(excerpts[patient_id])
 
 # Aggregate excerpts by patient
 inputs = []
-icns = []
-for patient_icn, patient_excerpts in excerpts.items():
+ids = []
+for patient_id, patient_excerpts in excerpts.items():
     patient_excerpts.sort()
 
     if len(patient_excerpts) <= excerpt_limit:
@@ -146,11 +146,11 @@ for patient_icn, patient_excerpts in excerpts.items():
         
     # Replace newline characters with \\n
     inputs.append(patient_string.replace("\n", "\\n"))
-    icns.append(patient_icn)
+    ids.append(patient_id)
 
 # Write outputs
-with open("ptIDs_1_of_3.txt", "w", encoding="utf-8") as f:
-    f.writelines(f"{icn}\n" for icn in icns)
+with open("ptIDs.txt", "w", encoding="utf-8") as f:
+    f.writelines(f"{id}\n" for id in ids)
 
-with open("input_1_of_3.txt", "w", encoding="utf-8") as f:
+with open("input.txt", "w", encoding="utf-8") as f:
     f.writelines(f"{input_str}\n" for input_str in inputs)

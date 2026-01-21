@@ -40,7 +40,7 @@ def filter_files(included_ids_file):
         f.write("\n".join(filtered_inputs) + "\n")
 
 # Parameters
-included_ids_file = "disputedICNs_for_llama70B.txt"  # Replace with the file containing included IDs
+included_ids_file = "disputedIDs_for_llama70B.txt"  # Replace with the file containing included IDs
 
 # Run the script
 filter_files(included_ids_file)

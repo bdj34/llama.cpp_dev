@@ -50,7 +50,7 @@ This repository contains the pipeline designed to extract clinically relevant da
 | **Inference Engine** | `llama.cpp` (merged from main repo on: [2025-01-29](https://github.com/bdj34/llama.cpp_dev/releases/tag/20250129)) |
 | **Pathology Report Extraction Model (step 4)** | [`Llama-3.3-70B-Instruct-Q6_K.gguf`](https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF/tree/main/Llama-3.3-70B-Instruct-Q6_K) |
 | **Validation (yes/no) of Colonoscopy Reports Model (step 9)** | [`phi-4-Q6_K_L.gguf (14B)`](https://huggingface.co/bartowski/phi-4-GGUF/blob/main/phi-4-Q6_K_L.gguf) |
-| **Colonoscopy Report Extraction Model (steps 13 & 18)** | [`Mistral-Small-24B-Instruct-2501-Q8_0.gguf`](https://huggingface.co/bartowski/Mistral-Small-24B-Instruct-2501-GGUF)  |
+| **Colonoscopy Report Extraction Model (steps 13 & 18)** | [`Mistral-Small-24B-Instruct-2501-Q8_0.gguf`](https://huggingface.co/bartowski/Mistral-Small-24B-Instruct-2501-GGUF/blob/main/Mistral-Small-24B-Instruct-2501-Q8_0.gguf)  |
 | **Linkage Window** | ±30 days (Specimen taken date [pathology] vs. Colonoscopy report note date) |
 
 ---

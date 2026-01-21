@@ -6,36 +6,24 @@ import random
 import time
 import os
 
-os.chdir("<PATH>/ibdYear")
+os.chdir("<PATH>/crc_free_text")
 
-notes_file = 'ibdYear_notes.csv'
+notes_file = 'crc_notes.csv'
 
 # Parameters
 myregex = (
-    r"(?i)((crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bcuc\b|\bc\.u\.c\.\b|"
-    r"inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
-    r"chronic\s+proct).{0,30}?((\b\d{2}\b)|(\b\d{4}\b)))|"
-    r"(((\b\d{2}\b)|(\b\d{4}\b)).{0,30}?(crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bc\.u\.c\.\b|"
-    r"\bcuc\b|inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
-    r"chronic\s+proct))"
-)
-priorityregex = (
-    r"(?i)((crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bcuc\b|\bc\.u\.c\.\b|"
-    r"inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
-    r"chronic\s+proct).{0,30}?((19|20)\d{2}))|"
-    r"(((19|20)\d{2}).{0,30}?(crohn|ulcerative\s+colitis|\buc\b|\bu\.c\.\b|\bc\.u\.c\.\b|"
-    r"\bcuc\b|inflammatory\s+bowel\s+disease|\bibd\b|ulcerative\s+proct|chronic\s+colitis|"
-    r"chronic\s+proct))"
-) 
-icdIgnore = (
-    r"(?i)(556|555|K52|K51|K50|ICD|snomed)"
+    r"(?i)((colon|colorectal|rectal)\s+(adenocarcinoma|carcinoma|cancer))|crc"
 )
 
-lines_before = 2 # Don't change context based on # of notes
-lines_after = 2
-excerpt_limit = 30
-n_most_recent = 3
-n_most_distant = 15
+regexIgnore = (
+    r"(?i)(surveillance|screen|detection|prevent|family\s+(history|hx))"
+)
+
+lines_before = 5 # Don't change context based on # of notes
+lines_after = 5
+excerpt_limit = 50
+n_most_recent = 15
+n_most_distant = 10
 max_excerpts_per_note = 10
 
 # Define headers for CSVs
@@ -133,36 +121,24 @@ for note in notes:
         # Get excerpt
         excerptText = "\n".join(lines[start:end+1])
 
-        # Check if its an ICD code
-        excludeMatch = bool(re.search(icdIgnore, excerptText, flags=re.IGNORECASE)) 
-        
-        # Check if its a priority match
-        priorityMatch = bool(re.search(priorityregex, excerptText, flags=re.IGNORECASE))
+        # Check if it should be removed
+        excludeMatch = bool(re.search(regexIgnore, excerptText, flags=re.IGNORECASE)) 
 
         # Don't add if exact excerpt is already included
         if excerptText.strip().lower() in seen_text[patient_id]:
             continue
         
-        # Don't add if its text from ICD/SNOMED
+        # Don't add if we want to ignore
         if excludeMatch:
             continue
 
         seen_text[patient_id].add(excerptText.strip().lower())
 
-        # If priority match, insert in front and increment priority_matches count
-        if priorityMatch:
-            priority_matches[patient_id] += 1
-            excerpts[patient_id].insert(0, 
-                f"\n<<<\nNote date (YYYY-MM): {entry_date}\nNote text:\n"
-                + excerptText
-                + "\n>>>\n"
-            )
-        else:
-            excerpts[patient_id].append(
-                f"\n<<<\nNote date (YYYY-MM): {entry_date}\nNote text:\n"
-                + excerptText
-                + "\n>>>\n"
-            )
+        excerpts[patient_id].append(
+            f"\n<<<\nNote date (YYYY-MM): {entry_date}\nNote text:\n"
+            + excerptText
+            + "\n>>>\n"
+        )
 
     counter += 1
     if counter % 100000 == 0:
@@ -176,42 +152,28 @@ inputs = []
 ids = []
 for patient_id, patient_excerpts in excerpts.items():
 
-    if len(patient_excerpts) <= excerpt_limit:
+    # If less than limit, include all. If not, select randomly
+    if(len(patient_excerpts) == 0):
+        continue
+    elif len(patient_excerpts) <= excerpt_limit:
         patient_excerpts.sort()
         patient_string = "".join(patient_excerpts)
-        patient_string = patient_string + "\nQuestion: When was this patient originally diagnosed with IBD (Ulcerative colitis or Crohn's disease)?\n"
+        patient_string = patient_string + "\nQuestion: Has this patient been diagnosed with colorectal cancer (CRC)? If so, what was the year and month of CRC diagnosis?\n"
     else:
-        priority_excerpts = patient_excerpts[0:priority_matches[patient_id]]
-        patient_excerpts = patient_excerpts[priority_matches[patient_id]:]
         patient_excerpts.sort()
         most_recent_excerpts = patient_excerpts[-n_most_recent:]
         most_distant_excerpts = patient_excerpts[:n_most_distant]
-        n_included = len(set(priority_excerpts + most_recent_excerpts + most_distant_excerpts))
+        n_included = len(most_recent_excerpts + most_distant_excerpts)
 
-        # Adjust what is included based on number of priority excerpts
-        if n_included < excerpt_limit and len(patient_excerpts[n_most_distant:-n_most_recent]) > 0:
-            # Randomly select excerpts until excerpt_limit is reached
-            random_excerpts = random.sample(patient_excerpts[n_most_distant:-n_most_recent], 
+        # Randomly select excerpts until excerpt_limit is reached
+        random_excerpts = random.sample(patient_excerpts[n_most_distant:-n_most_recent], 
                     excerpt_limit-n_included)
-        elif n_included == excerpt_limit: # Don't add random excerpts (perfect amount as is)
-            random_excerpts = []
-        elif len(priority_excerpts) < excerpt_limit: # Choose randomly from most recent and distant
-            recent_distant = list(set(most_recent_excerpts + most_distant_excerpts))
-            random_excerpts = random.sample(recent_distant, 
-                    min(excerpt_limit - len(priority_excerpts), len(recent_distant)))
-            most_recent_excerpts = []
-            most_distant_excerpts = []
-        else: # Priority excerpts >= excerpt limit, select random excerpt_limit
-            random_excerpts = random.sample(priority_excerpts, excerpt_limit)
-            priority_excerpts = []
-            most_recent_excerpts = []
-            most_distant_excerpts = []
             
-        all_excerpts = list(set(priority_excerpts + most_recent_excerpts + 
+        all_excerpts = list(set(most_recent_excerpts + 
             random_excerpts + most_distant_excerpts))
         all_excerpts.sort()
         patient_string = "".join(all_excerpts)
-        patient_string = patient_string + "\nQuestion: When was this patient originally diagnosed with IBD (Ulcerative colitis or Crohn's disease)?\n"
+        patient_string = patient_string + "\nQuestion: Has this patient been diagnosed with colorectal cancer (CRC)? If so, what was the year and month of CRC diagnosis?\n"
         
     # Replace newline characters with \\n
     inputs.append(patient_string.replace("\n", "\\n"))
