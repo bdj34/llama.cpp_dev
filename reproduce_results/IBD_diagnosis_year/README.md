@@ -1,6 +1,6 @@
 # IBD Diagnosis Year Extraction
 
-This directory contains the end-to-end pipeline for determining the **year of original IBD diagnosis** using a consensus approach with multiple Large Language Models (LLMs).
+This directory contains the end-to-end pipeline for determining the **year of original IBD diagnosis** using a consensus approach with multiple Large Language Models (LLMs). In downstream use cases such as UC-CaRE, the LLM-extracted data from this process was used in combination with other date sources like ICD codes, colitis findings from colonoscopy results, and/or IBD medication data.
 
 The LLM part of the process uses the following logic (analogous to the logic used for IBD diagnosis type):
 * Two efficient smaller models (**Gemma-2-9B-SPPO** and **Phi-4-14B**) process the entire cohort.
