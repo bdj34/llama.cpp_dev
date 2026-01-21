@@ -198,6 +198,6 @@ llm_base <- llm.df[llm.df$IBDC,c("PatientID", "IBDC", "diagnosis", "path_confirm
 colnames(llm_base) <- c("PatientID", "IBDC", "diagnosis", "pathConfirmed", "diagnosticOdyssey")
 
 # Make a database table with the positives
-DBI::dbWriteTable(conn, "baseTable5_2025_01_28", llm_base)
+DBI::dbWriteTable(conn, "baseTable_with_llms", llm_base)
 
 
