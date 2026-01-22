@@ -28,7 +28,7 @@ This directory details the pipeline for identifying colectomy procedures and ext
     * Aggregates up to 20 snippets per patient, always including the 5 most recent and 5 earliest snippets.
     * Appends the specific question: *"Has this patient had all or part of their colon or rectum removed?"*
 
-3.  **LLM Inference (Quad-Model Extraction):**
+3.  **LLM Inference (`step3A-D...sh`):**
     * Four models run in parallel to extract: **Yes/No**, **Procedure Type**, **Segments Removed**, **Month**, and **Year**.
     * **Phi-4-14B** (`step3A_run_phi4.sh`)
     * **Gemma-3-27B** (`step3B_run_gemma3.sh`)
@@ -54,6 +54,6 @@ This directory details the pipeline for identifying colectomy procedures and ext
 
 | Component | Details |
 | :--- | :--- |
-| **Models** | [Llama-3.3-70B (Q6_K)](https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF), [Phi-4-14B (Q6_K_L)](https://huggingface.co/bartowski/phi-4-GGUF), [Gemma-3-27B (Q6_K_L)](https://huggingface.co/bartowski/gemma-3-27b-it-GGUF), [Mistral-Small-24B (Q8_0)](https://huggingface.co/bartowski/Mistral-Small-24B-Instruct-2501-GGUF) |
+| **Models** | [Llama-3.3-70B (Q6_K)](https://huggingface.co/bartowski/Llama-3.3-70B-Instruct-GGUF/tree/main/Llama-3.3-70B-Instruct-Q6_K), [Phi-4-14B (Q6_K_L)](https://huggingface.co/bartowski/phi-4-GGUF/blob/main/phi-4-Q6_K_L.gguf), [Gemma-3-27B (Q6_K_L)](https://huggingface.co/bartowski/google_gemma-3-27b-it-GGUF/blob/main/google_gemma-3-27b-it-Q6_K_L.gguf), [Mistral-Small-24B (Q8_0)](https://huggingface.co/bartowski/Mistral-Small-24B-Instruct-2501-GGUF/blob/main/Mistral-Small-24B-Instruct-2501-Q8_0.gguf) |
 | **Data Sources** | Unstructured Notes (LLM), CPT Codes (Structured) |
 | **Extraction Logic** | Regex-based snippet prioritization (up to 20 excerpts/patient) |
