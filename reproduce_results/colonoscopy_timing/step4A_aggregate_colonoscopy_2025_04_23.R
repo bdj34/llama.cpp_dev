@@ -23,17 +23,17 @@ cpt <- DBI::dbGetQuery(conn, paste0("select cpt.* from
 all(cpt$PatientID %in% base$PatientID)
 
 # Read in, process, save, mistrals
-mistralRaw <- readLines("./colonoscopy/mistralRaw/output.txt")
+mistralRaw <- readLines("./colonoscopy/mistralRaw/output_<DATE_TIME>.txt")
 mistral.df <- process_colonoscopy(mistralRaw)
 write.csv(mistral.df, "./colonoscopy/singleModelResults/mistral_results_2025_03_11.csv", row.names=F)
 
 # Read in, process, save, phis
-phiRaw <- readLines("./colonoscopy/phiRaw/output.txt")
+phiRaw <- readLines("./colonoscopy/phiRaw/output_<DATE_TIME>.txt")
 phi.df <- process_colonoscopy(phiRaw)
 write.csv(phi.df, "./colonoscopy/singleModelResults/phi_results_2025_03_11.csv", row.names=F)
 
 # Read in, process, save, gemmas
-gemmaRaw <- readLines("./colonoscopy/gemmaRaw/output.txt")
+gemmaRaw <- readLines("./colonoscopy/gemmaRaw/output_<DATE_TIME>.txt")
 gemma.df <- process_colonoscopy(gemmaRaw)
 write.csv(gemma.df, "./colonoscopy/singleModelResults/gemma_results_2025_03_11.csv", row.names=F)
 

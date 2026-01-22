@@ -19,10 +19,10 @@ cpt_colectomy <- DBI::dbGetQuery(conn, "select base.*, cpt.ProcDate
                       on cpt.PatientID = base.PatientID;")
 
 # And raw llama 70B output (with lateAddIBD pts)
-llamaRaw <- readLines("./colectomy/llamaRaw/output.txt")
-gemma3Raw <- readLines("./colectomy/gemma3Raw/output.txt")
-phiRaw <- readLines("./colectomy/phiRaw/output.txt")
-mistralRaw <- readLines("./colectomy/mistralRaw/output.txt")
+llamaRaw <- readLines("./colectomy/llamaRaw/output_<DATE_TIME>.txt")
+gemma3Raw <- readLines("./colectomy/gemma3Raw/output_<DATE_TIME>.txt")
+phiRaw <- readLines("./colectomy/phiRaw/output_<DATE_TIME>.txt")
+mistralRaw <- readLines("./colectomy/mistralRaw/output_<DATE_TIME>.txt")
 
 llama.df <- process_colectomy(llamaRaw)
 gemma3.df <- process_colectomy(gemma3Raw)

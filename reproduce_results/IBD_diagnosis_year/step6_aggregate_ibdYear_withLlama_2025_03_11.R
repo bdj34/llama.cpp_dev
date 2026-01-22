@@ -6,7 +6,7 @@ library(ggplot2)
 
 setwd("<PATH>")
 
-llamaRaw <- readLines("./ibdYearAll/llamaRaw/output.txt")
+llamaRaw <- readLines("./ibdYearAll/llamaRaw/output_<DATE_TIME>.txt")
 
 # Get years, IDs, Confidence for llama
 llamaYear <- sapply(llamaRaw, function(x){

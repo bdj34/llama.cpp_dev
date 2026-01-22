@@ -39,8 +39,8 @@ process_free_text_crc <- function(rawOut, prefix = ""){
   return(out.df)
 }
 
-llamaRaw <- readLines("./free_text_crc/llamaRaw/output.txt")
-mistralRaw <- readLines("./free_text_crc/mistralRaw/output.txt")
+llamaRaw <- readLines("./free_text_crc/llamaRaw/output_<DATE_TIME>.txt")
+mistralRaw <- readLines("./free_text_crc/mistralRaw/output_<DATE_TIME>.txt")
 
 mistral.df <- process_free_text_crc(mistralRaw, "mistral_")
 llama.df <- process_free_text_crc(llamaRaw, "llama_")

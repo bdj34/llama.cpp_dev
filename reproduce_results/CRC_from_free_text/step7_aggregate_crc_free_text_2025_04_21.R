@@ -63,15 +63,15 @@ eitherPos_run1$mistral_month[is.na(eitherPos_run1$mistral_month)] <- "Unknown"
 eitherPos_run1$llama_month[is.na(eitherPos_run1$llama_month)] <- "Unknown"
 
 # Mistral re-run
-mistralRaw_v2 <- readLines("./free_text_crc/rerun/mistralRaw/output.txt")
+mistralRaw_v2 <- readLines("./free_text_crc/rerun/mistralRaw/output_<DATE_TIME>.txt")
 mistral_v2.df <- process_free_text_crc(mistralRaw_v2, "mistral_rerun_")
 
 # Llama re-run
-llamaRaw_v2 <-  readLines("./free_text_crc/rerun/llamaRaw/output.txt")
+llamaRaw_v2 <-  readLines("./free_text_crc/rerun/llamaRaw/output_<DATE_TIME>.txt")
 llama_v2.df <- process_free_text_crc(llamaRaw_v2, "llama_rerun_")
 
 # Gemma3 (re-run only)
-gemma3Raw <- readLines("./free_text_crc/rerun/gemma3Raw/output.txt"))
+gemma3Raw <- readLines("./free_text_crc/rerun/gemma3Raw/output_<DATE_TIME>.txt"))
 gemma3.df <- process_free_text_crc(gemma3Raw, "gemma3_rerun_")
 
 # Merge all together

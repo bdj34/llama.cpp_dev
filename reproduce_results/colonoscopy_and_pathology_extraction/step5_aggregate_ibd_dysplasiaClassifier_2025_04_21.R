@@ -23,7 +23,7 @@ all_pathReports <- DBI::dbGetQuery(conn, paste0('select distinct T1.PatientID, T
 setwd("<PATH>")
 
 # Read in raw inputs
-llamaRaw <- readLines("./raw_output/output.txt")
+llamaRaw <- readLines("./raw_output/output_<DATE_TIME>.txt")
 
 # Function to parse JSON txt data and create a dataframe
 readJSON2df <- function(x){
