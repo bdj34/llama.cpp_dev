@@ -104,6 +104,7 @@ mkdir -p ~/completeness/results
 --outDir ~/completeness/results \
 --file ~/completeness/inputs/inputs.txt \
 --promptFormat gemma2
+```
 
 ## Example running command (if compiled with make; officially deprecated)  
 
