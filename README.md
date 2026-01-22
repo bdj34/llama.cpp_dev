@@ -144,7 +144,7 @@ mkdir -p ~/completeness/results
 | `--IDFile <path>` | Path to txt file containing identifiers for each input (one line per identifier). This can be patient IDs, note IDs, or any other ID that is useful. Identifier will be saved with LLM answer as tab separated txt file. |
 | `--grammar-file <path>` | Path to the GBNF grammar file used to constrain output format. |
 | `--outDir <path>` | Directory where output files will be saved. |
-| `--file <path>` | Path to the input file containing text to process. Each input should be on a new line, with new lines within each input escaped "\n" -> "\\n". The current logic converts the "\\n" to "\n" before inference. |
+| `--file <path>` | Path to the input file containing text to process. Each input should be on a new line, with new lines within each input escaped "\n" -> "\\\n". The current logic converts the "\\\n" to "\n" before inference. |
 | `--promptFormat <name>` | Prompt formatting to match with formatting model was trained on (Options: `gemma2`, `llama3`, `mistral` or `phi3`). |
 | `--no-escape` | Whether to process escape sequences. Must be included or the inputs will not be processed correctly. 
 | `--swa-full` | SWA = Sliding window attention. This may not be necessary but I've had errors when leaving it out that resolve when including it. See [main repo](https://github.com/ggml-org/llama.cpp) for details. 
