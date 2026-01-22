@@ -57,7 +57,7 @@ The pipeline prioritizes structured data (CPT codes and pathology reports) while
 
 | Component | Details |
 | :--- | :--- |
-| **Models** | [Phi-4-14B (Quantization: Q6_K_L)](https://huggingface.co/bartowski/phi-4-GGUF/blob/main/phi-4-Q6_K_L.gguf), [Gemma-2-9B-SPPO (F16)](https://huggingface.co/UCLA-AGI/Gemma-2-9B-It-SPPO-Iter3), [`Mistral-Small-24B-Instruct-2501-Q8_0.gguf`](https://huggingface.co/bartowski/Mistral-Small-24B-Instruct-2501-GGUF/blob/main/Mistral-Small-24B-Instruct-2501-Q8_0.gguf) |
+| **Models** | [Phi-4-14B (Quantization: Q6_K_L)](https://huggingface.co/bartowski/phi-4-GGUF/blob/main/phi-4-Q6_K_L.gguf), [Gemma-2-9B-SPPO (F16)](https://huggingface.co/UCLA-AGI/Gemma-2-9B-It-SPPO-Iter3), [Mistral-Small-24B-Instruct-2501-Q8_0.gguf](https://huggingface.co/bartowski/Mistral-Small-24B-Instruct-2501-GGUF/blob/main/Mistral-Small-24B-Instruct-2501-Q8_0.gguf) |
 | **Data Sources** | Unstructured Notes (LLM), CPT Codes (Structured), Pathology Reports (Structured, dates only) |
 | **Matching Logic** | LLM $\leftrightarrow$ CPT (60-day window); Path $\leftrightarrow$ CPT (15-day window) |
 | **Consensus** | Unmatched LLM dates require multi-model agreement or high confidence to be retained. |
