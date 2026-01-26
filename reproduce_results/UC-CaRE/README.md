@@ -7,7 +7,7 @@ This directory contains the code for validating the [**UC-CaRE (Ulcerative Colit
 1.  **Data preparation & scoring (`step1A_validate_webtool...R`):** Identifies patients with Ulcerative Colitis and an index Low-Grade Dysplasia (LGD) lesion. This is the main methods section step in the pipeline, where various data sources are integrated to get binary 0/1 (no/yes) answers for the four main UC-CaRE variables (**Large** lesion (≥1cm), **Incomplete/Invisible** lesion, **Multifocal** disease, and **Moderate/Severe Inflammation**) as well as outcomes (CRC, colectomy, etc.).
     * **Inputs:** Fetches data from SQL (Pathology, Colectomy, Colonoscopy Timing, PSC, Smoking).
     * **Logic:** * Links index LGD lesions to colonoscopy reports.
-        * Applies `step1B_UCCARE_fns.txt` helper functions to calculate the 4 UC-CaRE risk factors.
+        * Applies `step1B_UCCARE_fns.R` helper functions to calculate the 4 UC-CaRE risk factors.
         * Determines event/censor dates (AN / CRC vs. colectomy / death / last note).
     * **Outputs:** `UCCaRE_preSurvival_...csv`
 
