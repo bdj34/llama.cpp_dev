@@ -7,10 +7,10 @@ This is the code we used for the work in our paper in press (DOI coming soon). F
 
 Create an issue on this repo or reach out to me at brian.d.johnson97@gmail.com or bdj001@ucsd.edu if you have questions!
 
-To reproduce our implementation and analysis from paper(s), see the directory "reproduce_results". These are broken down into separate directories for pre-processing, inference, post-processing, and calculate-metrics. The UC-CaRE validation paper (DOI coming soon) is under the UC-CaRE sub-directory. There are separate READMEs under each of these directories to make sense of the scripts and what we did. 
+To reproduce our implementation and analysis from paper(s), see the directory "reproduce_results". These are broken down further into task-specific directories. The UC-CaRE validation paper (DOI coming soon) is documented under the UC-CaRE sub-directory. There are separate READMEs under each of these directories to make sense of the scripts and what we did. 
 
 **Supported/recommended models and updates:**  
-This fork is up to date with the main `llama.cpp` GitHub as of **Nov 11, 2025**. Any models released after that date will likely not work because the main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp) usually has to make modifications to accomodate new models. I will try to keep this code update every few months to accomodate newer models and advancements in inference efficiency. Hopefully, this fork can also serve as a guide for people to adapt the main llama.cpp GitHub to suit their needs. If something breaks with updates, I have tagged previous merges (see tags) so that we can go back to older versions of the code if necessary.
+This fork is up to date with the main `llama.cpp` GitHub as of **Nov 11, 2025**. Any models released after that date will likely not work because the main [llama.cpp GitHub](https://github.com/ggml-org/llama.cpp) usually has to make modifications to accomodate new models. I will try to keep this code updated every few months to accomodate newer models and advancements in inference efficiency. Hopefully, this fork can also serve as a guide for people to adapt the main llama.cpp GitHub to suit their needs. If something breaks with updates, I have tagged previous merges (see tags) so that we can go back to older versions of the code if necessary.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -23,11 +23,11 @@ We focus on compiling this software on a remote server **without internet access
 
 **Step 1: Clone, compress, and transfer**
 ```bash
-git clone https://github.com/bdj34/llama.cpp_data_extraction
-tar -czvf DESIRED_PATH/llama.cpp_data_extraction.tar.gz -C PATH_USED_FOR_GIT_CLONE/llama.cpp_data_extraction .
+git clone https://github.com/bdj34/llama.cpp_dev
+tar -czvf DESIRED_PATH/llama.cpp_dev.tar.gz -C PATH_USED_FOR_GIT_CLONE/llama.cpp_dev .
 ```
 
-Transfer `llama.cpp_data_extraction.tar.gz` to the server.  
+Transfer `llama.cpp_dev.tar.gz` to the server.  
 *(Example: at the VA, I transfer it via MS Teams to my VA computer, then upload it using the VINCI upload tool.)*
 
 **Step 2: Download model and transfer**  
@@ -46,18 +46,18 @@ Platform dependent: see below.
 
 ### No GPU
 ```bash
-mkdir llama.cpp_data_extraction
-tar -xzvf llama.cpp_data_extraction.tar.gz -C llama.cpp_data_extraction/
-cd llama.cpp_data_extraction
+mkdir llama.cpp_dev
+tar -xzvf llama.cpp_dev.tar.gz -C llama.cpp_dev/
+cd llama.cpp_dev
 cmake -B build --fresh
 cmake --build build --config Release
 ```
 
 ### With GPU (CUDA)
 ```bash
-mkdir llama.cpp_data_extraction
-tar -xzvf llama.cpp_data_extraction.tar.gz -C llama.cpp_data_extraction/
-cd llama.cpp_data_extraction
+mkdir llama.cpp_dev
+tar -xzvf llama.cpp_dev.tar.gz -C llama.cpp_dev/
+cd llama.cpp_dev
 cmake -B build -DGGML_CUDA=ON --fresh
 cmake --build build --config Release
 ```
@@ -73,7 +73,7 @@ Use windows build directions from main llama.cpp repo (https://github.com/ggml-o
 
 *(I have tested this and it should work. Let me know if there are issues.)*
 ```bash
-cd PATH_TO_DIR/llama.cpp_data_extraction
+cd PATH_TO_DIR/llama.cpp_dev
 cmake -B build
 cmake --build build --config Release
 ```
@@ -81,7 +81,7 @@ cmake --build build --config Release
 ## Compiling without cmake (linux and/or mac; deprecated by llama.cpp)
 *(I have tested this on older versions, but try to use cmake if possible. If this isn't working, try using older tagged versions of the code.)*
 ```bash
-cd PATH_TO_DIR/llama.cpp_data_extraction
+cd PATH_TO_DIR/llama.cpp_dev
 make
 ```
 
