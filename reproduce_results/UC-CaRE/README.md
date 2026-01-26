@@ -11,14 +11,14 @@ This directory contains the code for validating the [**UC-CaRE (Ulcerative Colit
         * Determines event/censor dates (AN / CRC vs. colectomy / death / last note).
     * **Outputs:** `UCCaRE_preSurvival_...csv`
 
-2-6. **Plots shown in the paper:** Predictions from UC-CaRE data use the logic in `step3B_calculate_survival...R`.
-    * **0-5 Years (`step2_plot_to5yrs...R`):** Generates Kaplan-Meier curves stratified by the number of risk factors (0-4), truncated at 5 years (Fig. 1B).
-    * **Bar Charts (`step3A_bar_charts...R`):** * Plots a side-by-side comparison of **Predicted Risk**, **Observed Risk (KM)**, and **Competing Risk (CRR)** at 1 year (Fig. 1C).
-    * **0 Risk factor plot (`step4_plot_0_riskFactor...R`):** * Specific visualization for the low-risk group comparing prediction vs. observation (Fig. 1D).
-    * **All follow-up (`step5_plot_all_follow-up...R`):** Generates KM curves for the full duration of follow-up (Supp. Fig. 1A).
-    * **Calibration curves (`step6_calibration_plots...R`):** Generates calibration curves for **all 16 binary risk profiles** (e.g., `0000` vs `1010`).
-        * Plots the model prediction ribbon (black) overlaying the observed KM curve (colored).
-        * Includes a "double uncertainty" analysis that accounts for potential misclassification in the confusion matrix.
+    2-6. **Plots shown in the paper:** Predictions from UC-CaRE data use the logic in `step3B_calculate_survival...R`.
+        * **0-5 Years (`step2_plot_to5yrs...R`):** Generates Kaplan-Meier curves stratified by the number of risk factors (0-4), truncated at 5 years (Fig. 1B).
+        * **Bar Charts (`step3A_bar_charts...R`):** * Plots a side-by-side comparison of **Predicted Risk**, **Observed Risk (KM)**, and **Competing Risk (CRR)** at 1 year (Fig. 1C).
+        * **0 Risk factor plot (`step4_plot_0_riskFactor...R`):** * Specific visualization for the low-risk group comparing prediction vs. observation (Fig. 1D).
+        * **All follow-up (`step5_plot_all_follow-up...R`):** Generates KM curves for the full duration of follow-up (Supp. Fig. 1A).
+        * **Calibration curves (`step6_calibration_plots...R`):** Generates calibration curves for **all 16 binary risk profiles** (e.g., `0000` vs `1010`).
+            * Plots the model prediction ribbon (black) overlaying the observed KM curve (colored).
+            * Includes a "double uncertainty" analysis that accounts for potential misclassification in the confusion matrix.
 
 ---
 
