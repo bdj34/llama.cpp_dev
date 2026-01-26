@@ -13,7 +13,7 @@ This pipeline integrates data from LLMs from free text (see dir `reproduce_resul
 2.  **Colectomy Integration & Location Assignment (`step2A_...R` & `step2B_...R`):**
     * Loads the HGD/CRC phenotypes from step 1 and the colectomy phenotypes (see dir `reproduce_results/colectomy_ascertainment`).
     * **Date Logic:**
-        * If diagnosis is *after* colectomy, it checks for closeness.
+        * If HGD/CRC diagnosis is after colectomy, it checks for closeness.
         * Sets HGD/CRC date equal to colectomy date when the dates are close. Here, the definition of 'close' depends on the precision of the data source (30 days for structured data sources all the way to 'within the same year' for LLM-based abstractions).
     * **Location Logic:** Scans data sources within 30 days of the diagnosis date to extract the tumor site.
     * Writes final tables `colectomy_aware_crc...` and `colectomy_aware_hgd_crc...` to SQL.
