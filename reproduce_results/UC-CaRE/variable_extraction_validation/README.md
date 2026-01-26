@@ -12,7 +12,7 @@ The validation process assesses how accurately the LLM extracts the four binary 
     * **`deID_reviewed_subset_for_github_2026-01-26.csv`:** Contains the paired data (Manual Review vs. Model Prediction) for the validation subset.
         * Capitalized columns (e.g., `Multifocal`) represent the manually review ground truth. 
         * Lower case columns (e.g., `multifocal`) represent the model result.
-2.  **Prevalence Adjustment (`get_extraction_validation_metrics.R`):** We calculate the apparent prevalence ($w$: the rate at which the LLM predicts "Positive") across the entire cohort for each variable. Then, using the PPV/NPV and the apparent prevalence $w$, we calculate the population-level **Sensitivity**, **Specificity**, **Accuracy**, and **F1 Score**. This ensures the metrics reflect the model's performance on the full dataset, not just the up-sampled validation sample.
+2.  **Prevalence Adjustment (`get_extraction_validation_metrics.R`):** We calculate the apparent prevalence ($w$: the rate at which the LLM predicts "Positive") across the entire cohort for each variable. Then, using the PPV/NPV and the apparent prevalence $w$, we calculate the population-level **Sensitivity**, **Specificity**, **Accuracy**, and **F1 Score**. This ensures the metrics reflect the model's performance on the full dataset, not just the up-sampled validation set.
 3. Results are stored in the CSV `/UC-CaRE/variable_extraction_validation/results_2026-01-26.csv`.
 
 ---
