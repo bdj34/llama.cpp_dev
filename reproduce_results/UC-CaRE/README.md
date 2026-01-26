@@ -27,7 +27,7 @@ This directory contains the code for validating the [**UC-CaRE (Ulcerative Colit
 
 | Component | Details |
 | :--- | :--- |
-| **Risk factors** | 1. **Large** (≥1cm), 2. **Incomplete/Invisible**, 3. **Multifocal**, 4. **Inflammation** (Mod/Severe) |
+| **Risk factors** | **Large** (≥1cm), **Incomplete/Invisible**, **Multifocal**, **Inflammation** (Mod/Severe) |
 | **Outcome** | Advanced Neoplasia (HGD or CRC) |
 | **Censoring** | Colectomy, Death, Last Clinical Note. Some analyses treat colectomy as competing risk. |
 | **Validation method** | Comparison of published model vs. observed Kaplan-Meier and/or competing risks estimates |
