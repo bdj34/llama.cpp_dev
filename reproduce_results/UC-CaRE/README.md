@@ -1,6 +1,6 @@
 # UC-CaRE Webtool Validation Pipeline
 
-This directory contains the code for validating the **UC-CaRE (Ulcerative Colitis-Cancer Risk Estimator)** clinical prediction model (Curtius et al., *Gut* 2022)[https://doi.org/10.1136/gutjnl-2020-323546] in Veterans Affairs (VA) national healthcare data. Details about the validation of the LLM-based data extraction from the pathology & colonoscopy reports is shown in the sub-directory `variable_extraction_validation`.
+This directory contains the code for validating the **UC-CaRE (Ulcerative Colitis-Cancer Risk Estimator)** clinical prediction model [Curtius et al., *Gut* 2022](https://doi.org/10.1136/gutjnl-2020-323546) in Veterans Affairs (VA) national healthcare data. Details about the validation of the LLM-based data extraction from the pathology & colonoscopy reports is shown in the sub-directory `variable_extraction_validation`.
 
 ### Step-by-Step Pipeline
 
