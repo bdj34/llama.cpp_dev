@@ -12,6 +12,19 @@
 --file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
 --promptFormat gemma2
 
+./build/bin/llama-data-extraction \
+-m ~/Downloads/models_gguf/google_gemma-4-26B-A4B-it-Q4_K_M.gguf \
+-sysf ./system_prompts/gemma/IBD_typeOnly.txt \
+--no-escape \
+--sequences 16 --parallel 4 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 8192 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/ibd_typeOnly.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat gemma4
+
+
 -- Gemma 9B (CPU-only)
 ./build/bin/llama-data-extraction \
 -m ~/Downloads/models_gguf/gemma2-9B_SPPO_f16.gguf \

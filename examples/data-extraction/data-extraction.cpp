@@ -109,6 +109,8 @@ std::string generatePreAnswer(const std::string& promptFormat) {
         return "<|im_end|>\n<|im_start|>assistant<|im_sep|>\n";
     } else if (promptFormat == "gemma2") {
         return "<end_of_turn>\n<start_of_turn>model\n";
+    } else if (promptFormat == "gemma4") {
+        return "\n<turn|>\n<|turn>model\n<|channel>thought\n<channel|>";
     } else if (promptFormat == "qwen") {
         return "<|im_end|>\n<|im_start|>assistant\n";
     } else if (promptFormat == "R1") {
@@ -295,7 +297,7 @@ int main(int argc, char ** argv) {
     std::vector<llama_token> tokens_system;
     // Print the string and tokenize
     printf("System prompt: %s\n", k_system.c_str());
-    tokens_system = common_tokenize(ctx, k_system, true);
+    tokens_system = common_tokenize(ctx, k_system, true, true);
     const int32_t n_tokens_system = tokens_system.size();
 
     llama_seq_id g_seq_id = 0;
@@ -401,11 +403,15 @@ int main(int argc, char ** argv) {
                         client.prompt += k_system;
                     }
 
-                    common_sampler_reset(client.smpl);
+                    // OLD:
+                    // common_sampler_reset(client.smpl);
+                    // ATTEMPTED FIX:
+                    common_sampler_free(client.smpl);
+                    client.smpl = common_sampler_init(model, params.sampling);
 
                     // do not prepend BOS because we have a system prompt!
                     std::vector<llama_token> tokens_prompt;
-                    tokens_prompt = common_tokenize(ctx, client.prompt, false);
+                    tokens_prompt = common_tokenize(ctx, client.prompt, false, true);
 
                     for (size_t i = 0; i < tokens_prompt.size(); ++i) {
                         common_batch_add(batch, tokens_prompt[i], client.n_past++, { client.id + 1 }, false);
@@ -515,7 +521,7 @@ int main(int argc, char ** argv) {
                 client.sampled = id;
 
                 // Determine when to stop generating
-                if (client.n_decoded > 0 &&
+                if (client.n_decoded > 2 &&
                     (llama_vocab_is_eog(vocab, id) ||
                          (params.n_predict > 0 && client.n_decoded >= params.n_predict))) {
 
