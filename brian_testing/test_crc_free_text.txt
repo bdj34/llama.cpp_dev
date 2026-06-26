@@ -1,0 +1,40 @@
+# Gemma 4
+
+./build/bin/llama-data-extraction \
+-m ~/Downloads/models_gguf/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
+-sysf ./system_prompts/gemma4/crc_free_text.txt \
+--grammar-file ./grammars/crc_free_text_gemma4.gbnf \
+--no-escape \
+--sequences 5 --parallel 1 \
+--temp 0 --saveInput \
+--IDfile ./brian_testing/crc_free_text/example_IDs.txt \
+--outDir ./brian_testing/crc_free_text/output \
+--file ./brian_testing/crc_free_text/example_inputs.txt \
+--promptFormat gemma4
+
+
+./build/bin/llama-data-extraction \
+-m ~/Downloads/models_gguf/gemma-4-31B_q4_0-it.gguf \
+-sysf ./system_prompts/gemma4/crc_free_text.txt \
+--grammar-file ./grammars/crc_free_text_gemma4.gbnf \
+--no-escape \
+--sequences 5 --parallel 1 \
+--temp 0 --saveInput \
+--IDfile ./brian_testing/crc_free_text/example_IDs.txt \
+--outDir ./brian_testing/crc_free_text/output \
+--file ./brian_testing/crc_free_text/example_inputs.txt \
+--promptFormat gemma4
+
+# Qwen
+./build/bin/llama-data-extraction \
+-m ~/Downloads/models_gguf/Qwen3.6-35B-A3B-UD-Q6_K.gguf \
+-sysf ./system_prompts/qwen/crc_free_text.txt \
+--ctx-size 4096 \
+--no-escape \
+--sequences 5 --parallel 1 \
+--temp 0 --saveInput \
+--IDfile ./brian_testing/crc_free_text/example_IDs.txt \
+--outDir ./brian_testing/crc_free_text/output \
+--file ./brian_testing/crc_free_text/example_inputs.txt \
+--promptFormat qwen
+

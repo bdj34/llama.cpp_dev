@@ -1,0 +1,185 @@
+[34m0.00.000.312[0m [32mI [0mcommon_init_result: fitting params to device memory ...
+[34m0.00.000.313[0m [32mI [0mcommon_init_result: (for bugs during this step try to reproduce them with -fit off, or provide --verbose logs if the bug only occurs with -fit on)
+[34m0.00.697.453[0m [35mW load: override 'tokenizer.ggml.add_bos_token' to 'true' for Gemma4
+[0m[34m0.00.718.734[0m [35mW load: control-looking token:     50 '<|tool_response>' was not control-type; this is probably a bug in the model. its type will be overridden
+[0m[34m0.00.722.437[0m [35mW load: control-looking token:    212 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+[0m[34m0.00.732.250[0m [35mW load: special_eog_ids contains '<|tool_response>', removing '</s>' token from EOG list
+[0m[34m0.07.942.964[0m [35mW llama_context: n_ctx_seq (131072) < n_ctx_train (262144) -- the full capacity of the model will not be utilized
+[0m[34m0.10.188.070[0m [32mI [0mcommon_init_from_params: warming up the model with an empty run - please wait ... (--no-warmup to disable)
+[34m0.10.406.888[0m [32mI [0m[32mNow printing the external prompt file ./brian_testing/crc_free_text/example_inputs.txt[0m
+
+[34m0.10.407.080[0m [32mI [0m
+
+[34m0.10.414.277[0m [32mI [0mmain: Simulating parallel requests from clients:
+[34m0.10.414.279[0m [32mI [0mmain: n_parallel = 1, n_sequences = 5, cont_batching = 1, system tokens = 326
+[34m0.10.414.279[0m [32mI [0m
+[34m0.10.414.279[0m [32mI [0mmain: Evaluating the system prompt ...
+[34m0.10.421.707[0m [32mI [0m
+[34m0.10.421.709[0m [32mI [0mProcessing requests ...
+
+[34m0.10.422.364[0m [32mI [0mmain: clearing the KV cache
+[34m0.10.422.614[0m [32mI [0m
+
+[0mClient   0, Patient 1, seq    0, started decoding ...[0m
+[34m0.25.321.684[0m [32mI [0m[0m 
+Input:
+[96mOncology Follow-Up | 14 Mar 2019
+Patient is a 67-year-old male presenting for follow-up of colorectal adenocarcinoma diagnosed in January 2019 following colonoscopy and subsequent surgical resection. Pathology confirmed pT3N1M0 adenocarcinoma of the sigmoid colon. Patient completed 6 cycles of FOLFOX without significant toxicity. CEA trending down. Surveillance colonoscopy scheduled in 12 months.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Patient: 67-year-old male.
+    *   Note date: 14 Mar 2019.
+    *   Key phrase: "follow-up of colorectal adenocarcinoma diagnosed in January 2019".
+    *   Additional evidence: "colonoscopy and subsequent surgical resection", "Pathology confirmed pT3N1M0 adenocarcinoma of the sigmoid colon", "completed 6 cycles of FOLFOX".
+
+    *   Has the patient been diagnosed with CRC? Yes.
+    *   Diagnosis date: January 2019.
+
+    *   Answer: Yes.
+    *   Confidence: Certain (explicitly stated "diagnosed in January 2019").
+    *   Diagnosis year: 2019.
+    *   Diagnosis month: January.<channel|>Answer: Yes. Confidence: Certain.
+Diagnosis year: 2019. Diagnosis month: January.<turn|>[0m
+[92mJust completed: Patient: 1, sequence   0 of   5, prompt:   98 tokens, response:  201 tokens, time: 14.90 seconds, speed 20.07 t/s[34m0.25.321.687[0m [32mI [0m
+Just completed ID: 1[34m0.25.322.273[0m [32mI [0mmain: clearing the KV cache
+[34m0.25.322.806[0m [32mI [0m
+
+[0mClient   0, Patient 2, seq    1, started decoding ...[0m
+[34m0.43.887.150[0m [32mI [0m[0m 
+Input:
+[96mInfusion Center Note | 02 Aug 2021
+Patient here for cycle 4 of FOLFIRI + bevacizumab for metastatic CRC. Originally diagnosed with colon cancer in 2018, now with liver mets identified on CT abdomen in June 2021. Tolerating treatment reasonably well, mild neuropathy noted. Port flushed without issue. Next cycle in 14 days.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Task: Identify if the patient has/had colorectal cancer (CRC).
+    *   Source: Provided medical note excerpts.
+    *   Constraint: No diagnostic judgments; rely only on provided text.
+    *   Required Output: Answer (Yes/No), Confidence, Diagnosis Year, Diagnosis Month.
+
+    *   Note Date: 02 Aug 2021.
+    *   Key phrase 1: "cycle 4 of FOLFIRI + bevacizumab for metastatic CRC."
+    *   Key phrase 2: "Originally diagnosed with colon cancer in 2018".
+    *   Key phrase 3: "now with liver mets identified on CT abdomen in June 2021."
+
+    *   Has the patient been diagnosed with CRC? Yes. (The note explicitly states "Originally diagnosed with colon cancer in 2018" and mentions "metastatic CRC").
+    *   Confidence: Certain (The text explicitly states the diagnosis and the year).
+    *   Diagnosis Year: 2018.
+    *   Diagnosis Month: Not mentioned (Unknown).
+
+    *   Answer: Yes.
+    *   Confidence: Certain.
+    *   Diagnosis year: 2018.
+    *   Diagnosis month: Unknown.<channel|>Answer: Yes. Confidence: Certain.
+Diagnosis year: 2018. Diagnosis month: Unknown.<turn|>[0m
+[92mJust completed: Patient: 2, sequence   1 of   5, prompt:   90 tokens, response:  301 tokens, time: 18.56 seconds, speed 21.06 t/s[34m0.43.887.152[0m [32mI [0m
+Just completed ID: 2[34m0.43.887.908[0m [32mI [0mmain: clearing the KV cache
+[34m0.43.889.030[0m [32mI [0m
+
+[0mClient   0, Patient 3, seq    2, started decoding ...[0m
+[34m0.55.958.797[0m [32mI [0m[0m 
+Input:
+[96mGI Consult | 29 Oct 2022
+58-year-old female referred for colonoscopy screening given family history of colorectal cancer in first-degree relatives (mother diagnosed with colon cancer age 72, brother with rectal polyps). Patient herself has no known diagnosis of CRC. Colonoscopy today revealed sigmoid diverticulosis and two tubular adenomas removed — no malignancy. Lynch syndrome testing ordered. Repeat colonoscopy in 3 years.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Patient: 58-year-old female.
+    *   Reason for consult: Colonoscopy screening due to family history (mother had colon cancer, brother had rectal polyps).
+    *   Patient's status: "Patient herself has no known diagnosis of CRC."
+    *   Colonoscopy results: Sigmoid diverticulosis and two tubular adenomas removed; "no malignancy."
+    *   Plan: Lynch syndrome testing, repeat colonoscopy in 3 years.
+
+    *   Does the patient have or had CRC? No.
+    *   Evidence: The notes explicitly state "Patient herself has no known diagnosis of CRC" and the current colonoscopy showed "no malignancy."
+
+    *   Answer: No.
+    *   Confidence: Certain (the note explicitly denies the diagnosis and the current procedure was negative).<channel|>Answer: No. Confidence: Certain.<turn|>[0m
+[92mJust completed: Patient: 3, sequence   2 of   5, prompt:   99 tokens, response:  186 tokens, time: 12.07 seconds, speed 23.61 t/s[34m0.55.958.800[0m [32mI [0m
+Just completed ID: 3[34m0.55.959.409[0m [32mI [0mmain: clearing the KV cache
+[34m0.55.959.942[0m [32mI [0m
+
+[0mClient   0, Patient 4, seq    3, started decoding ...[0m
+[34m1.21.017.419[0m [32mI [0m[0m 
+Input:
+[96mSurgical Discharge Summary | 11 Feb 2020
+Patient underwent low anterior resection with diverting loop ileostomy for adenocarcinoma of the rectum. Procedure uncomplicated. Final pathology: pT2N0M0, margins clear. Patient to follow up with colorectal surgery in 2 weeks and medical oncology for adjuvant therapy discussion. Ileostomy reversal anticipated at 3 months.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Task: Identify if the patient has/had colorectal cancer (CRC).
+    *   Source: Provided medical note excerpts.
+    *   Constraint: No diagnostic judgments; rely only on provided evidence.
+    *   Required Output: Answer (Yes/No), Confidence, Diagnosis Year, Diagnosis Month.
+
+    *   Document: Surgical Discharge Summary dated 11 Feb 2020.
+    *   Key phrase: "Patient underwent low anterior resection with diverting loop ileostomy for adenocarcinoma of the rectum."
+    *   Key phrase: "Final pathology: pT2N0M0, margins clear."
+    *   Key phrase: "Patient to follow up with colorectal surgery... and medical oncology for adjuvant therapy discussion."
+
+    *   "Adenocarcinoma of the rectum" is a type of colorectal cancer.
+    *   The patient underwent a surgical resection for this condition.
+    *   Pathology (pT2N0M0) confirms the malignancy.
+    *   The date of the discharge summary is 11 Feb 2020. Since the surgery happened before the discharge summary, the diagnosis was established by this date.
+
+    *   Answer: Yes.
+    *   Confidence: Certain (The note explicitly states the surgery was for adenocarcinoma of the rectum and provides pathology).
+    *   Diagnosis Year: 2020 (The surgery and discharge summary are Feb 2020).
+    *   Diagnosis Month: February (The discharge summary is dated 11 Feb 2020, and the surgery occurred just before this).
+
+    *   Answer: Yes.
+    *   Confidence: Certain.
+    *   Diagnosis year: 2020.
+    *   Diagnosis month: February.<channel|>Answer: Yes. Confidence: Certain.
+Diagnosis year: 2020. Diagnosis month: February.<turn|>[0m
+[92mJust completed: Patient: 4, sequence   3 of   5, prompt:   82 tokens, response:  398 tokens, time: 25.06 seconds, speed 19.16 t/s[34m1.21.017.422[0m [32mI [0m
+Just completed ID: 4[34m1.21.018.085[0m [32mI [0mmain: clearing the KV cache
+[34m1.21.019.004[0m [32mI [0m
+
+[0mClient   0, Patient 5, seq    4, started decoding ...[0m
+[34m1.49.289.314[0m [32mI [0m[0m 
+Input:
+[96mPrimary Care Visit | 05 May 2023
+Annual wellness exam. PMH per chart. Medications reviewed and reconciled. Patient reports fatigue and mild weight loss over past 3 months. ICD-10 problem list includes C18.7, hypertension, and type 2 diabetes. Referred to GI for evaluation. Labs ordered including CBC, CMP, TSH. Follow up in 4 weeks or sooner if symptoms worsen.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Task: Identify if the patient has/had colorectal cancer (CRC) based on provided notes.
+    *   Constraint 1: Do not make diagnostic judgments.
+    *   Constraint 2: ICD codes alone are not evidence of diagnosis.
+    *   Constraint 3: Do not assume information not stated.
+    *   Format: Answer (Yes/No), Confidence (Low, Medium, High, Certain), Diagnosis Year, Diagnosis Month.
+
+    *   Date: 05 May 2023
+    *   Visit: Primary Care Visit (Annual wellness exam).
+    *   Symptoms: Fatigue, mild weight loss over past 3 months.
+    *   Problem list: ICD-10 C18.7 (which corresponds to Malignant neoplasm of sigmoid colon), hypertension, type 2 diabetes.
+    *   Action: Referred to GI for evaluation. Labs ordered.
+
+    *   The notes mention "ICD-10 problem list includes C18.7".
+    *   The instructions explicitly state: "ICD codes alone should not be considered evidence of a diagnosis."
+    *   The patient is being *referred* to GI for evaluation due to fatigue and weight loss. This suggests the diagnosis is not yet confirmed or is being investigated in the current context of the visit.
+    *   There is no explicit statement like "Patient has colorectal cancer" or "History of CRC" or "Pathology confirmed CRC".
+
+    *   Since the only evidence is an ICD code (C18.7) and the instructions forbid using ICD codes alone as evidence, I cannot conclude "Yes".
+    *   The patient is being referred for evaluation, which implies the diagnosis is not established in the text provided.
+
+    *   Answer: No.
+    *   Confidence: High (because the only potential evidence is an ICD code, which is explicitly excluded).<channel|>Answer: No. Confidence: High.<turn|>[0m
+[92mJust completed: Patient: 5, sequence   4 of   5, prompt:   96 tokens, response:  410 tokens, time: 28.27 seconds, speed 17.90 t/s[34m1.49.289.317[0m [32mI [0m
+Just completed ID: 5[34m1.49.290.002[0m [32mI [0mmain: clearing the KV cache
+[34m1.49.290.179[0m [32mI [0m
+[34m1.49.290.180[0m [32mI [0m[35mrun parameters as of 2026-06-26 09:49:24[0m
+[34m1.49.290.180[0m [32mI [0m
+[34m1.49.290.180[0m [32mI [0mmain: n_parallel = 1, n_sequences = 5, cont_batching = 1, system tokens = 326
+[34m1.49.290.181[0m [32mI [0mExternal prompt file: [32m./brian_testing/crc_free_text/example_inputs.txt[0m
+[34m1.49.290.181[0m [32mI [0mModel and path used:  [32m/Users/brianjohnson/Downloads/models_gguf/gemma-4-31B_q4_0-it.gguf[0m
+
+[34m1.49.290.181[0m [32mI [0mTotal prompt tokens:    465, speed:  4.70 t/s
+[34m1.49.290.182[0m [32mI [0mTotal gen tokens:      1496, speed: 15.13 t/s
+[34m1.49.290.182[0m [32mI [0mTotal speed (AVG):           speed: 19.83 t/s
+[34m1.49.290.182[0m [32mI [0mCache misses:             0
+[34m1.49.290.182[0m [32mI [0m
+
+

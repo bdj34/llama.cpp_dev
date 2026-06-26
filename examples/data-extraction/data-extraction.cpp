@@ -110,9 +110,11 @@ std::string generatePreAnswer(const std::string& promptFormat) {
     } else if (promptFormat == "gemma2") {
         return "<end_of_turn>\n<start_of_turn>model\n";
     } else if (promptFormat == "gemma4") {
+        return "\n<turn|>\n<|turn>model\n";
+    } else if (promptFormat == "gemma4_nonThinking") {
         return "\n<turn|>\n<|turn>model\n<|channel>thought\n<channel|>";
     } else if (promptFormat == "qwen") {
-        return "<|im_end|>\n<|im_start|>assistant\n";
+        return "<|im_end|>\n<|im_start|>assistant";
     } else if (promptFormat == "R1") {
         return "<｜Assistant｜>\n";
     } else {

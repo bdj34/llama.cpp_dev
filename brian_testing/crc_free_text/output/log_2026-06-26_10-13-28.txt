@@ -1,0 +1,119 @@
+[34m0.00.000.308[0m [32mI [0mcommon_init_result: fitting params to device memory ...
+[34m0.00.000.309[0m [32mI [0mcommon_init_result: (for bugs during this step try to reproduce them with -fit off, or provide --verbose logs if the bug only occurs with -fit on)
+[34m0.02.368.232[0m [35mW llama_context: n_ctx_seq (2048) < n_ctx_train (262144) -- the full capacity of the model will not be utilized
+[0m[34m0.02.420.390[0m [32mI [0mcommon_init_from_params: warming up the model with an empty run - please wait ... (--no-warmup to disable)
+[34m0.02.635.134[0m [32mI [0m[32mNow printing the external prompt file ./brian_testing/crc_free_text/example_inputs.txt[0m
+
+[34m0.02.635.283[0m [32mI [0m
+
+[34m0.02.637.136[0m [32mI [0mmain: Simulating parallel requests from clients:
+[34m0.02.637.138[0m [32mI [0mmain: n_parallel = 1, n_sequences = 5, cont_batching = 1, system tokens = 326
+[34m0.02.637.139[0m [32mI [0m
+[34m0.02.637.139[0m [32mI [0mmain: Evaluating the system prompt ...
+[34m0.02.643.048[0m [32mI [0m
+[34m0.02.643.050[0m [32mI [0mProcessing requests ...
+
+[34m0.02.643.218[0m [32mI [0mmain: clearing the KV cache
+[34m0.02.643.421[0m [32mI [0m
+
+[0mClient   0, Patient 1, seq    0, started decoding ...[0m
+[34m0.03.771.610[0m [32mI [0m[0m 
+Input:
+[96mOncology Follow-Up | 14 Mar 2019
+Patient is a 67-year-old male presenting for follow-up of colorectal adenocarcinoma diagnosed in January 2019 following colonoscopy and subsequent surgical resection. Pathology confirmed pT3N1M0 adenocarcinoma of the sigmoid colon. Patient completed 6 cycles of FOLFOX without significant toxicity. CEA trending down. Surveillance colonoscopy scheduled in 12 months.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: Yes. Confidence: Certain.
+Diagnosis year: 2019. Diagnosis month: January.<|im_end|>[0m
+[92mJust completed: Patient: 1, sequence   0 of   5, prompt:  108 tokens, response:   29 tokens, time:  1.13 seconds, speed 121.41 t/s[34m0.03.771.614[0m [32mI [0m
+Just completed ID: 1[34m0.03.771.740[0m [32mI [0mmain: clearing the KV cache
+[34m0.03.772.272[0m [32mI [0m
+
+[0mClient   0, Patient 2, seq    1, started decoding ...[0m
+[34m0.04.525.954[0m [32mI [0m[0m 
+Input:
+[96mInfusion Center Note | 02 Aug 2021
+Patient here for cycle 4 of FOLFIRI + bevacizumab for metastatic CRC. Originally diagnosed with colon cancer in 2018, now with liver mets identified on CT abdomen in June 2021. Tolerating treatment reasonably well, mild neuropathy noted. Port flushed without issue. Next cycle in 14 days.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: Yes. Confidence: Certain.
+Diagnosis year: 2018. Diagnosis month: Unknown.<|im_end|>[0m
+[92mJust completed: Patient: 2, sequence   1 of   5, prompt:   94 tokens, response:   29 tokens, time:  0.75 seconds, speed 163.09 t/s[34m0.04.525.959[0m [32mI [0m
+Just completed ID: 2[34m0.04.526.162[0m [32mI [0mmain: clearing the KV cache
+[34m0.04.527.400[0m [32mI [0m
+
+[0mClient   0, Patient 3, seq    2, started decoding ...[0m
+[34m0.04.957.804[0m [32mI [0m[0m 
+Input:
+[96mGI Consult | 29 Oct 2022
+58-year-old female referred for colonoscopy screening given family history of colorectal cancer in first-degree relatives (mother diagnosed with colon cancer age 72, brother with rectal polyps). Patient herself has no known diagnosis of CRC. Colonoscopy today revealed sigmoid diverticulosis and two tubular adenomas removed — no malignancy. Lynch syndrome testing ordered. Repeat colonoscopy in 3 years.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: No. Confidence: Certain.<|im_end|>[0m
+[92mJust completed: Patient: 3, sequence   2 of   5, prompt:  101 tokens, response:   13 tokens, time:  0.43 seconds, speed 264.11 t/s[34m0.04.957.806[0m [32mI [0m
+Just completed ID: 3[34m0.04.957.891[0m [32mI [0mmain: clearing the KV cache
+[34m0.04.958.275[0m [32mI [0m
+
+[0mClient   0, Patient 4, seq    3, started decoding ...[0m
+[34m0.05.636.581[0m [32mI [0m[0m 
+Input:
+[96mSurgical Discharge Summary | 11 Feb 2020
+Patient underwent low anterior resection with diverting loop ileostomy for adenocarcinoma of the rectum. Procedure uncomplicated. Final pathology: pT2N0M0, margins clear. Patient to follow up with colorectal surgery in 2 weeks and medical oncology for adjuvant therapy discussion. Ileostomy reversal anticipated at 3 months.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: Yes. Confidence: Certain.
+Diagnosis year: 2020. Diagnosis month: Unknown.<|im_end|>[0m
+[92mJust completed: Patient: 4, sequence   3 of   5, prompt:   95 tokens, response:   29 tokens, time:  0.68 seconds, speed 182.71 t/s[34m0.05.636.584[0m [32mI [0m
+Just completed ID: 4[34m0.05.636.665[0m [32mI [0mmain: clearing the KV cache
+[34m0.05.637.063[0m [32mI [0m
+
+[0mClient   0, Patient 5, seq    4, started decoding ...[0m
+[34m0.34.850.426[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.430[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.430[0m [35mW main : failed to decode the batch, retrying with n_batch = 1024
+[0m[34m0.34.850.456[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.457[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.457[0m [35mW main : failed to decode the batch, retrying with n_batch = 512
+[0m[34m0.34.850.479[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.480[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.480[0m [35mW main : failed to decode the batch, retrying with n_batch = 256
+[0m[34m0.34.850.502[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.503[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.503[0m [35mW main : failed to decode the batch, retrying with n_batch = 128
+[0m[34m0.34.850.526[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.527[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.527[0m [35mW main : failed to decode the batch, retrying with n_batch = 64
+[0m[34m0.34.850.549[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.550[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.550[0m [35mW main : failed to decode the batch, retrying with n_batch = 32
+[0m[34m0.34.850.572[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.572[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.573[0m [35mW main : failed to decode the batch, retrying with n_batch = 16
+[0m[34m0.34.850.595[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.595[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.595[0m [35mW main : failed to decode the batch, retrying with n_batch = 8
+[0m[34m0.34.850.622[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.623[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.623[0m [35mW main : failed to decode the batch, retrying with n_batch = 4
+[0m[34m0.34.850.646[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.647[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.647[0m [35mW main : failed to decode the batch, retrying with n_batch = 2
+[0m[34m0.34.850.671[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.671[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.672[0m [35mW main : failed to decode the batch, retrying with n_batch = 1
+[0m[34m0.34.850.741[0m [31mE init_batch: failed to prepare attention ubatches
+[0m[34m0.34.850.749[0m [35mW decode: failed to find a memory slot for batch of size 1
+[0m[34m0.34.850.750[0m [31mE main : failed to decode the batch, n_batch = 1, ret = 1
+[0m
