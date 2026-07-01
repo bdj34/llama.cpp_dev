@@ -29,6 +29,7 @@
 ./build/bin/llama-data-extraction \
 -m ~/Downloads/models_gguf/Qwen3.6-35B-A3B-UD-Q6_K.gguf \
 -sysf ./system_prompts/qwen/crc_free_text.txt \
+--grammar-file ./grammars/crc_free_text_qwen3.gbnf \
 --ctx-size 4096 \
 --no-escape \
 --sequences 5 --parallel 1 \
