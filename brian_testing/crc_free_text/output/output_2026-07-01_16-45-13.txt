@@ -1,0 +1,5 @@
+<|channel>thought\n*   Excerpt: "Oncology Follow	1
+<|channel>thought\n*   Excerpt: "Infusion Center	2
+<|channel>thought\n*   Input: Excerpts from	3
+<|channel>thought\n*   Excerpt: "Surgical Discharge	4
+<|channel>thought\n*   Input: Medical note excerpt from	5

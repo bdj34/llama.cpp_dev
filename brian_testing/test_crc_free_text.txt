@@ -4,7 +4,8 @@
 -m ~/Downloads/models_gguf/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
 -sysf ./system_prompts/gemma4/crc_free_text.txt \
 --grammar-file ./grammars/crc_free_text_gemma4.gbnf \
---no-escape \
+--no-escape -fa on \
+--n-predict 10 \
 --sequences 5 --parallel 1 \
 --temp 0 --saveInput \
 --IDfile ./brian_testing/crc_free_text/example_IDs.txt \
@@ -30,6 +31,7 @@
 -m ~/Downloads/models_gguf/Qwen3.6-35B-A3B-UD-Q6_K.gguf \
 -sysf ./system_prompts/qwen/crc_free_text.txt \
 --grammar-file ./grammars/crc_free_text_qwen3.gbnf \
+--n-predict 1000 \
 --ctx-size 4096 \
 --no-escape \
 --sequences 5 --parallel 1 \

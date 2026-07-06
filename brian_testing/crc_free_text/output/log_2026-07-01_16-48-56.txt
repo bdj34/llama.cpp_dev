@@ -1,0 +1,78 @@
+[34m0.02.465.905[0m [32mI [0m[32mNow printing the external prompt file ./brian_testing/crc_free_text/example_inputs.txt[0m
+
+[34m0.02.466.051[0m [32mI [0m
+
+[34m0.02.467.995[0m [32mI [0mmain: Simulating parallel requests from clients:
+[34m0.02.467.997[0m [32mI [0mmain: n_parallel = 1, n_sequences = 5, cont_batching = 1, system tokens = 326
+[34m0.02.467.997[0m [32mI [0m
+[34m0.02.467.997[0m [32mI [0mmain: Evaluating the system prompt ...
+[34m0.02.474.113[0m [32mI [0m
+[34m0.02.474.117[0m [32mI [0mProcessing requests ...
+
+[34m0.02.474.278[0m [32mI [0mmain: clearing the KV cache
+[34m0.02.474.477[0m [32mI [0m
+
+[0mClient   0, Patient 1, seq    0, started decoding ...[0m
+[34m0.03.634.342[0m [32mI [0m[0m 
+Input:
+[96mOncology Follow-Up | 14 Mar 2019
+Patient is a 67-year-old male presenting for follow-up of colorectal adenocarcinoma diagnosed in January 2019 following colonoscopy and subsequent surgical resection. Pathology confirmed pT3N1M0 adenocarcinoma of the sigmoid colon. Patient completed 6 cycles of FOLFOX without significant toxicity. CEA trending down. Surveillance colonoscopy scheduled in 12 months.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: Yes. Confidence: Certain.
+Diagnosis year: 2019. Diagnosis month: January.<|im_end|>[0m
+[92mJust completed: Patient: 1, sequence   0 of   5, prompt:  108 tokens, response:   29 tokens, time:  1.16 seconds, speed 118.10 t/s[34m0.03.634.351[0m [32mI [0m
+Just completed ID: 1[34m0.03.634.568[0m [32mI [0mmain: clearing the KV cache
+[34m0.03.636.193[0m [32mI [0m
+
+[0mClient   0, Patient 2, seq    1, started decoding ...[0m
+[34m0.04.322.875[0m [32mI [0m[0m 
+Input:
+[96mInfusion Center Note | 02 Aug 2021
+Patient here for cycle 4 of FOLFIRI + bevacizumab for metastatic CRC. Originally diagnosed with colon cancer in 2018, now with liver mets identified on CT abdomen in June 2021. Tolerating treatment reasonably well, mild neuropathy noted. Port flushed without issue. Next cycle in 14 days.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: Yes. Confidence: Certain.
+Diagnosis year: 2018. Diagnosis month: Unknown.<|im_end|>[0m
+[92mJust completed: Patient: 2, sequence   1 of   5, prompt:   94 tokens, response:   29 tokens, time:  0.69 seconds, speed 178.70 t/s[34m0.04.322.877[0m [32mI [0m
+Just completed ID: 2[34m0.04.322.956[0m [32mI [0mmain: clearing the KV cache
+[34m0.04.323.440[0m [32mI [0m
+
+[0mClient   0, Patient 3, seq    2, started decoding ...[0m
+[34m0.04.741.470[0m [32mI [0m[0m 
+Input:
+[96mGI Consult | 29 Oct 2022
+58-year-old female referred for colonoscopy screening given family history of colorectal cancer in first-degree relatives (mother diagnosed with colon cancer age 72, brother with rectal polyps). Patient herself has no known diagnosis of CRC. Colonoscopy today revealed sigmoid diverticulosis and two tubular adenomas removed — no malignancy. Lynch syndrome testing ordered. Repeat colonoscopy in 3 years.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: No. Confidence: Certain.<|im_end|>[0m
+[92mJust completed: Patient: 3, sequence   2 of   5, prompt:  101 tokens, response:   13 tokens, time:  0.42 seconds, speed 272.39 t/s[34m0.04.741.476[0m [32mI [0m
+Just completed ID: 3[34m0.04.741.556[0m [32mI [0mmain: clearing the KV cache
+[34m0.04.741.958[0m [32mI [0m
+
+[0mClient   0, Patient 4, seq    3, started decoding ...[0m
+[34m0.05.416.875[0m [32mI [0m[0m 
+Input:
+[96mSurgical Discharge Summary | 11 Feb 2020
+Patient underwent low anterior resection with diverting loop ileostomy for adenocarcinoma of the rectum. Procedure uncomplicated. Final pathology: pT2N0M0, margins clear. Patient to follow up with colorectal surgery in 2 weeks and medical oncology for adjuvant therapy discussion. Ileostomy reversal anticipated at 3 months.<|im_end|>
+<|im_start|>assistant[91m
+<think>
+
+</think>
+
+Answer: Yes. Confidence: Certain.
+Diagnosis year: 2020. Diagnosis month: Unknown.<|im_end|>[0m
+[92mJust completed: Patient: 4, sequence   3 of   5, prompt:   95 tokens, response:   29 tokens, time:  0.68 seconds, speed 183.62 t/s[34m0.05.416.877[0m [32mI [0m
+Just completed ID: 4[34m0.05.416.955[0m [32mI [0mmain: clearing the KV cache
+[34m0.05.417.373[0m [32mI [0m
+
+[0mClient   0, Patient 5, seq    4, started decoding ...[0m

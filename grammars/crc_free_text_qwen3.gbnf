@@ -13,6 +13,7 @@ month ::= ("January" | "February" | "March" | "April" | "May" | "June" | "July" 
 
 conf ::= "Low" | "Medium" | "High" | "Certain"
 
-thinkText ::= ([^<] | "<" [^/] | "</" [^t] | "</t" [^h] | "</th" [^i] | "</thi" [^n] | "</thin" [^k] | "</think" [^>])*
+# thinkText ::= ([^<] | "<" [^/] | "</" [^t] | "</t" [^h] | "</th" [^i] | "</thi" [^n] | "</thin" [^k] | "</think" [^>])*
+thinkText ::= [^\x00]*
 
 ws ::= [ \t\n]*

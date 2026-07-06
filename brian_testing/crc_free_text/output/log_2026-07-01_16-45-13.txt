@@ -1,0 +1,95 @@
+[34m0.00.733.801[0m [35mW load: control-looking token:     50 '<|tool_response>' was not control-type; this is probably a bug in the model. its type will be overridden
+[0m[34m0.00.736.429[0m [35mW load: control-looking token:    212 '</s>' was not control-type; this is probably a bug in the model. its type will be overridden
+[0m[34m0.00.739.787[0m [35mW load: control-looking token:      1 '<eos>' was not control-type; this is probably a bug in the model. its type will be overridden
+[0m[34m0.00.742.572[0m [35mW load: special_eog_ids contains '<|tool_response>', removing '</s>' token from EOG list
+[0m[34m0.03.151.200[0m [32mI [0m[32mNow printing the external prompt file ./brian_testing/crc_free_text/example_inputs.txt[0m
+
+[34m0.03.151.320[0m [32mI [0m
+
+[34m0.03.156.475[0m [32mI [0mmain: Simulating parallel requests from clients:
+[34m0.03.156.477[0m [32mI [0mmain: n_parallel = 1, n_sequences = 5, cont_batching = 1, system tokens = 326
+[34m0.03.156.477[0m [32mI [0m
+[34m0.03.156.478[0m [32mI [0mmain: Evaluating the system prompt ...
+[34m0.03.164.396[0m [32mI [0m
+[34m0.03.164.398[0m [32mI [0mProcessing requests ...
+
+[34m0.03.165.141[0m [32mI [0mmain: clearing the KV cache
+[34m0.03.165.610[0m [32mI [0m
+
+[0mClient   0, Patient 1, seq    0, started decoding ...[0m
+[34m0.03.973.874[0m [32mI [0m[0m 
+Input:
+[96mOncology Follow-Up | 14 Mar 2019
+Patient is a 67-year-old male presenting for follow-up of colorectal adenocarcinoma diagnosed in January 2019 following colonoscopy and subsequent surgical resection. Pathology confirmed pT3N1M0 adenocarcinoma of the sigmoid colon. Patient completed 6 cycles of FOLFOX without significant toxicity. CEA trending down. Surveillance colonoscopy scheduled in 12 months.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Excerpt: "Oncology Follow[0m
+[92mJust completed: Patient: 1, sequence   0 of   5, prompt:   98 tokens, response:   10 tokens, time:  0.81 seconds, speed 133.55 t/s[34m0.03.973.919[0m [32mI [0m
+Just completed ID: 1[34m0.03.974.564[0m [32mI [0mmain: clearing the KV cache
+[34m0.03.975.412[0m [32mI [0m
+
+[0mClient   0, Patient 2, seq    1, started decoding ...[0m
+[34m0.04.427.124[0m [32mI [0m[0m 
+Input:
+[96mInfusion Center Note | 02 Aug 2021
+Patient here for cycle 4 of FOLFIRI + bevacizumab for metastatic CRC. Originally diagnosed with colon cancer in 2018, now with liver mets identified on CT abdomen in June 2021. Tolerating treatment reasonably well, mild neuropathy noted. Port flushed without issue. Next cycle in 14 days.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Excerpt: "Infusion Center[0m
+[92mJust completed: Patient: 2, sequence   1 of   5, prompt:   90 tokens, response:   10 tokens, time:  0.45 seconds, speed 220.97 t/s[34m0.04.427.126[0m [32mI [0m
+Just completed ID: 2[34m0.04.427.700[0m [32mI [0mmain: clearing the KV cache
+[34m0.04.428.550[0m [32mI [0m
+
+[0mClient   0, Patient 3, seq    2, started decoding ...[0m
+[34m0.04.895.886[0m [32mI [0m[0m 
+Input:
+[96mGI Consult | 29 Oct 2022
+58-year-old female referred for colonoscopy screening given family history of colorectal cancer in first-degree relatives (mother diagnosed with colon cancer age 72, brother with rectal polyps). Patient herself has no known diagnosis of CRC. Colonoscopy today revealed sigmoid diverticulosis and two tubular adenomas removed — no malignancy. Lynch syndrome testing ordered. Repeat colonoscopy in 3 years.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Input: Excerpts from[0m
+[92mJust completed: Patient: 3, sequence   2 of   5, prompt:   99 tokens, response:   10 tokens, time:  0.47 seconds, speed 232.82 t/s[34m0.04.895.888[0m [32mI [0m
+Just completed ID: 3[34m0.04.896.472[0m [32mI [0mmain: clearing the KV cache
+[34m0.04.897.210[0m [32mI [0m
+
+[0mClient   0, Patient 4, seq    3, started decoding ...[0m
+[34m0.05.346.858[0m [32mI [0m[0m 
+Input:
+[96mSurgical Discharge Summary | 11 Feb 2020
+Patient underwent low anterior resection with diverting loop ileostomy for adenocarcinoma of the rectum. Procedure uncomplicated. Final pathology: pT2N0M0, margins clear. Patient to follow up with colorectal surgery in 2 weeks and medical oncology for adjuvant therapy discussion. Ileostomy reversal anticipated at 3 months.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Excerpt: "Surgical Discharge[0m
+[92mJust completed: Patient: 4, sequence   3 of   5, prompt:   82 tokens, response:   10 tokens, time:  0.45 seconds, speed 204.27 t/s[34m0.05.346.860[0m [32mI [0m
+Just completed ID: 4[34m0.05.347.419[0m [32mI [0mmain: clearing the KV cache
+[34m0.05.348.023[0m [32mI [0m
+
+[0mClient   0, Patient 5, seq    4, started decoding ...[0m
+[34m0.05.812.670[0m [32mI [0m[0m 
+Input:
+[96mPrimary Care Visit | 05 May 2023
+Annual wellness exam. PMH per chart. Medications reviewed and reconciled. Patient reports fatigue and mild weight loss over past 3 months. ICD-10 problem list includes C18.7, hypertension, and type 2 diabetes. Referred to GI for evaluation. Labs ordered including CBC, CMP, TSH. Follow up in 4 weeks or sooner if symptoms worsen.
+<turn|>
+<|turn>model
+[91m<|channel>thought
+*   Input: Medical note excerpt from[0m
+[92mJust completed: Patient: 5, sequence   4 of   5, prompt:   96 tokens, response:   10 tokens, time:  0.47 seconds, speed 227.85 t/s[34m0.05.812.684[0m [32mI [0m
+Just completed ID: 5[34m0.05.814.061[0m [32mI [0mmain: clearing the KV cache
+[34m0.05.814.413[0m [32mI [0m
+[34m0.05.814.417[0m [32mI [0m[35mrun parameters as of 2026-07-01 16:45:19[0m
+[34m0.05.814.417[0m [32mI [0m
+[34m0.05.814.418[0m [32mI [0mmain: n_parallel = 1, n_sequences = 5, cont_batching = 1, system tokens = 326
+[34m0.05.814.420[0m [32mI [0mExternal prompt file: [32m./brian_testing/crc_free_text/example_inputs.txt[0m
+[34m0.05.814.420[0m [32mI [0mModel and path used:  [32m/Users/brianjohnson/Downloads/models_gguf/gemma-4-26B-A4B-it-UD-Q6_K.gguf[0m
+
+[34m0.05.814.421[0m [32mI [0mTotal prompt tokens:    465, speed: 174.95 t/s
+[34m0.05.814.422[0m [32mI [0mTotal gen tokens:        50, speed: 18.81 t/s
+[34m0.05.814.423[0m [32mI [0mTotal speed (AVG):           speed: 193.76 t/s
+[34m0.05.814.423[0m [32mI [0mCache misses:             0
+[34m0.05.814.423[0m [32mI [0m
+
+

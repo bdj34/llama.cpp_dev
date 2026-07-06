@@ -96,6 +96,10 @@ struct client {
     std::string response;
     std::string inputID;
 
+    // true when this sequence is a grammar-free retry of an input whose grammar-constrained
+    // run ran away (hit the n_predict cap without emitting EOG). See fault-tolerance logic.
+    bool no_grammar = false;
+
     struct common_sampler * smpl = nullptr;
 };
 
@@ -117,8 +121,13 @@ std::string generatePreAnswer(const std::string& promptFormat) {
         return "<|im_end|>\n<|im_start|>assistant";
     } else if (promptFormat == "R1") {
         return "<｜Assistant｜>\n";
+    } else if (promptFormat == "raw") {
+        // Passthrough: all chat formatting (system/user wrappers + assistant-turn opener)
+        // is done in Python (make_inputs.py) using tokens pulled from the GGUF chat_template.
+        // The tool appends nothing, so it stays model-agnostic (no per-model C++ edits).
+        return "";
     } else {
-        throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, phi4, llama3, mistral, qwen, R1.");
+        throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, phi4, llama3, mistral, qwen, R1, raw.");
     }
 }
 
@@ -304,6 +313,11 @@ int main(int argc, char ** argv) {
 
     llama_seq_id g_seq_id = 0;
 
+    // Inputs whose grammar-constrained run ran away (hit the n_predict cap without EOG) are
+    // queued here to be re-run once with the grammar disabled. Holds (input text, ID).
+    std::vector<std::pair<std::string, std::string>> retry_queue;
+    int g_retry_id = 0; // synthetic seq label for retries (KV uses client.id+1, so this is cosmetic)
+
     // the max batch size is as large as the context to handle cases where we get very long input prompt from multiple
     // users. regardless of the size, the main loop will chunk the batch into a maximum of params.n_batch tokens at a time
     llama_batch batch = llama_batch_init(n_ctx, 0, 1);
@@ -380,19 +394,31 @@ int main(int argc, char ** argv) {
         // insert new sequences for decoding
         if (cont_batching || batch.n_tokens == 0) {
             for (auto & client : clients) {
-                if (client.seq_id == -1 && g_seq_id < n_seq) {
-                    client.seq_id = g_seq_id;
+                // Take a grammar-free retry first (if any queued), otherwise a fresh input.
+                const bool have_retry = !retry_queue.empty();
+                if (client.seq_id == -1 && (have_retry || g_seq_id < n_seq)) {
+                    const bool is_retry = have_retry;
 
                     client.t_start_prompt = ggml_time_us();
                     client.t_start_gen    = 0;
 
-                    client.input    = convertEscapedNewlines(k_prompts[promptNumber]);
-                    if(!params.IDfile.empty()){
-                        client.inputID = allIDs[promptNumber];
+                    if (is_retry) {
+                        // Re-run an input whose grammar-constrained pass ran away, grammar disabled.
+                        client.input      = retry_queue.back().first;
+                        client.inputID    = retry_queue.back().second;
+                        retry_queue.pop_back();
+                        client.seq_id     = n_seq + (g_retry_id++); // cosmetic label; KV keyed by client.id+1
+                        client.no_grammar = true;
+                    } else {
+                        client.seq_id     = g_seq_id;
+                        client.input      = convertEscapedNewlines(k_prompts[promptNumber]);
+                        if(!params.IDfile.empty()){
+                            client.inputID = allIDs[promptNumber];
+                        }
+                        promptNumber++;
+                        client.no_grammar = false;
                     }
 
-                    promptNumber++;
-                    client.prompt   = client.input;
                     client.response = "";
 
                     // construct the prompt:
@@ -409,7 +435,15 @@ int main(int argc, char ** argv) {
                     // common_sampler_reset(client.smpl);
                     // ATTEMPTED FIX:
                     common_sampler_free(client.smpl);
-                    client.smpl = common_sampler_init(model, params.sampling);
+                    if (client.no_grammar) {
+                        // Same sampling params, but with the grammar constraint removed so a
+                        // runaway input can terminate naturally (emit EOG) and yield a raw answer.
+                        common_params_sampling sp_nogrammar = params.sampling;
+                        sp_nogrammar.grammar = common_grammar{}; // COMMON_GRAMMAR_TYPE_NONE -> no grammar sampler
+                        client.smpl = common_sampler_init(model, sp_nogrammar);
+                    } else {
+                        client.smpl = common_sampler_init(model, params.sampling);
+                    }
 
                     // do not prepend BOS because we have a system prompt!
                     std::vector<llama_token> tokens_prompt;
@@ -429,12 +463,14 @@ int main(int argc, char ** argv) {
                     client.i_batch   = batch.n_tokens - 1;
 
                     if(params.IDfile.empty()){
-                        LOG_INF("\n\n\033[0mClient %3d, seq %4d, started decoding ...\033[0m\n", client.id, client.seq_id);
+                        LOG_INF("\n\n\033[0mClient %3d, seq %4d, started decoding ...%s\033[0m\n", client.id, client.seq_id, is_retry ? " (grammar-free retry)" : "");
                     }else{
-                        LOG_INF("\n\n\033[0mClient %3d, Patient %s, seq %4d, started decoding ...\033[0m\n", client.id, client.inputID.c_str(), client.seq_id);
+                        LOG_INF("\n\n\033[0mClient %3d, Patient %s, seq %4d, started decoding ...%s\033[0m\n", client.id, client.inputID.c_str(), client.seq_id, is_retry ? " (grammar-free retry)" : "");
                     }
 
-                    g_seq_id += 1;
+                    if (!is_retry) {
+                        g_seq_id += 1;
+                    }
 
                     // insert new requests one-by-one
                     //if (cont_batching) {
@@ -476,8 +512,12 @@ int main(int argc, char ** argv) {
             const int ret = llama_decode(ctx, batch_view);
             if (ret != 0) {
                 if (n_batch == 1 || ret < 0) {
-                    // if you get here, it means the KV cache is full - try increasing it via the context size
+                    // KV cache is full. With --n-predict set, grammar runaways are capped before
+                    // reaching here, so this now means a genuine sizing problem, not a single bad input.
                     LOG_ERR("%s : failed to decode the batch, n_batch = %d, ret = %d\n", __func__, n_batch, ret);
+                    LOG_ERR("%s : KV cache exhausted. Ensure (--parallel * (max_prompt_tokens + --n-predict) + system_tokens) "
+                            "fits in --ctx-size; reduce --parallel or raise --ctx-size. run_task.sh will resume from the "
+                            "last completed ID on re-run.\n", __func__);
                     return 1;
                 }
 
@@ -522,21 +562,38 @@ int main(int argc, char ** argv) {
                 client.response += token_str;
                 client.sampled = id;
 
-                // Determine when to stop generating
-                if (client.n_decoded > 2 &&
-                    (llama_vocab_is_eog(vocab, id) ||
-                         (params.n_predict > 0 && client.n_decoded >= params.n_predict))) {
+                // Determine when to stop generating.
+                // hit_eog = clean end-of-generation; hit_cap = stopped at the n_predict ceiling.
+                const bool hit_eog = llama_vocab_is_eog(vocab, id);
+                const bool hit_cap = (params.n_predict > 0 && client.n_decoded >= params.n_predict);
+                if (client.n_decoded > 2 && (hit_eog || hit_cap)) {
 
-
-                    // Copy the client response and the ptID to the output file
-                    if(!client.inputID.empty()){
-                        outFile3 << escapeNewLines(client.response);
-                        outFile3 << "\t" << client.inputID;
-                    }else{
+                    if (client.inputID.empty()) {
                         std::cerr << "No ID given to identify each input!" << std::endl;
                         return 1;
                     }
-                    outFile3 << std::endl;
+
+                    // A grammar-constrained run that hits the cap WITHOUT emitting EOG is a
+                    // grammar-driven runaway (the grammar prevented termination). Re-run it once
+                    // with the grammar disabled so it can terminate and give a usable raw answer.
+                    const bool runaway = hit_cap && !hit_eog;
+
+                    if (runaway && !client.no_grammar) {
+                        retry_queue.push_back({ client.input, client.inputID });
+                        LOG_INF("\n\033[91mGrammar runaway (hit n_predict=%d without EOG), ID %s -> queued grammar-free retry\033[0m", params.n_predict, client.inputID.c_str());
+                    } else if (runaway && client.no_grammar) {
+                        // Even the grammar-free retry ran to the cap: give up, write an Error row.
+                        outFile3 << "Error" << "\t" << client.inputID << std::endl;
+                        LOG_INF("\n\033[91mGrammar-free retry still ran away, ID %s -> wrote Error\033[0m", client.inputID.c_str());
+                    } else {
+                        // Clean stop (EOG). Tag grammar-free-retry rows with a 3rd column so
+                        // aggregate.py knows to parse them leniently (they are unconstrained).
+                        outFile3 << escapeNewLines(client.response) << "\t" << client.inputID;
+                        if (client.no_grammar) {
+                            outFile3 << "\t" << "NO_GRAMMAR";
+                        }
+                        outFile3 << std::endl;
+                    }
 
                     // delete only the generated part of the sequence, i.e. keep the system prompt in the cache
                     llama_memory_seq_rm(mem,    client.id + 1, -1, -1);
