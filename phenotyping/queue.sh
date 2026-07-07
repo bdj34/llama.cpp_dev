@@ -5,9 +5,10 @@
 # never contended. Enqueue as many tasks as you like; a single background worker runs them in
 # order, starting the next the instant the current one finishes.
 #
-#   ./queue.sh add <task> [flags]       enqueue ONE task with run_task.sh flags (unquoted), e.g.
-#                                       ./queue.sh add colectomy --slices 6
-#   ./queue.sh add <task1> <task2> ...  enqueue several bare tasks (no flags) at once
+#   ./queue.sh add <task> --out-root DIR [flags]   enqueue ONE task (--out-root REQUIRED), e.g.
+#                                       ./queue.sh add colectomy --out-root /data --slices 6
+#   several at once: quote each entry, e.g.
+#     ./queue.sh add "colectomy --out-root /data" "ibd --out-root /data --slices 4"
 #   ./queue.sh list                     show the running task + pending queue
 #   ./queue.sh stop                     stop the worker after the current task finishes
 #   ./queue.sh worker                   (internal) the worker loop
@@ -22,6 +23,8 @@
 set -uo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Queue metadata is small global coordination state -> fixed in-repo location (per-task DATA
+# goes to each task's required --out-root, which may differ between tasks).
 QDIR="$DIR/runtime/_queue"; mkdir -p "$QDIR"
 QUEUE="$QDIR/queue.txt"; RUNNING="$QDIR/running.txt"
 LOCK="$QDIR/queue.lock"; WPID="$QDIR/worker.pid"; WLOG="$QDIR/worker.log"; STOP="$QDIR/stop"
@@ -89,6 +92,7 @@ cmd="${1:-}"; shift || true
 case "$cmd" in
     add)
         [ $# -ge 1 ] || { echo "usage: $0 add <task> [flags] | $0 add <task1> <task2> ..."; exit 2; }
+        orig="$*"   # saved for logging; the validator below consumes the positional params
         # If any arg is a flag (starts with -), the whole line is ONE "task + flags" entry
         # (e.g. `add colectomy --slices 6`). Otherwise each bare name is a separate task
         # (e.g. `add colectomy ibd crc`).
@@ -101,7 +105,7 @@ case "$cmd" in
             case "$tname" in -*) echo "queue: 'add' — first argument must be a task name, got flag '$tname'."; exit 2 ;; esac
             while [ $# -gt 0 ]; do
                 case "$1" in
-                    --from|--until|--slices) shift; [ $# -gt 0 ] && shift ;;   # value-taking flag: skip flag + value
+                    --from|--until|--slices|--out-root) shift; [ $# -gt 0 ] && shift ;;   # value-taking flag: skip flag + value
                     -*) shift ;;                                              # boolean/other flag
                     *)  echo "queue: ambiguous 'add' — flags are present, so only ONE task is allowed, but found an extra task '$1'."
                         echo "       When using flags, add tasks one at a time, e.g.:"
@@ -110,14 +114,19 @@ case "$cmd" in
                         exit 2 ;;
                 esac
             done
+            case "$entry" in *--out-root*) ;; *) echo "queue: task must include --out-root DIR (missing in '$entry'). run_task.sh requires it."; exit 2 ;; esac
             with_lock _enqueue "$entry"  # single entry, args preserved
         else
-            with_lock _enqueue "$@"      # one entry per task name
+            # bare names: each still needs --out-root, so each must be a quoted "task --out-root DIR"
+            for t in "$@"; do
+                case "$t" in *--out-root*) ;; *) echo "queue: each task must include --out-root DIR (missing in '$t'). run_task.sh requires it."; exit 2 ;; esac
+            done
+            with_lock _enqueue "$@"      # one entry per task
         fi
         # NOTE: do NOT requeue-interrupted here — if a worker is alive, RUNNING holds the
         # legitimately-running task. A fresh worker requeues an interrupted task on startup.
         with_lock _start_worker_if_needed
-        log "enqueued: $*"
+        log "enqueued: $orig"
         "$0" list
         ;;
 

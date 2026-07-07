@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Single entrypoint for the phenotyping pipeline.
 #
-#   ./run_task.sh <task> [--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]
+#   ./run_task.sh <task> --out-root DIR [--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]
 #
 # Runs, for the given task: preprocess (streams from SQL + builds inputs) -> infer(pass x
 # model) -> aggregate. Every step is guarded by a .done marker in runtime/<task>/, so a crash
@@ -16,7 +16,7 @@
 set -uo pipefail   # NOT -e: per-step fault isolation is handled by run_step
 
 # Print helpful error message if user runs with empty or unknown arguments
-usage() { echo "usage: $0 <task> [--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]"; exit 2; }
+usage() { echo "usage: $0 <task> --out-root DIR [--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]"; exit 2; }
 
 # If the number of arguments is 0, return error message via usage fn above
 [ $# -ge 1 ] || usage
@@ -25,13 +25,14 @@ usage() { echo "usage: $0 <task> [--resume|--from <step>|--slices N|--force|--dr
 TASK="$1"; shift
 
 # Process the remaining args and assign the variables accordingly
-FROM=""; UNTIL=""; SLICES_ARG=""; export FORCE=0 DRY_RUN=0; RETRY_ERRORS=0
+FROM=""; UNTIL=""; SLICES_ARG=""; OUT_ROOT_ARG=""; export FORCE=0 DRY_RUN=0; RETRY_ERRORS=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --resume)        ;;                       # default; ";;" serves as 'break' out of case statement
         --from)          FROM="${2:-}"; shift ;;  # FROM is set to the arg after --from (or empty if none)
         --until)         UNTIL="${2:-}"; shift ;; # run through this step then stop (for prep-ahead)
         --slices)        SLICES_ARG="${2:-}"; shift ;; # partition cohort into N sliced pulls/inputs
+        --out-root)      OUT_ROOT_ARG="${2:-}"; shift ;; # root for all working data (inputs/outputs/results)
         --force)         FORCE=1 ;;
         --dry-run)       DRY_RUN=1 ;;
         --retry-errors)  RETRY_ERRORS=1 ;;
@@ -41,14 +42,21 @@ while [ $# -gt 0 ]; do
 done
 
 # Source lib.sh in same dir as this script by determining this script's dir (${BASH_SOURCE[0]}) AS IT WAS CALLED
+# --out-root is REQUIRED — the root for all of this task's working data (inputs, outputs,
+# results, markers, logs). No env-var fallback. Pass it consistently across runs of a task so
+# resumes find their state (queue.sh reuses it from the task entry automatically).
+[ -n "$OUT_ROOT_ARG" ] || { echo "error: --out-root <DIR> is required."; usage; }
+
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
+
+RUNTIME_ROOT="$OUT_ROOT_ARG"
 
 # Set the task config file and error if none found
 CONF="$PHENO_DIR/config/${TASK}.conf"
 [ -f "$CONF" ] || die "no config for task '$TASK' ($CONF)"
 
-# Define filenames and make directories
-WORKDIR="$PHENO_DIR/runtime/$TASK"
+# Define filenames and make directories. RUNTIME_ROOT is the required --out-root.
+WORKDIR="$RUNTIME_ROOT/$TASK"
 mkdir -p "$WORKDIR/inputs" "$WORKDIR/llm_out"
 export WORKDIR TASK
 LOGFILE="$WORKDIR/run_$(date '+%Y%m%d_%H%M%S').log"; export LOGFILE
@@ -249,9 +257,12 @@ do_infer() {
 # hand, or an orphaned task after a worker kill), no two inferences ever share the GPUs.
 # flock auto-releases when its holder dies, so a crash can't deadlock it. On hosts without
 # flock (e.g. macOS dev), the queue's single-worker design provides the serialization.
-GPU_LOCK="${GPU_LOCK:-$PHENO_DIR/runtime/.gpu.lock}"
+# GPU mutex lives in the fixed in-repo COORD_DIR (NOT under per-task --out-root), so it's a
+# single machine-wide lock shared by every task regardless of where its data goes.
+GPU_LOCK="${GPU_LOCK:-$COORD_DIR/.gpu.lock}"
 do_infer_locked() {
     command -v flock >/dev/null 2>&1 || { do_infer; return $?; }
+    mkdir -p "$COORD_DIR"
     exec 201>"$GPU_LOCK"
     log "waiting for GPU lock ($GPU_LOCK) ..."
     flock -x 201

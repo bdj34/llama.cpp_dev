@@ -11,6 +11,10 @@ LLAMA_BIN="${LLAMA_BIN:-$REPO_DIR/build/bin/llama-data-extraction}"
 GRAMMAR_DIR="${GRAMMAR_DIR:-$REPO_DIR/grammars}"
 MODELS_CONF="$PHENO_DIR/config/models.conf"
 
+# Small in-repo coordination state (GPU lock, queue metadata) lives here regardless of where a
+# task's large data goes. Per-task working data lives under the REQUIRED --out-root instead.
+COORD_DIR="$PHENO_DIR/runtime"
+
 # ---------------------------------------------------------------------------
 # Logging functions
 # ---------------------------------------------------------------------------

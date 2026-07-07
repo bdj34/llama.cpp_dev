@@ -6,8 +6,12 @@ copy-pasted scripts in `../reproduce_results/`. Runs entirely on the GPU box.
 Each **task** (an extraction *domain*) runs end-to-end via one command:
 
 ```bash
-./run_task.sh <task> [--resume|--from STEP|--force|--dry-run|--retry-errors]
+./run_task.sh <task> --out-root DIR [--resume|--from STEP|--slices N|--force|--dry-run|--retry-errors]
 ```
+
+`--out-root DIR` is **required** — it's the root for all of the task's working data
+(`DIR/<task>/`: inputs, LLM outputs, results, markers, logs). Pass it consistently across a
+task's runs so resumes find their state.
 
 Steps (each guarded by a `.done` marker so a crash resumes by re-running the same command):
 
@@ -36,7 +40,10 @@ Steps (each guarded by a `.done` marker so a crash resumes by re-running the sam
 - `python/` — `db.py` (streams notes from SQL), `make_inputs.py` (preprocess, `--sql` streams
   or `--notes` CSV), `aggregate.py` (consensus). `db_pull.py` is an optional CSV sample-dumper.
 - `lib.sh` — shared bash helpers (logging, step runner, kinit, sharding).
-- `runtime/` — gitignored working dir (inputs, LLM outputs, markers, logs, results).
+- **Task data** goes under the required `--out-root DIR` (`DIR/<task>/`) — put this on a data
+  disk outside the repo, e.g. `./run_task.sh colectomy --out-root /data/pheno`.
+- `runtime/` (in-repo, gitignored) holds only small **coordination state**: the GPU lock and the
+  queue metadata. It is *not* where the large per-task files go.
 
 ## Running multiple tasks (GPU queue)
 
@@ -44,10 +51,13 @@ Each task already maximizes GPU use (per-model `split`/`dual` in `models.conf`),
 should run **one at a time**. `queue.sh` is a foolproof single-worker FIFO queue:
 
 ```bash
-./queue.sh add colectomy ibd crc   # enqueue; a background worker runs them in order
+./queue.sh add colectomy --out-root /data --slices 6          # enqueue one task
+./queue.sh add "colectomy --out-root /data" "ibd --out-root /data"   # several: quote each entry
 ./queue.sh list                     # show running + pending
 ./queue.sh stop                     # stop the worker after the current task finishes
 ```
+(Each queued task must include `--out-root` — the queue reuses it for the task's full run and
+its prep-ahead automatically.)
 
 The next task starts the instant the current one finishes. The worker survives terminal
 close, and a worker/box crash is safe — the interrupted task is re-queued and **resumes from
@@ -67,7 +77,7 @@ the GPU never sits idle waiting for a DB pull. Bounded to one task ahead; disabl
 When the cohort is too big for a single SQL pull, partition it into N buckets:
 
 ```bash
-./run_task.sh colectomy --slices 8
+./run_task.sh colectomy --out-root /data --slices 8
 ```
 
 Each bucket is pulled separately (server-side `ABS(CHECKSUM(PatientID)) % N`, so each pull
