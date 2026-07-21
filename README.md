@@ -150,3 +150,13 @@ mkdir -p ~/completeness/results
 | `--swa-full` | SWA = Sliding window attention. This may not be necessary but I've had errors when leaving it out that resolve when including it. See [main repo](https://github.com/ggml-org/llama.cpp) for details. 
 
 
+
+
+# To stay up-to-date with the GGML public repo:
+## Merge from ggerganov/ repo
+git checkout master
+git pull origin master --no-rebase
+# Manually resolve merges (or do in Merge editor in VS code), then do:
+git add .
+git commit
+
