@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Single entrypoint for the phenotyping pipeline.
 #
-#   ./run_task.sh <task> --out-root DIR [--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]
+#   ./run_task.sh <task> --out-root DIR [--notes CSV|--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]
 #
 # Runs, for the given task: preprocess (streams from SQL + builds inputs) -> infer(pass x
 # model) -> aggregate. Every step is guarded by a .done marker in runtime/<task>/, so a crash
@@ -16,7 +16,7 @@
 set -uo pipefail   # NOT -e: per-step fault isolation is handled by run_step
 
 # Print helpful error message if user runs with empty or unknown arguments
-usage() { echo "usage: $0 <task> --out-root DIR [--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]"; exit 2; }
+usage() { echo "usage: $0 <task> --out-root DIR [--notes CSV|--resume|--from <step>|--slices N|--force|--dry-run|--retry-errors]"; exit 2; }
 
 # If the number of arguments is 0, return error message via usage fn above
 [ $# -ge 1 ] || usage
@@ -25,7 +25,7 @@ usage() { echo "usage: $0 <task> --out-root DIR [--resume|--from <step>|--slices
 TASK="$1"; shift
 
 # Process the remaining args and assign the variables accordingly
-FROM=""; UNTIL=""; SLICES_ARG=""; OUT_ROOT_ARG=""; export FORCE=0 DRY_RUN=0; RETRY_ERRORS=0
+FROM=""; UNTIL=""; SLICES_ARG=""; OUT_ROOT_ARG=""; NOTES_CSV=""; export FORCE=0 DRY_RUN=0 RETRY_ERRORS=0
 while [ $# -gt 0 ]; do
     case "$1" in
         --resume)        ;;                       # default; ";;" serves as 'break' out of case statement
@@ -33,6 +33,7 @@ while [ $# -gt 0 ]; do
         --until)         UNTIL="${2:-}"; shift ;; # run through this step then stop (for prep-ahead)
         --slices)        SLICES_ARG="${2:-}"; shift ;; # partition cohort into N sliced pulls/inputs
         --out-root)      OUT_ROOT_ARG="${2:-}"; shift ;; # root for all working data (inputs/outputs/results)
+        --notes)         NOTES_CSV="${2:-}"; shift ;; # read notes from this CSV (e.g. exported by R) instead of SQL
         --force)         FORCE=1 ;;
         --dry-run)       DRY_RUN=1 ;;
         --retry-errors)  RETRY_ERRORS=1 ;;
@@ -46,6 +47,14 @@ done
 # results, markers, logs). No env-var fallback. Pass it consistently across runs of a task so
 # resumes find their state (queue.sh reuses it from the task entry automatically).
 [ -n "$OUT_ROOT_ARG" ] || { echo "error: --out-root <DIR> is required."; usage; }
+
+# --notes: read notes from a CSV (e.g. exported by R) instead of SQL. When set, the config's
+# preprocess_pass uses --notes; otherwise it falls back to --sql (which needs pyodbc). Exported
+# so the sourced config can see it.
+if [ -n "$NOTES_CSV" ]; then
+    [ -f "$NOTES_CSV" ] || { echo "error: --notes CSV not found: $NOTES_CSV"; exit 2; }
+fi
+export NOTES_CSV
 
 source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib.sh"
 
@@ -147,17 +156,19 @@ for m in "${MODELS[@]}"; do
 done
 
 # --------------------------------------------------------------------------
-# Step 1: preprocess = pull + build inputs. Notes are STREAMED from SQL directly into
-# excerpt extraction (make_inputs.py --sql), so no notes.csv is ever written. This is the
-# only DB touch, so it needs a valid Kerberos ticket.
+# Step 1: preprocess = read notes + build inputs. Notes come from --notes <csv> (e.g. exported
+# by R; no DB/Kerberos needed) or, if omitted, streamed from SQL (make_inputs.py --sql, needs a
+# Kerberos ticket). Either way excerpt extraction + chat formatting happen here.
 # --------------------------------------------------------------------------
 do_preprocess() {
-    [ "$DRY_RUN" = 1 ] || require_ticket
+    # A Kerberos ticket is only needed for the SQL pull; the --notes CSV path needs no DB.
+    if [ "$DRY_RUN" != 1 ] && [ -z "${NOTES_CSV:-}" ]; then require_ticket; fi
     [ "$FORCE" = 1 ] && export FORCE_INPUTS=1   # config passes --force to make_inputs
-    local fams; fams="$(families_for_models)"
+    local fams src; fams="$(families_for_models)"
+    [ -n "${NOTES_CSV:-}" ] && src="CSV $NOTES_CSV" || src="SQL"
     for entry in "${PASSES[@]}"; do
         local pass="${entry%%:*}"
-        log "preprocess pass '$pass' families=$fams slices=$SLICES (streaming notes from SQL)"
+        log "preprocess pass '$pass' families=$fams slices=$SLICES (notes from $src)"
         preprocess_pass "$pass" "$WORKDIR/inputs/$pass" "$fams" || return 1
     done
 }

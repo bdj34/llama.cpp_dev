@@ -105,7 +105,7 @@ case "$cmd" in
             case "$tname" in -*) echo "queue: 'add' — first argument must be a task name, got flag '$tname'."; exit 2 ;; esac
             while [ $# -gt 0 ]; do
                 case "$1" in
-                    --from|--until|--slices|--out-root) shift; [ $# -gt 0 ] && shift ;;   # value-taking flag: skip flag + value
+                    --from|--until|--slices|--out-root|--notes) shift; [ $# -gt 0 ] && shift ;;   # value-taking flag: skip flag + value
                     -*) shift ;;                                              # boolean/other flag
                     *)  echo "queue: ambiguous 'add' — flags are present, so only ONE task is allowed, but found an extra task '$1'."
                         echo "       When using flags, add tasks one at a time, e.g.:"

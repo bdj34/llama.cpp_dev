@@ -15,9 +15,12 @@ task's runs so resumes find their state.
 
 Steps (each guarded by a `.done` marker so a crash resumes by re-running the same command):
 
-1. **preprocess** — streams notes from SQL Server over Kerberos (`kticket` once) *directly*
-   into `python/make_inputs.py` (regex snippet extraction + chat formatting) → sharded
-   `input.txt` / `ptIDs.txt` per pass. No `notes.csv` is written. *(The only DB interaction.)*
+1. **preprocess** — reads notes and does regex snippet extraction + chat formatting in
+   `python/make_inputs.py` → sharded `input.txt` / `ptIDs.txt` per pass. Notes come from either:
+   - **`--notes <csv>`** — a CSV (e.g. exported from R), *recommended* / the only option where
+     Python can't reach SQL Server. No Kerberos ticket needed. See "Notes CSV format" below.
+   - **`--sql`** (default in the config if `--notes` is omitted) — streams from SQL Server over
+     Kerberos (`kticket` once) directly, writing no `notes.csv`. Needs a working `pyodbc`.
 2. **infer** — `../build/bin/llama-data-extraction` per pass, grouped by model (each GGUF
    loads once). Per-`(pass,model)` `.done` markers.
 3. **aggregate** — `python/aggregate.py` per-field consensus across models → `results.csv`.
@@ -31,6 +34,29 @@ Steps (each guarded by a `.done` marker so a crash resumes by re-running the sam
 | `ibd`                 | IBD-dx notes | diagnosis type + confirmation + year |
 | `colectomy`           | colectomy notes | yes/no + type + segments + date |
 | `crc`                 | CRC free-text notes | yes/no + confidence + date |
+
+## Notes CSV format (`--notes`)
+
+When you pull notes in R and hand them to the pipeline as a CSV, it must contain these four
+columns (a header row is recommended — columns are then matched **by name**, any order; without
+a header, the positional order below is assumed):
+
+| column | contents |
+| :--- | :--- |
+| `PatientID` | patient identifier (also the hash key for `--slices`) |
+| `EntryDateTime` | note datetime, `YYYY-MM-DD HH:MM:SS` (used for the note-date label) |
+| `NoteID` | note identifier |
+| `ReportText` | full note text (newlines fine; standard CSV quoting) |
+
+Typical R export, then run:
+```r
+write.csv(notes, "colectomy_notes.csv", row.names = FALSE)   # notes: the 4 columns above
+```
+```bash
+./run_task.sh colectomy --notes colectomy_notes.csv --out-root /data --slices 8
+```
+With `--notes`, no Kerberos ticket or `pyodbc` is used. `--slices` still works (client-side hash
+partition of the CSV), giving the same per-slice resumable inference as the SQL path.
 
 ## Layout
 
