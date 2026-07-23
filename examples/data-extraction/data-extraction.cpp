@@ -285,6 +285,7 @@ int main(int argc, char ** argv) {
     outFile2 << "Start date-time: " << dateTimeOutFile << std::endl;
     outFile2 << "Output file format (tab-separated): {Model answer, with newlines escaped}\t{Patient ID or SurgPathID}" << std::endl << std::endl;   
     outFile2 << "Model path: " << params.model.path << std::endl << std::endl;
+    outFile2 << "Sampling params (resolved, incl. defaults):" << std::endl << params.sampling.print() << std::endl << std::endl;
     outFile2 << "Input file path: " << params.prompt_file << std::endl;
     outFile2 << "Patient ID file path (if applicable): " << params.IDfile << std::endl;
     outFile2 << "Reading until line" << n_seq << std::endl << std::endl;
