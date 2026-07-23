@@ -47,12 +47,39 @@ from typing import Optional
 
 csv.field_size_limit(min(sys.maxsize, 2**31 - 1))
 
-_DATE_FORMATS = ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M:%S.%f", "%Y-%m-%d %H:%M", "%Y-%m-%d")
+# Tolerant date matcher: pulls the leading Y-M-D (with optional time) out of whatever the note
+# datetime looks like. Handles the ISO 8601 form data.table::fwrite writes ("2020-05-01T09:00:00Z"),
+# the space form ("2020-05-01 09:00:00"), date-only, and "/" separators -- ignoring any trailing
+# fractional seconds / "Z" / timezone offset. This is the format that dropped every patient when
+# it was an enumerated strptime list that did not include the "T...Z" variant.
+_DT_RE = re.compile(r"\s*(\d{4})[-/](\d{1,2})[-/](\d{1,2})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?")
 _WS = re.compile(r"\s+")
 # For dedup only: collapse 1-3 digit numbers (lab values, vitals, doses that vary between
 # copy-forwards), but NEVER a number touching a date separator -- so "3/2016" and "4/2016"
 # stay distinct instead of both becoming "#/2016". 4-digit years are never matched here.
 _SHORTNUM = re.compile(r"(?<![\d/\-])\d{1,3}(?![\d/\-])")
+
+
+# ---------------------------------------------------------------------------
+# Progress output. Two kinds of line share the terminal, so route both through
+# these helpers to avoid one shorter line leaving the tail of a longer one behind:
+#   _progress -> transient, overwritten in place (a counter that keeps updating)
+#   _logline  -> committed, stays on its own line (a per-bucket / final summary)
+# On a TTY we use CR + clear-to-end-of-line (\033[K) so a short line fully erases a
+# long one; when stderr is redirected to a file we just print plain lines (no CR
+# soup), so `... 2> run.log` is clean and readable.
+# ---------------------------------------------------------------------------
+_TTY = sys.stderr.isatty()
+
+
+def _progress(msg: str):
+    sys.stderr.write(("\r" + msg + "\033[K") if _TTY else (msg + "\n"))
+    sys.stderr.flush()
+
+
+def _logline(msg: str):
+    sys.stderr.write(("\r\033[K" + msg + "\n") if _TTY else (msg + "\n"))
+    sys.stderr.flush()
 
 
 @dataclass
@@ -158,9 +185,8 @@ def _iter_buckets(bucket_dir: Path):
                 # per row and nothing else (no extra passes over the data).
                 nrows += 1
                 if nrows % 200000 == 0:
-                    sys.stderr.write(f"\r  [{bucket}] reading... {nrows:,} rows")
-                    sys.stderr.flush()
-        print(f"\r  [{bucket}] read {nrows:,} rows, {len(by_pt):,} patients      ", file=sys.stderr)
+                    _progress(f"  [{bucket}] reading... {nrows:,} rows")
+        _logline(f"  [{bucket}] read {nrows:,} rows, {len(by_pt):,} patients")
         for pid, rows in by_pt.items():
             yield pid, rows
 
@@ -176,18 +202,21 @@ def _iter_single_csv(path: Path):
 
 
 def _parse_dt(value: str) -> Optional[datetime]:
-    """Parse a note timestamp, trying several formats in turn; return None for blank/NULL/
-    unparseable values. Notes without a usable date are skipped downstream, since every
-    snippet needs a date label and a chronological sort key."""
+    """Parse a note timestamp leniently (see _DT_RE): accepts ISO 8601 with T/Z/offset, the
+    space-separated form, date-only, and "/" separators. Returns None for blank/NULL/unparseable
+    values -- those notes are skipped downstream, since every snippet needs a date label and a
+    chronological sort key. (A too-strict version here silently drops every note -> every patient.)"""
     value = (value or "").strip()
     if not value or value.upper() == "NULL":
         return None
-    for fmt in _DATE_FORMATS:
-        try:
-            return datetime.strptime(value, fmt)
-        except ValueError:
-            continue
-    return None
+    m = _DT_RE.match(value)
+    if not m:
+        return None
+    y, mo, d, hh, mi, ss = m.groups()
+    try:
+        return datetime(int(y), int(mo), int(d), int(hh or 0), int(mi or 0), int(ss or 0))
+    except ValueError:
+        return None
 
 
 # --------------------------------------------------------------------------
@@ -527,15 +556,19 @@ def run(cfg: TaskConfig):
     no_snip_w = (outdir / "audit_no_snippets.txt").open("w", encoding="utf-8")
     no_prio_w = (outdir / "audit_no_priority.txt").open("w", encoding="utf-8") if cfg._priority else None
 
-    n_seen = n_pts = n_lines = n_dropped = n_noprio = 0
+    n_seen = n_pts = n_lines = n_dropped = n_noprio = n_nodate = 0
     for pid, rows in _iter_source(args):
         n_seen += 1
         if n_seen % 2000 == 0:
-            sys.stderr.write(f"\r  processing... {n_seen:,} patients seen, {n_pts:,} kept, "
-                             f"{n_dropped:,} dropped")
-            sys.stderr.flush()
+            _progress(f"  processing... {n_seen:,} patients seen, {n_pts:,} kept, {n_dropped:,} dropped")
         pool = _build_pool(rows, cfg)
         if not pool:
+            # Distinguish the two drop reasons so a systemic problem is obvious: a patient whose
+            # notes ALL have an unparseable date (a format/schema issue -> the whole run is bad)
+            # vs one with dates but no concept match (a genuine negative). Re-parsing only the
+            # dropped patients' dates is cheap relative to snippet cutting.
+            if not any(_parse_dt(r["NoteDateTime"]) for r in rows):
+                n_nodate += 1
             no_snip_w.write(f"{pid}\n")
             n_dropped += 1
             continue
@@ -564,8 +597,9 @@ def run(cfg: TaskConfig):
 
     summary = (f"[{cfg.name}] {n_seen:,} patients seen | {n_pts:,} kept "
                f"({n_lines:,} rows/replicate x {n_reps} replicates) | "
-               f"{n_dropped:,} dropped (no snippet, see audit_no_snippets.txt)")
+               f"{n_dropped:,} dropped (no snippet, see audit_no_snippets.txt; "
+               f"of these {n_nodate:,} had NO parseable note date -- a date-format problem if high)")
     if cfg._priority:
         summary += f" | {n_noprio:,} kept without a priority anchor (audit_no_priority.txt)"
     (outdir / "audit_summary.txt").write_text(summary + "\n", encoding="utf-8")
-    print("\r" + summary + "   ", file=sys.stderr)
+    _logline(summary)
