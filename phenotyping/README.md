@@ -1,125 +1,134 @@
-# Phenotyping pipeline
+# Phenotyping inference queue
 
-Self-contained, single-entrypoint LLM phenotyping pipeline. Supersedes the per-variable
-copy-pasted scripts in `../reproduce_results/`. Runs entirely on the GPU box.
+A minimal, crash-proof way to run a batch of LLM extraction jobs on the GPU box and walk away.
+Preprocessing is a **separate** step (see [python/](python/)); this half only runs
+`llama-data-extraction` and is designed to survive the GPU being shut down for maintenance mid-run.
 
-Each **task** (an extraction *domain*) runs end-to-end via one command:
+## Model
+
+The whole thing rests on one idea: **all resume state lives on disk in the results directory.**
+`llama-data-extraction` writes a timestamped `output_<datetime>.txt` per run into its `--outDir`,
+with one tab-separated row per input (`<answer>\t<ID>`, or `Error\t<ID>`). So "which IDs are done"
+is just "which IDs already appear in those files." Every job is therefore idempotent: re-running it
+recomputes what's left and continues. No `.done` markers, no checkpoints, nothing to corrupt.
+
+A **job** is one line: `<task> <model> <replicate> <retry>` (retry `T`/`F`). Its output goes to
+`results/<task>/<model>/rep<r>/` (so a model run over multiple replicates, or thinking vs
+non-thinking variants, never collide).
+
+## Prerequisites
+
+1. Build the tool: `../build/bin/llama-data-extraction`.
+2. Make the inputs with the extractors, e.g. `python/extract_ibd.py --buckets ... --out-dir /data/pheno/ibd`
+   (produces `inputs_<r>.txt` + `IDs_<r>.txt`).
+3. Fill in config/jobs.conf (one row per task x model).
+4. `flock` (standard on Linux) enables the per-worker singleton + per-card locks; without it there's
+   an automatic `mkdir` fallback, so it's still safe.
+
+## Config
+
+One file, `config/jobs.conf` — one row per **job = (task, model, replicate, retry)**:
+```
+task | model | replicate | retry | gguf | prompt_dir | promptFormat | grammar | input_dir | args
+```
+Each row fully specifies a job, so `./queue.sh add-all` enqueues every row. `replicate` is the
+consensus assignment (give a task's models different replicates so they read the complementary
+`inputs_<r>.txt` subsamples). This is the right granularity because most inference args depend on
+**both**: a task's input length against a model's VRAM sets `--ctx-size`/`--parallel`, and the task's
+answer length plus the model's thinking mode sets `--n-predict`. Thinking vs non-thinking also use a
+different `grammar` and `promptFormat` — all per-row here, so a variant is just another row.
+
+- `retry` → `T` or `F`, part of the key. `F` = normal run. `T` = a separate row (same
+  task/model/replicate, `retry=T`) that reprocesses only this job's error-only IDs with that row's
+  settings (see [Errors](#errors-handled-manually)).
+- `prompt_dir` → system prompt `system_prompts/<prompt_dir>/<task>.txt`.
+- `promptFormat` → `--promptFormat` (must be tool-recognized).
+- `args` → inference flags for this job (`--ctx-size`, `--parallel`, `--n-predict`, `--batch-size`,
+  `--n-gpu-layers`, `--temp` + thinking `--top-k`/`--top-p`, `--no-escape`, `--swa-full`). **No GPU
+  placement** and no `--promptFormat` (own column): every job runs on **one card** automatically —
+  the per-card worker's card under the queue, or card 0 for a bare `run_one.sh` without `--gpu`.
+
+The model fields repeat across a model's tasks and the task fields across a task's models — the cost
+of one self-contained line per job.
+
+## Running
 
 ```bash
-./run_task.sh <task> --out-root DIR [--resume|--from STEP|--slices N|--force|--dry-run|--retry-errors]
+./queue.sh add-all                               # enqueue EVERY job row in config/jobs.conf
+./queue.sh add ibd gemma4-26B-A4B-thinking 1     # ... or enqueue one job
+./queue.sh list                                  # show the manifest
+./queue.sh start                                 # launch workers (both cards by default) / resume
+./queue.sh stop                                  # stop after the current job
 ```
-
-`--out-root DIR` is **required** — it's the root for all of the task's working data
-(`DIR/<task>/`: inputs, LLM outputs, results, markers, logs). Pass it consistently across a
-task's runs so resumes find their state.
-
-Steps (each guarded by a `.done` marker so a crash resumes by re-running the same command):
-
-1. **preprocess** — reads notes and does regex snippet extraction + chat formatting in
-   `python/make_inputs.py` → sharded `input.txt` / `ptIDs.txt` per pass. Notes come from either:
-   - **`--notes <csv>`** — a CSV (e.g. exported from R), *recommended* / the only option where
-     Python can't reach SQL Server. No Kerberos ticket needed. See "Notes CSV format" below.
-   - **`--sql`** (default in the config if `--notes` is omitted) — streams from SQL Server over
-     Kerberos (`kticket` once) directly, writing no `notes.csv`. Needs a working `pyodbc`.
-2. **infer** — `../build/bin/llama-data-extraction` per pass, grouped by model (each GGUF
-   loads once). Per-`(pass,model)` `.done` markers.
-3. **aggregate** — `python/aggregate.py` per-field consensus across models → `results.csv`.
-
-## Tasks
-
-| task | notes | extracts |
-| :--- | :--- | :--- |
-| `colonoscopy_report` | VA colonoscopy reports + linked pathology | all endoscopic + pathology findings (gate → link → merged extraction) |
-| `colonoscopy_timing`  | GP/progress notes | external/internal colonoscopy occurrence + date |
-| `ibd`                 | IBD-dx notes | diagnosis type + confirmation + year |
-| `colectomy`           | colectomy notes | yes/no + type + segments + date |
-| `crc`                 | CRC free-text notes | yes/no + confidence + date |
-
-## Notes CSV format (`--notes`)
-
-When you pull notes in R and hand them to the pipeline as a CSV, it must contain these four
-columns (a header row is recommended — columns are then matched **by name**, any order; without
-a header, the positional order below is assumed):
-
-| column | contents |
-| :--- | :--- |
-| `PatientID` | patient identifier (also the hash key for `--slices`) |
-| `EntryDateTime` | note datetime, `YYYY-MM-DD HH:MM:SS` (used for the note-date label) |
-| `NoteID` | note identifier |
-| `ReportText` | full note text (newlines fine; standard CSV quoting) |
-
-Typical R export, then run:
-```r
-write.csv(notes, "colectomy_notes.csv", row.names = FALSE)   # notes: the 4 columns above
-```
+You can also run a single job directly, resumable on its own:
 ```bash
-./run_task.sh colectomy --notes colectomy_notes.csv --out-root /data --slices 8
+./run_one.sh ibd gemma4-26B-A4B-thinking 1
 ```
-With `--notes`, no Kerberos ticket or `pyodbc` is used. `--slices` still works (client-side hash
-partition of the CSV), giving the same per-slice resumable inference as the SQL path.
+
+### How the workers use the GPUs
+
+Every job runs on **one card**. `./queue.sh start` launches **one worker per card** (default cards
+`0,1`), so both GPUs run *different* jobs at once; when a card frees up its worker immediately claims
+the next unclaimed job (jobs are locked so the two cards never run the same one). This keeps both
+cards saturated — it's the normal mode and needs no flags.
+
+Override the card set with the `CARDS` env var or `--cards`: `CARDS=0 ./queue.sh start` (or
+`./queue.sh start --cards 0`) for a single-GPU box, or `--cards 0,1,2,3` for four cards.
+
+## Resume after maintenance (no root needed)
+
+Because state is on disk, resuming is just running the worker again. Put this in your **own**
+crontab (`crontab -e`, no sudo) — `worker` (not `start`) so a pending `stop` is respected, and it
+no-ops if a worker is already running or everything is done. One line per card:
+```
+*/5 * * * * /ABS/PATH/phenotyping/queue.sh worker 0  >> /ABS/PATH/phenotyping/runtime/cron.log 2>&1
+*/5 * * * * /ABS/PATH/phenotyping/queue.sh worker 1  >> /ABS/PATH/phenotyping/runtime/cron.log 2>&1
+```
+This covers both a full reboot and the "processes killed, box stays up" case. A job interrupted
+partway through simply resumes from the IDs already written (rows are flushed per-ID, so nothing
+beyond the in-flight batch is redone).
+
+## Errors (handled manually)
+
+The tool isolates per-input failures (one bad input can't crash a run) and writes `Error\t<ID>`;
+grammar runaways are auto-retried grammar-free. Normal resume treats an errored ID as done, so it is
+**not** retried automatically.
+```bash
+./queue.sh errors                        # report error-only IDs per job
+```
+To re-run a job's failures — optionally **with different settings** — add a **second row** for it
+with `retry=T` (same `task/model/replicate`, new `args`/`promptFormat`/`gguf`), then re-run the
+queue. A `T` job reprocesses only the error-only IDs (successful IDs untouched) and writes to the
+same outDir. Both rows are enqueued by `add-all`; each queue run does one retry pass, so remove the
+`T` row (or leave it — it no-ops once there are no errors) when you're done. Add `T` rows *after* the
+`F` run has produced errors. `./run_one.sh <task> <model> <rep>` runs the `F` row; add `T` as a 4th
+arg (`./run_one.sh ibd gemma 1 T`) to run the retry row directly.
+
+## What gets recorded (per run)
+
+In each `results/<task>/<model>/rep<r>/`:
+- `output_<datetime>.txt` — the answers (`<answer>\t<ID>`), the resume source of truth.
+- `invocation_<datetime>.txt` — the **exact command** `run_one` executed (every flag/value).
+- `metadata_<datetime>.txt` — written by the tool: the prompt used **and** the fully-resolved
+  sampling parameters (`params.sampling.print()`, including defaults you didn't set).
+- `log_<datetime>.txt` — the tool's run log.
+
+Together, `invocation_*` (what we ran) + `metadata_*` (resolved sampler + prompt) fully document each
+batch. A resume produces a new set of these files alongside the old ones.
+
+## Note on editing prompts mid-queue
+
+The prompt file is read when a job's process launches, not when it's queued — so you can edit a
+task's prompt any time before its job starts and it will be picked up. If you edit a prompt *after*
+that job has already produced outputs, the finished IDs keep the old prompt and only the remaining
+ones get the new one; to reprocess uniformly, delete that `results/<task>/<model>/rep<r>/` first.
 
 ## Layout
 
-- `config/models.conf` — model registry (gguf path, format, ctx, parallel, n_predict, …).
-- `config/<task>.conf` — per-task passes, grammars, prompts, models, consensus rule.
-- `sql/<task>.sql` — parameterized note-pull query.
-- `python/` — `db.py` (streams notes from SQL), `make_inputs.py` (preprocess, `--sql` streams
-  or `--notes` CSV), `aggregate.py` (consensus). `db_pull.py` is an optional CSV sample-dumper.
-- `lib.sh` — shared bash helpers (logging, step runner, kinit, sharding).
-- **Task data** goes under the required `--out-root DIR` (`DIR/<task>/`) — put this on a data
-  disk outside the repo, e.g. `./run_task.sh colectomy --out-root /data/pheno`.
-- `runtime/` (in-repo, gitignored) holds only small **coordination state**: the GPU lock and the
-  queue metadata. It is *not* where the large per-task files go.
-
-## Running multiple tasks (GPU queue)
-
-Each task already maximizes GPU use (per-model `split`/`dual` in `models.conf`), so tasks
-should run **one at a time**. `queue.sh` is a foolproof single-worker FIFO queue:
-
-```bash
-./queue.sh add colectomy --out-root /data --slices 6          # enqueue one task
-./queue.sh add "colectomy --out-root /data" "ibd --out-root /data"   # several: quote each entry
-./queue.sh list                     # show running + pending
-./queue.sh stop                     # stop the worker after the current task finishes
-```
-(Each queued task must include `--out-root` — the queue reuses it for the task's full run and
-its prep-ahead automatically.)
-
-The next task starts the instant the current one finishes. The worker survives terminal
-close, and a worker/box crash is safe — the interrupted task is re-queued and **resumes from
-its last `.done` marker**. Two layers of serialization make it foolproof:
-1. **queue.sh** — a single worker runs tasks FIFO (ordering + auto-next).
-2. **run_task.sh** — a `flock` GPU mutex around the infer step, so no two inferences ever
-   share the GPUs even outside the queue (e.g. a hand-launched run or an orphaned task).
-
-**Prep-ahead (no GPU idle between tasks):** while the current task is on the GPU, the worker
-runs the *next* task's SQL pull + preprocessing in the background (`run_task.sh <next>
---until preprocess`). When the current task finishes, the next goes straight to inference —
-the GPU never sits idle waiting for a DB pull. Bounded to one task ahead; disable with
-`QUEUE_PREP_AHEAD=0`. (`run_task.sh --until <step>` runs through a step then stops.)
-
-## Large cohorts (`--slices N`)
-
-When the cohort is too big for a single SQL pull, partition it into N buckets:
-
-```bash
-./run_task.sh colectomy --out-root /data --slices 8
-```
-
-Each bucket is pulled separately (server-side `ABS(CHECKSUM(PatientID)) % N`, so each pull
-fetches ~1/N of patients) and produces its own `sliceK/{system,input,ptIDs}.txt`. Inference
-then runs **per slice** with per-`(pass,model,slice)` `.done` markers, so a crash on a huge
-cohort resumes at the current slice rather than restarting. `aggregate.py` unions all slices
-(disjoint patient sets) into one `results.csv`. The slice count is persisted per task, so
-resumes stay consistent; `--force` regenerates. Requires a `{SLICE_FILTER}` placeholder on the
-cohort select in `sql/<task>.sql` (see `sql/colectomy.sql`). Composes with `dual` GPU mode
-(each slice is further split across GPUs).
-
-## Robustness (unattended multi-week runs)
-
-- **Per-input fault tolerance** in `llama-data-extraction`: a per-pass `--n-predict` cap stops
-  grammar-driven runaway generation; the offending input is automatically re-run **grammar-free**
-  and its raw output captured (tagged `NO_GRAMMAR`) for lenient parsing. Hard failures are logged
-  `Error\t<ID>` instead of crashing the run.
-- `--retry-errors` re-runs only the IDs that failed.
-- Flash attention is forced on (`-fa on`) to match prior runs (upstream default is now `auto`).
+- `config/` — `jobs.conf` (one row per task x model).
+- `run_one.sh` — the idempotent single-job unit (filter to remaining -> run, under the GPU lock).
+- `queue.sh` — manifest + single worker (`add`/`start`/`stop`/`list`/`errors`/`rerun-errors`).
+- `lib.sh` — config lookup, logging, GPU lock.
+- `runtime/` — coordination state only (GPU lock, `_queue/` manifest + worker log); gitignored.
+- `results/` (or your `RESULTS_ROOT`) — per-job output dirs.
+- `python/` — the standalone input builders (`extract_*.py`, `snippet_lib.py`).
