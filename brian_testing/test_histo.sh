@@ -13,9 +13,9 @@ cd /Users/brianjohnson/VA_IBD/llama.cpp_dev_merge_public
 --promptFormat gemma2
 
 # Gemma 4
-cd /Users/brianjohnson/VA_IBD/llama.cpp_dev_merge_public
+cd /Users/brianjohnson/VA_IBD/llama.cpp_dev
 ./build/bin/llama-data-extraction \
--m ~/Downloads/models_gguf/google_gemma-4-26B-A4B-it-Q4_K_M.gguf \
+-m ~/Downloads/models_gguf/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
 -sysf ./system_prompts/gemma/histologic_colitis.txt \
 --no-escape \
 --sequences 5 --parallel 5 \

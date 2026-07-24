@@ -14,3 +14,5 @@ cd ~/llama.cpp_2025_06_10
 --outDir ~/completeness/results \
 --file ~/completeness/inputs/inputs.txt \
 --promptFormat gemma2
+
+

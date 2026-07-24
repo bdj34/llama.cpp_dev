@@ -1,5 +1,0 @@
-<think>\n\n</think>\n\nAnswer: Yes. Confidence: Certain.\nDiagnosis year: 2019. Diagnosis month: January.<|im_end|>	1
-<think>\n\n</think>\n\nAnswer: Yes. Confidence: Certain.\nDiagnosis year: 2018. Diagnosis month: Unknown.<|im_end|>	2
-<think>\n\n</think>\n\nAnswer: No. Confidence: Certain.<|im_end|>	3
-<think>\n\n</think>\n\nAnswer: Yes. Confidence: Certain.\nDiagnosis year: 2020. Diagnosis month: Unknown.<|im_end|>	4
-<think>\n\n</think>\n\nAnswer: No. Confidence: High.\nDiagnosis year: Unknown. Diagnosis month: Unknown.<|im_end|>	5
