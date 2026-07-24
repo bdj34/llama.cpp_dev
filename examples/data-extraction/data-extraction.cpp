@@ -113,12 +113,14 @@ std::string generatePreAnswer(const std::string& promptFormat) {
         return "<|im_end|>\n<|im_start|>assistant<|im_sep|>\n";
     } else if (promptFormat == "gemma2") {
         return "<end_of_turn>\n<start_of_turn>model\n";
-    } else if (promptFormat == "gemma4") {
-        return "\n<turn|>\n<|turn>model\n";
-    } else if (promptFormat == "gemma4_nonThinking") {
-        return "\n<turn|>\n<|turn>model\n<|channel>thought\n<channel|>";
-    } else if (promptFormat == "qwen") {
-        return "<|im_end|>\n<|im_start|>assistant";
+    } else if (promptFormat == "gemma4-thinking") {
+        return "<turn|>\n<|turn>model\n";
+    } else if (promptFormat == "gemma4-nonThinking") {
+        return "<turn|>\n<|turn>model\n<|channel>thought\n<channel|>";
+    } else if (promptFormat == "qwen-thinking") {
+        return "<|im_end|>\n<|im_start|>assistant\n<think>\n";
+    } else if (promptFormat == "qwen-nonThinking") {
+        return "<|im_end|>\n<|im_start|>assistant\n<think>\n\n</think>\n\n";
     } else if (promptFormat == "R1") {
         return "<｜Assistant｜>\n";
     } else if (promptFormat == "raw") {
@@ -127,7 +129,7 @@ std::string generatePreAnswer(const std::string& promptFormat) {
         // The tool appends nothing, so it stays model-agnostic (no per-model C++ edits).
         return "";
     } else {
-        throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, phi4, llama3, mistral, qwen, R1, raw.");
+        throw std::runtime_error("Error: prompt format not recognized. Recognized options are: gemma2, gemma4-thinking, gemma4-nonThinking, phi4, llama3, mistral, qwen-thinking, qwen-nonThinking, R1, raw (if inputs are already appended with formatting).");
     }
 }
 
@@ -138,7 +140,7 @@ static void print_date_time() {
     strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", local_time);
 
     LOG_INF("\n");
-    LOG_INF("\033[35mrun parameters as of %s\033[0m\n", buffer);
+    LOG_INF(LOG_COL_MAGENTA "run parameters as of %s" LOG_COL_DEFAULT "\n", buffer);
     LOG_INF("\n");
 }
 
@@ -222,14 +224,14 @@ int main(int argc, char ** argv) {
     } else {
         // Output each line of the input params.prompts vector and copy to k_prompts
         int index = 0;
-        LOG_INF("\033[32mNow printing the external prompt file %s\033[0m\n\n", params.prompt_file.c_str());
+        LOG_INF(LOG_COL_GREEN "Now printing the external prompt file %s" LOG_COL_DEFAULT "\n\n", params.prompt_file.c_str());
 
         // Create and open a text file (if input is to be saved)
         if(params.saveInput){
 
             // Check if the file was opened successfully
             if (!outFile1) {
-                std::cerr << "Failed to open the input prompt out file." << std::endl;
+                LOG_ERR("Failed to open the input prompt out file.\n");
                 return 1; // Return with error code
             }
         }else{
@@ -277,7 +279,7 @@ int main(int argc, char ** argv) {
 
     // Check if the file was opened successfully
     if (!outFile2) {
-        std::cerr << "Failed to open the metadata out file." << std::endl;
+        LOG_ERR("Failed to open the metadata out file.\n");
         return 1; // Return with error code
     }
 
@@ -308,7 +310,7 @@ int main(int argc, char ** argv) {
     // Initialize system prompt token vec
     std::vector<llama_token> tokens_system;
     // Print the string and tokenize
-    printf("System prompt: %s\n", k_system.c_str());
+    LOG_INF("System prompt: %s\n", k_system.c_str());
     tokens_system = common_tokenize(ctx, k_system, true, true);
     const int32_t n_tokens_system = tokens_system.size();
 
@@ -359,7 +361,7 @@ int main(int argc, char ** argv) {
     std::ofstream outFile3(outputFile.c_str());
     // Check if the file was opened successfully
     if (!outFile3) {
-        std::cerr << "Failed to open the output out file." << std::endl;
+        LOG_ERR("Failed to open the output out file.\n");
         return 1; // Return with error code
     }
 
@@ -464,9 +466,9 @@ int main(int argc, char ** argv) {
                     client.i_batch   = batch.n_tokens - 1;
 
                     if(params.IDfile.empty()){
-                        LOG_INF("\n\n\033[0mClient %3d, seq %4d, started decoding ...%s\033[0m\n", client.id, client.seq_id, is_retry ? " (grammar-free retry)" : "");
+                        LOG_INF("Client %3d, seq %4d, started decoding ...%s\n", client.id, client.seq_id, is_retry ? " (grammar-free retry)" : "");
                     }else{
-                        LOG_INF("\n\n\033[0mClient %3d, Patient %s, seq %4d, started decoding ...%s\033[0m\n", client.id, client.inputID.c_str(), client.seq_id, is_retry ? " (grammar-free retry)" : "");
+                        LOG_INF("Client %3d, Patient %s, seq %4d, started decoding ...%s\n", client.id, client.inputID.c_str(), client.seq_id, is_retry ? " (grammar-free retry)" : "");
                     }
 
                     if (!is_retry) {
@@ -570,7 +572,7 @@ int main(int argc, char ** argv) {
                 if (client.n_decoded > 2 && (hit_eog || hit_cap)) {
 
                     if (client.inputID.empty()) {
-                        std::cerr << "No ID given to identify each input!" << std::endl;
+                        LOG_ERR("No ID given to identify each input!\n");
                         return 1;
                     }
 
@@ -581,11 +583,11 @@ int main(int argc, char ** argv) {
 
                     if (runaway && !client.no_grammar) {
                         retry_queue.push_back({ client.input, client.inputID });
-                        LOG_INF("\n\033[91mGrammar runaway (hit n_predict=%d without EOG), ID %s -> queued grammar-free retry\033[0m", params.n_predict, client.inputID.c_str());
+                        LOG_INF(LOG_COL_RED "Grammar runaway (hit n_predict=%d without EOG), ID %s -> queued grammar-free retry" LOG_COL_DEFAULT "\n", params.n_predict, client.inputID.c_str());
                     } else if (runaway && client.no_grammar) {
                         // Even the grammar-free retry ran to the cap: give up, write an Error row.
                         outFile3 << "Error" << "\t" << client.inputID << std::endl;
-                        LOG_INF("\n\033[91mGrammar-free retry still ran away, ID %s -> wrote Error\033[0m", client.inputID.c_str());
+                        LOG_INF(LOG_COL_RED "Grammar-free retry still ran away, ID %s -> wrote Error" LOG_COL_DEFAULT "\n", client.inputID.c_str());
                     } else {
                         // Clean stop (EOG). Tag grammar-free-retry rows with a 3rd column so
                         // aggregate.py knows to parse them leniently (they are unconstrained).
@@ -602,19 +604,14 @@ int main(int argc, char ** argv) {
 
                     const auto t_main_end = ggml_time_us();
 
-                    LOG_INF("\033[0m \nInput:\n\033[96m%s\033[91m%s\033[0m\n\033[92mJust completed: Patient: %s, sequence %3d of %3d, prompt: %4d tokens, response: %4d tokens, time: %5.2f seconds, speed %5.2f t/s",
-                            //escapeNewLines(client.input).c_str(),
+                    LOG_INF("\nInput:\n" LOG_COL_CYAN "%s" LOG_COL_YELLOW "%s" LOG_COL_DEFAULT "\n",
                             client.input.c_str(),
-                            client.response.c_str(),
+                            client.response.c_str());
+
+                    LOG_INF(LOG_COL_GREEN "Just completed: Patient: %s, sequence %3d of %3d, prompt: %4d tokens, response: %4d tokens, time: %5.2f seconds, speed %5.2f t/s" LOG_COL_DEFAULT "\n\n",
                             client.inputID.c_str(), client.seq_id, n_seq, client.n_prompt, client.n_decoded,
                             (t_main_end - client.t_start_prompt) / 1e6,
                             (double) (client.n_prompt + client.n_decoded) / (t_main_end - client.t_start_prompt) * 1e6);
-                            // n_cache_miss,
-                            //k_system.c_str(),
-                            //::trim(prompts[promptNumber]).c_str());
-                    
-                    LOG_INF("\nJust completed ID: %s",
-                        client.inputID.c_str());
 
                     n_total_prompt += client.n_prompt;
                     n_total_gen    += client.n_decoded;
@@ -635,7 +632,7 @@ int main(int argc, char ** argv) {
 
     // Check if the file was opened successfully
     if (!metaFile) {
-        std::cerr << "Failed to open the metadata out file." << std::endl;
+        LOG_ERR("Failed to open the metadata out file.\n");
         return 1; // Return with error code
     }
 
@@ -651,8 +648,8 @@ int main(int argc, char ** argv) {
     if (params.prompt_file.empty()) {
         params.prompt_file = "used built-in defaults";
     }
-    LOG_INF("External prompt file: \033[32m%s\033[0m\n", params.prompt_file.c_str());
-    LOG_INF("Model and path used:  \033[32m%s\033[0m\n\n", params.model.path.c_str());
+    LOG_INF("External prompt file: " LOG_COL_GREEN "%s" LOG_COL_DEFAULT "\n", params.prompt_file.c_str());
+    LOG_INF("Model and path used:  " LOG_COL_GREEN "%s" LOG_COL_DEFAULT "\n\n", params.model.path.c_str());
 
     LOG_INF("Total prompt tokens: %6d, speed: %5.2f t/s\n", n_total_prompt, (double) (n_total_prompt              ) / (t_main_end - t_main_start) * 1e6);
     LOG_INF("Total gen tokens:    %6d, speed: %5.2f t/s\n", n_total_gen,    (double) (n_total_gen                 ) / (t_main_end - t_main_start) * 1e6);
