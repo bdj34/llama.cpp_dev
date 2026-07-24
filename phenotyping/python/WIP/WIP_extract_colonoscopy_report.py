@@ -107,8 +107,8 @@ def main():
     outdir = Path(args.out_dir)
     outdir.mkdir(parents=True, exist_ok=True)
     n_reps = args.replicates
-    in_w = [(outdir / f"input_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
-    id_w = [(outdir / f"ptIDs_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
+    in_w = [(outdir / f"inputs_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
+    id_w = [(outdir / f"IDs_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
 
     source = _iter_buckets(Path(args.buckets)) if args.buckets else _iter_single_csv(Path(args.notes))
     n_reports = 0

@@ -33,28 +33,25 @@ CONFIG = TaskConfig(
     ignore_regex=(
         r"(?i)(?:recommend|schedul\w*|due\s+for|plan(?:ned|s|ning)?\s+for|"
         r"will\s+(?:need|schedule|get)|refer\w*\s+for|should\s+(?:have|get|undergo)|"
-        r"advis\w*|order\w*\s+for)\W{0,25}(?:a\s+)?(?:screening\s+|surveillance\s+)?colonoscop"
+        r"advis\w*|order\w*\s+for).{0,25}?(?:screening\s+|surveillance\s+|repeat\s+)?colonoscop"
     ),
 
     # Overrides the ignore above: a colonoscopy mention carrying a PAST-event cue (a year,
     # had / last / ago / prior / status post / underwent / performed on) is a real event and
     # is kept. (In chunk mode this flag is used only to protect snippets from ignore_regex.)
     priority_regex=(
-        r"(?is)(?=.*colonoscop)"
+        r"\A(?=.*colonoscop)"
         r"(?=.*(?:(?:19|20)\d{2}|\bhad\b|\blast\b|\bago\b|\bprior\b|\bprevious\b|"
         r"status\s+post|s/?p\b|underwent|completed|performed\s+(?:on|at|in)))"
     ),
 
     # Instruction appended once at the END of every input, after the snippets.
-    question=(
-        "Question: List each distinct colonoscopy this patient underwent, with its year and "
-        "month if known, and whether it was performed at the VA or externally (non-VA)."
+    question=(""
+        # "Question: List each distinct colonoscopy this patient underwent, with its year and "
+        # "month if known, and whether it was performed at the VA or externally (non-VA)."
     ),
 
-    date_strftime="%Y-%m-%d",  # note-date format used to build the label...
-    date_label="YYYY-MM-DD",   # ...shown as "Note date (YYYY-MM-DD)"; full date lets the model
-                               # resolve relative timing ("colonoscopy last year / 3 years ago")
-    snip_chars=240,            # narrower window: we want the date + VA/external cue near the mention
+    snip_chars=200,            # narrow window: we want the date + VA/external cue near the mention
     max_snips_per_note=15,     # cap snippets from a single note
     dedup="exact",             # exact (not normalized): keep "3 years ago" vs "5 years ago" distinct,
                                # since those are different events; byte-identical copies still collapse

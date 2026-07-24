@@ -462,16 +462,26 @@ def _select_replicates(pool, cfg: TaskConfig, n_reps: int, seed_base: int):
 # --------------------------------------------------------------------------
 # Formatting + output.
 # --------------------------------------------------------------------------
-def _format(records, cfg: TaskConfig, total: int, span) -> str:
+def _format(records, cfg: TaskConfig, pool) -> str:
     """Render one patient input as a SINGLE line for llama-data-extraction's --file format:
-    an optional `[Timeline: showing X of Y ...]` orientation header, each snippet wrapped with
-    its note date, then the task question. All real newlines are escaped to \\n so the whole
-    input occupies exactly one physical line (paired 1:1 with a ptIDs line)."""
+    an optional `[Timeline: showing excerpts X-Y ...]` orientation header, each snippet wrapped
+    with its note date, then the task question. All real newlines are escaped to \\n so the whole
+    input occupies exactly one physical line (paired 1:1 with an IDs line). `pool` is the patient's
+    full oldest->newest snippet list; `records` is the (date-sorted) subset shown on this line."""
     parts = []
-    if cfg.header:
-        first, last = span
-        parts.append(f"[Timeline: showing {len(records)} of {total} distinct excerpts, "
-                     f"{first} to {last}]\n")
+    if cfg.header and records:
+        span = f"{pool[0]['label']} to {pool[-1]['label']}"
+        if cfg.mode == "chunk":
+            # Contiguous slice: report the excerpt positions this chunk covers and their date range.
+            pos = {id(r): i for i, r in enumerate(pool)}
+            idx = [pos[id(r)] for r in records]
+            parts.append(f"[Timeline: showing excerpts {min(idx) + 1}-{max(idx) + 1} of {len(pool)} total, "
+                         f"capturing {records[0]['label']} to {records[-1]['label']}, "
+                         f"of a total patient timeline spanning {span}]\n")
+        else:
+            # Consensus: excerpts are a scattered sample, so report the count over the full timeline.
+            parts.append(f"[Timeline: showing a subset of {len(records)} of the {len(pool)} total distinct excerpts "
+                         f"spanning {span}]\n")
     for r in records:
         parts.append(f"\n<<<\nNote date ({cfg.date_label}): {r['label']}\nNote text:\n{r['text']}\n>>>\n")
     body = "".join(parts)
@@ -533,7 +543,7 @@ def parse_args(cfg: TaskConfig):
 
 def run(cfg: TaskConfig):
     """Entry point every task script calls. Compiles the config, opens the N replicate
-    input_k.txt / ptIDs_k.txt files, then for each patient builds the snippet pool and writes
+    inputs_k.txt / IDs_k.txt files, then for each patient builds the snippet pool and writes
     one line per replicate -- either full-coverage chunking (mode="chunk", identical files) or
     the complementary consensus subsample (mode="consensus", distinct files). Writes a per-run
     summary to stderr."""
@@ -546,8 +556,8 @@ def run(cfg: TaskConfig):
     n_reps = args.replicates
     _write_metadata(outdir, cfg, args, n_reps)   # reproducibility record, written up front
 
-    in_w = [(outdir / f"input_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
-    id_w = [(outdir / f"ptIDs_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
+    in_w = [(outdir / f"inputs_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
+    id_w = [(outdir / f"IDs_{r + 1}.txt").open("w", encoding="utf-8") for r in range(n_reps)]
 
     # Audit of silent drops: patients that were pulled (so they matched the SQL/FTS terms)
     # but produced zero snippets here -> a regex-recall miss, invisible without this file.
@@ -576,19 +586,22 @@ def run(cfg: TaskConfig):
         if no_prio_w is not None and not any(r["priority"] for r in pool):
             no_prio_w.write(f"{pid}\n")
             n_noprio += 1
-        span = (pool[0]["label"], pool[-1]["label"])
-        total = len(pool)
         if cfg.mode == "chunk":
-            for i in range(0, len(pool), cfg.chunk_size):
-                chunk = pool[i:i + cfg.chunk_size]
-                line = _format(chunk, cfg, total, span)
+            # One patient spans several inputs; tag each with "<PatientID>_<n>_of_<N>_chunks"
+            # so every chunk is a distinct, resumable ID downstream (skip already-run chunks)
+            # while the base PatientID is still recoverable by stripping the _n_of_N_chunks suffix.
+            n_chunks = (len(pool) + cfg.chunk_size - 1) // cfg.chunk_size
+            for ci in range(n_chunks):
+                chunk = pool[ci * cfg.chunk_size:(ci + 1) * cfg.chunk_size]
+                line = _format(chunk, cfg, pool)
+                cid = f"{pid}_{ci + 1}_of_{n_chunks}_chunks"
                 for r in range(n_reps):
                     in_w[r].write(line + "\n")
-                    id_w[r].write(f"{pid}\n")
+                    id_w[r].write(f"{cid}\n")
                 n_lines += 1
         else:
             for r, recs in enumerate(_select_replicates(pool, cfg, n_reps, _stable_seed(pid, args.seed))):
-                in_w[r].write(_format(recs, cfg, total, span) + "\n")
+                in_w[r].write(_format(recs, cfg, pool) + "\n")
                 id_w[r].write(f"{pid}\n")
             n_lines += 1
 

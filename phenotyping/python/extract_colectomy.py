@@ -5,8 +5,9 @@ extract_colectomy.py -- inputs for the `colectomy` task.
 Yes/no + procedure type + segments removed + month/year. Concept regex mirrors the
 surgical vocabulary: colectomy variants (procto/hemi/rectosigmoid/ileocecal/subtotal/
 total/segmental/partial), sigmoidectomy/proctectomy/proctocolectomy/ileocecectomy,
-abdominoperineal resection (APR), colon/rectum/bowel resection-or-removal (either word
-order), Hartmann, ileostomy/colostomy, anastomosis, and J-pouch / IPAA / pouch creation.
+abdominoperineal resection (APR), low anterior resection (LAR), colon/rectum/bowel
+resection-or-removal (either word order), Hartmann, ileostomy/colostomy, anastomosis,
+and J-pouch / IPAA / pouch creation.
 
 Priority (kept in every replicate) = evidence the operation actually happened: a
 resection/ostomy/pouch term co-occurring with s/p, status-post, underwent, performed,
@@ -17,25 +18,18 @@ fills the remaining budget.
 """
 from snippet_lib import TaskConfig, run
 
+SEG    = r"(?:procto|hemi|recto\s?sigmoid|ileocec|subtotal|total|segmental|partial)"
+ORGAN  = r"\b(?:colon|rect\w*|cecum|sigmoid|bowel|ileocecal)"
+REMOVE = r"(?:resect|remov|excis)\w*"
 PROC = (
-    # "colectomy" with an OPTIONAL leading qualifier naming the extent/segment
-    # (proctocolectomy, hemicolectomy, rectosigmoid/ileocecal/subtotal/total/segmental/partial).
-    r"(?:procto|hemi|recto\s?sigmoid|ileocec|subtotal|total|segmental|partial)?\s*colectom\w*|"
-    # Other "-ectomy" resections of specific segments: sigmoidectomy, proctectomy,
-    # proctocolectomy, ileocecectomy.
-    r"(?:sigmoid|procto|proctocol|ileocec)ectom\w*|"
-    # Abdominoperineal resection (rectum + anus removed), spelled out or as the abbreviation APR.
-    r"abdominoperineal\s+resection|\bapr\b|"
-    # ORGAN then ACTION: a colon/rectum/bowel term followed within ~25 chars by
-    # resect/remov/excis (e.g. "sigmoid colon was resected", "cecum removed").
-    r"(?:colon|rect\w*|cecum|sigmoid|bowel|ileocecal)\W.{0,25}?(?:resect|remov|excis)\w*|"
-    # ACTION then ORGAN: the reverse word order (e.g. "resection of the sigmoid colon").
-    r"(?:resect|remov|excis)\w*\W.{0,25}?(?:colon|rect\w*|cecum|sigmoid|bowel)|"
-    # Hartmann procedure; an ileostomy/colostomy (optionally "end ..."); any anastomosis
-    # (the bowel reconnection that follows a resection).
-    r"hartmann\w*|(?:end\s+)?(?:ileostom|colostom)\w*|anastomos\w*|"
-    # Ileal-pouch reconstruction after (procto)colectomy: J-pouch, IPAA, or pouch construction/creation.
-    r"j[- ]?pouch|\bipaa\b|pouch\s+(?:construction|creation)"
+    rf"{SEG}?\s*colectom\w*|"                     # (hemi/procto/subtotal...)colectomy
+    r"(?:sigmoid|proct|ileocec)ectom\w*|"         # sigmoidectomy, proctectomy, ileocecectomy
+    r"abdominoperineal\s+resection|(?-i:\bAPR\b)|"  # APR (case-sensitive so it is not "April")
+    r"low\s+anterior\s+resection|(?-i:\bLAR\b)|"     # LAR (case-sensitive; common rectal resection)
+    rf"{ORGAN}.{{0,20}}?{REMOVE}|"                # "sigmoid colon was resected", "cecum removed"
+    rf"{REMOVE}.{{0,20}}?{ORGAN}|"                # reverse order: "resection of the sigmoid colon"
+    r"hartmann\w*|(?:ileostom|colostom)\w*|anastomos\w*|"  # Hartmann / ostomy / anastomosis
+    r"j[- ]?pouch|\bipaa\b|pouch\s+(?:construction|creation)"  # ileal-pouch reconstruction
 )
 
 CONFIG = TaskConfig(
@@ -49,19 +43,20 @@ CONFIG = TaskConfig(
     # (s-p / status post / underwent / performed / post-op / POD / history of / a year).
     # This separates a done procedure from mere discussion ("candidate for colectomy").
     priority_regex=(
-        r"(?is)(?=.*(?:colectom|proctectom|ectom\w|resect|ostom|hartmann|pouch|\bapr\b))"
+        r"\A(?=.*(?:ectom\w|resect|ostom|hartmann|pouch|(?-i:\bAPR\b)))"
         r"(?=.*(?:s/?p\b|status\s+post|underwent|performed|post[- ]?op|\bpod\b|"
         r"history\s+of|hx\s+of|(?:19|20)\d{2}|\d{1,3}\s*(?:years?|yrs?)\s+ago))"
     ),
 
     # Instruction appended once at the END of every input, after the snippets.
-    question=(
-        "Question: Using only these notes, determine whether any part of the colon or rectum "
-        "was surgically REMOVED, and if so the procedure type, which segments were removed, and "
-        "the month and year of the procedure."
+    question=(""
+        # "Question: Using only these notes, determine whether any part of the colon or rectum "
+        # "was surgically REMOVED, and if so the procedure type, which segments were removed, and "
+        # "the month and year of the procedure."
     ),
 
-    snip_chars=320,          # characters of context kept on EACH side of a regex hit
+    snip_chars=260,          # tighter window: procedure type/segments/date sit close to the hit,
+                             # and the small-active-param models (A4B/A3B) do better with less noise
     max_snips_per_note=12,   # cap snippets from a single note
     snippet_budget=35,       # smaller budget: colectomy is a single event, not a long course
     char_budget=50000,       # hard safety cap on snippet chars per input
