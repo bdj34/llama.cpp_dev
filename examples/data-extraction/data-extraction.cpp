@@ -245,7 +245,12 @@ int main(int argc, char ** argv) {
         std::string tmpPrompt;
         for (const auto& prompt : allPrompts) {
             k_prompts.resize(index + 1);
-            tmpPrompt = prompt + generatePreAnswer(params.promptFormat);
+            // python emits each input ending in a newline; strip trailing whitespace so the
+            // text abuts the pre-answer directly: [text][pre-answer]. raw is fully pre-formatted
+            // in python (assistant-turn opener + its newline included), so leave it untouched.
+            std::string converted = convertEscapedNewlines(prompt);
+            tmpPrompt = (params.promptFormat == "raw" ? converted : trim(converted))
+                      + generatePreAnswer(params.promptFormat);
             k_prompts[index] = tmpPrompt;
 
             // Write each prompt to the out file
