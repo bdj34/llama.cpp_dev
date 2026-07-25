@@ -1,0 +1,34 @@
+# CRC free-text extraction -- JSON output, fixed key order.
+# Early exit: crc="no" emits ONLY crc+confidence then stops, saving decode on the
+# common negative case (CRC is rare). crc="yes" emits the full object.
+# Pair with system_prompts/gemma4-nonThinking/crc_free_text.txt.
+# NOTE: this parser needs each rule's alternation on ONE line (no line-wrapping).
+
+root ::= "{" nl "  \"crc\": " body nl "}"
+
+nl ::= "\n"
+
+body ::= no-body | yes-body
+no-body ::= "\"no\"," nl "  \"confidence\": " confidence
+yes-body ::= "\"yes\"," nl "  \"confidence\": " confidence "," nl "  \"diagnosis_date\": " date "," nl "  \"date_approximate\": " approx "," nl "  \"anatomical_site\": " site "," nl "  \"detection_mode\": " mode "," nl "  \"stage_ajcc\": " ajcc "," nl "  \"stage_t\": " tcat "," nl "  \"stage_n\": " ncat "," nl "  \"stage_m\": " mcat "," nl "  \"care_setting\": " setting
+
+confidence ::= "\"low\"" | "\"medium\"" | "\"high\"" | "\"certain\""
+
+date ::= "\"" year ( "-" month ( "-" day )? )? "\"" | "\"unknown\""
+year ::= [0-9] [0-9] [0-9] [0-9]
+month ::= "0" [1-9] | "1" [0-2]
+day ::= "0" [1-9] | [12] [0-9] | "3" [01]
+
+approx ::= "\"exact\"" | "\"during " decade "\"" | "\"before " year "\"" | "\"after " year "\"" | "\"" year "-" year "\"" | "\"unknown\""
+decade ::= [0-9] [0-9] [0-9] "0s"
+
+site ::= "\"cecum\"" | "\"ascending_colon\"" | "\"hepatic_flexure\"" | "\"transverse_colon\"" | "\"splenic_flexure\"" | "\"descending_colon\"" | "\"sigmoid_colon\"" | "\"rectosigmoid\"" | "\"rectum\"" | "\"right_colon\"" | "\"left_colon\"" | "\"colon_nos\"" | "\"non_colon_primary\"" | "\"not_documented\""
+
+mode ::= "\"screen_detected\"" | "\"symptomatic\"" | "\"not_documented\""
+
+ajcc ::= "\"0\"" | "\"I\"" | "\"II\"" | "\"III\"" | "\"IV\"" | "\"unknown\"" | "\"not_documented\""
+tcat ::= "\"Tis\"" | "\"T0\"" | "\"T1\"" | "\"T2\"" | "\"T3\"" | "\"T4\"" | "\"T4a\"" | "\"T4b\"" | "\"TX\"" | "\"not_documented\""
+ncat ::= "\"N0\"" | "\"N1\"" | "\"N1a\"" | "\"N1b\"" | "\"N1c\"" | "\"N2\"" | "\"N2a\"" | "\"N2b\"" | "\"NX\"" | "\"not_documented\""
+mcat ::= "\"M0\"" | "\"M1\"" | "\"M1a\"" | "\"M1b\"" | "\"M1c\"" | "\"MX\"" | "\"not_documented\""
+
+setting ::= "\"VA\"" | "\"external\"" | "\"not_documented\""

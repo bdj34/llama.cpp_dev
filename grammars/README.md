@@ -1,10 +1,6 @@
 # GBNF Guide
 
-<<<<<<< HEAD
-GBNF (GGML BNF) is a format for defining [formal grammars](https://en.wikipedia.org/wiki/Formal_grammar) to constrain model outputs in `llama.cpp`. For example, you can use it to force the model to generate valid JSON, or speak only in emojis. GBNF grammars are supported in various ways in `examples/main` and `examples/server`.
-=======
 GBNF (GGML BNF) is a format for defining [formal grammars](https://en.wikipedia.org/wiki/Formal_grammar) to constrain model outputs in `llama.cpp`. For example, you can use it to force the model to generate valid JSON, or speak only in emojis. GBNF grammars are supported in various ways in `tools/cli`, `tools/completion` and `tools/server`.
->>>>>>> aa50b2c2ae91326d5aad956ceeb015d1d48e626b
 
 ## Background
 
@@ -138,15 +134,9 @@ While semantically correct, the syntax `x? x? x?.... x?` (with N repetitions) ma
 
 You can use GBNF grammars:
 
-<<<<<<< HEAD
-- In [llama-server](../examples/server)'s completion endpoints, passed as the `grammar` body field
-- In [llama-cli](../examples/main), passed as the `--grammar` & `--grammar-file` flags
-- With [llama-gbnf-validator](../examples/gbnf-validator) tool, to test them against strings.
-=======
 - In [llama-server](../tools/server)'s completion endpoints, passed as the `grammar` body field
 - In [llama-cli](../tools/cli) and [llama-completion](../tools/completion), passed as the `--grammar` & `--grammar-file` flags
 - With [test-gbnf-validator](../tests/test-gbnf-validator.cpp), to test them against strings.
->>>>>>> aa50b2c2ae91326d5aad956ceeb015d1d48e626b
 
 ## JSON Schemas → GBNF
 
@@ -155,19 +145,12 @@ You can use GBNF grammars:
 - In [llama-server](../examples/server):
     - For any completion endpoints, passed as the `json_schema` body field
     - For the `/chat/completions` endpoint, passed inside the `response_format` body field (e.g. `{"type", "json_object", "schema": {"items": {}}}` or `{ type: "json_schema", json_schema: {"schema": ...} }`)
-<<<<<<< HEAD
-- In [llama-cli](../examples/main), passed as the `--json` / `-j` flag
-- To convert to a grammar ahead of time:
-    - in CLI, with [examples/json_schema_to_grammar.py](../examples/json_schema_to_grammar.py)
-    - in JavaScript with [json-schema-to-grammar.mjs](../examples/server/public_legacy/json-schema-to-grammar.mjs) (this is used by the [server](../examples/server)'s Web UI)
-=======
 - In [llama-cli](../tools/cli) and [llama-completion](../tools/completion), passed as the `--json` / `-j` flag
 - To convert to a grammar ahead of time:
     - in CLI, with [examples/json_schema_to_grammar.py](../examples/json_schema_to_grammar.py)
 
 > [!NOTE]
 > The JSON schema is only used to constrain the model output and is not injected into the prompt. The model has no visibility into the schema, so if you want it to understand the expected structure, describe it explicitly in your prompt. This does not apply to tool calling, where schemas are injected into the prompt.
->>>>>>> aa50b2c2ae91326d5aad956ceeb015d1d48e626b
 
 Take a look at [tests](../tests/test-json-schema-to-grammar.cpp) to see which features are likely supported (you'll also find usage examples in https://github.com/ggml-org/llama.cpp/pull/5978, https://github.com/ggml-org/llama.cpp/pull/6659 & https://github.com/ggml-org/llama.cpp/pull/6555).
 
