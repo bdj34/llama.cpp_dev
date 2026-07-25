@@ -135,19 +135,22 @@ def _open_maybe_gzip(path: Path):
 
 def _read_csv_rows(path: Path):
     """Yield one normalized dict per CSV row: {PatientID, NoteID, NoteDateTime, ReportText}.
-    Columns are matched case-insensitively BY NAME (a header is required), and the date column
-    may be NoteDateTime (v2 buckets) or EntryDateTime (older exports). Raises if a required
-    column is missing, so a malformed file fails loudly rather than yielding silent garbage."""
+    Columns are matched case-insensitively BY NAME (a header is required). Each key accepts an
+    alias so both the local exports and VA CDW pulls work: patient = PatientID or PatientICN,
+    note = NoteID or TIUDocumentSID, date = NoteDateTime (v2 buckets) or EntryDateTime (older
+    exports). Raises if a required column is missing, so a malformed file fails loudly rather
+    than yielding silent garbage."""
     with _open_maybe_gzip(path) as f:
         reader = csv.DictReader(f)
         cols = {c.lower(): c for c in (reader.fieldnames or [])}
-        pid_c, note_c = cols.get("patientid"), cols.get("noteid")
+        pid_c = cols.get("patientid") or cols.get("patienticn")
+        note_c = cols.get("noteid") or cols.get("tiudocumentsid")
         date_c = cols.get("notedatetime") or cols.get("entrydatetime")
         text_c = cols.get("reporttext")
         if not (pid_c and text_c and date_c):
             raise SystemExit(
-                f"{path}: need PatientID, NoteID, (Note|Entry)DateTime, ReportText; "
-                f"got {reader.fieldnames}"
+                f"{path}: need (PatientID|PatientICN), (NoteID|TIUDocumentSID), "
+                f"(Note|Entry)DateTime, ReportText; got {reader.fieldnames}"
             )
         for row in reader:
             yield {
@@ -475,13 +478,18 @@ def _format(records, cfg: TaskConfig, pool) -> str:
             # Contiguous slice: report the excerpt positions this chunk covers and their date range.
             pos = {id(r): i for i, r in enumerate(pool)}
             idx = [pos[id(r)] for r in records]
-            parts.append(f"[Timeline: showing excerpts {min(idx) + 1}-{max(idx) + 1} of {len(pool)} total, "
+            parts.append(f"[Timeline: showing excerpts {min(idx) + 1}-{max(idx) + 1} of {len(pool)} total relevant excerpts, "
                          f"capturing {records[0]['label']} to {records[-1]['label']}, "
                          f"of a total patient timeline spanning {span}]\n")
         else:
             # Consensus: excerpts are a scattered sample, so report the count over the full timeline.
-            parts.append(f"[Timeline: showing a subset of {len(records)} of the {len(pool)} total distinct excerpts "
+            if len(pool) == len(records):
+                parts.append(f"[Timeline: showing all {len(records)} distinct relevant excerpts "
                          f"spanning {span}]\n")
+            else:
+                parts.append(f"[Timeline: showing a subset of {len(records)} of the {len(pool)} total distinct relevant excerpts "
+                         f"spanning {span}]\n")
+            
     for r in records:
         parts.append(f"\n<<<\nNote date ({cfg.date_label}): {r['label']}\nNote text:\n{r['text']}\n>>>\n")
     body = "".join(parts)

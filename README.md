@@ -60,6 +60,8 @@ tar -xzvf llama.cpp_dev.tar.gz -C llama.cpp_dev/
 cd llama.cpp_dev
 cmake -B build -DGGML_CUDA=ON --fresh
 cmake --build build --config Release
+# OR, on older gcc versions which produce error, just build the phenotyping binary
+cmake --build build --target llama-data-extraction -j
 ```
 
 ---
