@@ -483,13 +483,14 @@ def _format(records, cfg: TaskConfig, pool) -> str:
                          f"of a total patient timeline spanning {span}]\n")
         else:
             # Consensus: excerpts are a scattered sample, so report the count over the full timeline.
+            noun = "excerpt" if len(records) == 1 else "excerpts"
             if len(pool) == len(records):
-                parts.append(f"[Timeline: showing all {len(records)} distinct relevant excerpts "
+                parts.append(f"[Timeline: showing all {len(records)} distinct relevant {noun} "
                          f"spanning {span}]\n")
             else:
-                parts.append(f"[Timeline: showing a subset of {len(records)} of the {len(pool)} total distinct relevant excerpts "
+                parts.append(f"[Timeline: showing a subset of {len(records)} of the {len(pool)} total distinct relevant {noun} "
                          f"spanning {span}]\n")
-            
+
     for r in records:
         parts.append(f"\n<<<\nNote date ({cfg.date_label}): {r['label']}\nNote text:\n{r['text']}\n>>>\n")
     body = "".join(parts)
