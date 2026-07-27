@@ -11,7 +11,7 @@
 # "0,1" (override with the CARDS env var or --cards, e.g. --cards 0 for a single-GPU box).
 #
 #   ./queue.sh add <task> <model> <replicate> [T|F]  append a job (retry T/F, default F; starts workers)
-#   ./queue.sh add-all                             enqueue every job row in config/jobs.conf
+#   ./queue.sh add-all [--force]                   enqueue jobs.conf rows (--force: rewrite manifest to match jobs.conf, dropping stale keys)
 #   ./queue.sh start [--cards 0,1]                  clear stop + launch one worker per card (default 0,1)
 #   ./queue.sh stop                                stop after the current job (also blocks cron)
 #   ./queue.sh list                                show the manifest
@@ -47,15 +47,29 @@ case "$cmd" in
         ;;
 
     add-all)
-        # Enqueue every job row in jobs.conf, skipping any already in the manifest (idempotent).
+        # Enqueue every job row in jobs.conf. Default: append only new keys (idempotent).
+        # --force: rewrite the manifest to EXACTLY jobs.conf's current keys -- drops stale ones
+        # (removed rows / changed replicates) and adds new. Args are read from jobs.conf at run
+        # time, so this resyncs WHICH jobs exist, not their args, and does NOT re-run a settled
+        # job (that needs a worker restart: 'stop' then 'start').
         [ -f "$JOBS_CONF" ] || die "no config file: $JOBS_CONF"
         n=0
-        while read -r t m r y; do
-            [ -n "${t:-}" ] || continue
-            grep -qxF "$t $m $r $y" "$JOBS" 2>/dev/null && continue
-            printf '%s %s %s %s\n' "$t" "$m" "$r" "$y" >> "$JOBS"; n=$((n + 1))
-        done < <(job_keys)
-        log "add-all: enqueued $n new job(s) from $JOBS_CONF"
+        if [ "${1:-}" = "--force" ]; then
+            tmp="$JOBS.tmp.$$"; : > "$tmp"
+            while read -r t m r y; do
+                [ -n "${t:-}" ] || continue
+                printf '%s %s %s %s\n' "$t" "$m" "$r" "$y" >> "$tmp"; n=$((n + 1))
+            done < <(job_keys)
+            mv "$tmp" "$JOBS"                                   # atomic swap; safe vs a running worker
+            log "add-all --force: manifest rewritten to $n job(s) from $JOBS_CONF"
+        else
+            while read -r t m r y; do
+                [ -n "${t:-}" ] || continue
+                grep -qxF "$t $m $r $y" "$JOBS" 2>/dev/null && continue
+                printf '%s %s %s %s\n' "$t" "$m" "$r" "$y" >> "$JOBS"; n=$((n + 1))
+            done < <(job_keys)
+            log "add-all: enqueued $n new job(s) from $JOBS_CONF"
+        fi
         log "run './queue.sh start' to begin (uses both cards; set CARDS (bash variable) or --cards (arg) to change)."
         "$0" list
         ;;
