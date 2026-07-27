@@ -15,6 +15,7 @@
 #   ./queue.sh start [--cards 0,1]                  clear stop + launch one worker per card (default 0,1)
 #   ./queue.sh stop                                stop after the current job (also blocks cron)
 #   ./queue.sh kill [-y]                           IMMEDIATE stop: kill workers + inference NOW (prompts y/N; -y skips)
+#   ./queue.sh reap [N]                            cron watchdog: kill stuck worker(s) if NO inference runs for N checks (default 3)
 #   ./queue.sh list                                show the manifest
 #   ./queue.sh errors                              report error-only IDs per job
 #   ./queue.sh worker <card>                       (internal) per-card worker loop
@@ -34,7 +35,7 @@ JOBS="$QDIR/jobs.txt"; STOP="$QDIR/stop"; WLOG="$QDIR/worker.log"; WLOCK="$QDIR/
 touch "$JOBS"
 
 usage() {
-    grep '^#' "$DIR/queue.sh" | sed -n '3,27p' | sed 's/^# \{0,1\}//'
+    grep '^#' "$DIR/queue.sh" | sed -n '3,28p' | sed 's/^# \{0,1\}//'
     exit 2
 }
 
@@ -113,6 +114,31 @@ case "$cmd" in
             { pgrep -af 'queue\.sh worker'; pgrep -af "$binname"; } 2>/dev/null >&2
         else
             log "kill: all stopped. Stop flag is set -- run './queue.sh start' to resume."
+        fi
+        ;;
+
+    reap)
+        # Watchdog for a WEDGED queue: if worker loop(s) are alive but NO llama-data-extraction is
+        # running for N consecutive checks, a worker is stuck holding a card with nothing to show
+        # for it -- kill the worker(s) so the next cron 'worker' tick starts fresh ones and reclaims
+        # the card. Run from cron alongside 'worker'. N = arg 1 (default 3). The consecutive-miss
+        # counter persists across cron invocations in $QDIR/reap.misses. NOTE: this is GLOBAL -- any
+        # inference on any card resets it, so a card stuck while the other card runs is only reaped
+        # once that other card goes idle too.
+        N="${1:-3}"
+        binname="$(basename "$LLAMA_BIN")"
+        statef="$QDIR/reap.misses"
+        if [ -f "$STOP" ]; then rm -f "$statef"; exit 0; fi                          # stop flag set -> hands off
+        pgrep -f 'queue\.sh worker' >/dev/null 2>&1 || { rm -f "$statef"; exit 0; }  # no workers -> nothing to watch
+        if pgrep -f "$binname" >/dev/null 2>&1; then rm -f "$statef"; exit 0; fi     # inference running -> healthy
+        misses=$(( $(cat "$statef" 2>/dev/null || echo 0) + 1 ))
+        echo "$misses" > "$statef"
+        if [ "$misses" -ge "$N" ]; then
+            warn "reap: worker(s) alive but no $binname for $misses consecutive checks -> killing worker(s) (cron restarts them)."
+            pkill -f 'queue\.sh worker' 2>/dev/null; sleep 2; pkill -9 -f 'queue\.sh worker' 2>/dev/null
+            rm -f "$statef"
+        else
+            log "reap: worker(s) alive, no $binname running ($misses/$N)."
         fi
         ;;
 

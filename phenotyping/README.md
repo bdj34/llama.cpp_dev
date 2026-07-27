@@ -55,11 +55,17 @@ of one self-contained line per job.
 
 ```bash
 ./queue.sh add-all                               # enqueue EVERY job row in config/jobs.conf
+./queue.sh add-all --force                       # ... or rewrite the manifest to match jobs.conf (drops stale keys after you edit rows/replicates)
 ./queue.sh add ibd gemma4-26B-A4B-thinking 1     # ... or enqueue one job
 ./queue.sh list                                  # show the manifest
 ./queue.sh start                                 # launch workers (both cards by default) / resume
-./queue.sh stop                                  # stop after the current job
+./queue.sh stop                                  # stop GRACEFULLY (workers exit after the current job)
+./queue.sh kill                                  # stop NOW: kill workers + inference immediately (prompts y/N; -y to skip)
 ```
+`stop` only sets a flag and waits for the current inference to finish; use `kill` when you need to
+interrupt mid-inference. To change a job's **args**, just edit `config/jobs.conf` and re-run — args
+are read at launch, so no `add-all` is needed (use `add-all --force` only when you change *which
+jobs exist*: added/removed rows or changed replicate/retry).
 You can also run a single job directly, resumable on its own:
 ```bash
 ./run_one.sh ibd gemma4-26B-A4B-thinking 1
@@ -83,10 +89,19 @@ no-ops if a worker is already running or everything is done. One line per card:
 ```
 */5 * * * * /ABS/PATH/phenotyping/queue.sh worker 0  >> /ABS/PATH/phenotyping/runtime/cron.log 2>&1
 */5 * * * * /ABS/PATH/phenotyping/queue.sh worker 1  >> /ABS/PATH/phenotyping/runtime/cron.log 2>&1
+*/5 * * * * /ABS/PATH/phenotyping/queue.sh reap      >> /ABS/PATH/phenotyping/runtime/cron.log 2>&1
 ```
 This covers both a full reboot and the "processes killed, box stays up" case. A job interrupted
 partway through simply resumes from the IDs already written (rows are flushed per-ID, so nothing
 beyond the in-flight batch is redone).
+
+The optional `reap` line is a **stuck-worker watchdog**: if a worker is alive but **no**
+`llama-data-extraction` has run for N consecutive checks (default 3, so ~15 min at this cadence),
+it kills the worker so the next `worker` tick starts a fresh one and reclaims the card. Any inference
+on any card resets the counter, so it only fires when the queue is genuinely idle-but-not-exited.
+It's a backstop to `run_one`'s own teardown-hang watchdog (which kills an inference that spins after
+finishing, e.g. a CUDA-teardown hang) — together they let a wedged card recover without a manual
+`kill`. Tune with `reap <N>`.
 
 ## Errors (handled manually)
 
@@ -123,11 +138,19 @@ task's prompt any time before its job starts and it will be picked up. If you ed
 that job has already produced outputs, the finished IDs keep the old prompt and only the remaining
 ones get the new one; to reprocess uniformly, delete that `results/<task>/<model>/rep<r>/` first.
 
+## Note on changing RESULTS_ROOT mid-run
+
+`RESULTS_ROOT` (in `lib.sh`) is where **all** resume state lives. Don't change it while jobs are in
+flight: a running job keeps writing to the old root (it read `lib.sh` at launch), while new runs read
+and write the new root — so previously-completed jobs look un-done there and get **reprocessed**, and
+your output ends up split across two directories. If you must move it, do it with the queue stopped
+and move the existing `results/<task>/<model>/rep*` dirs into the new root so resume still sees them.
+
 ## Layout
 
 - `config/` — `jobs.conf` (one row per task x model).
 - `run_one.sh` — the idempotent single-job unit (filter to remaining -> run, under the GPU lock).
-- `queue.sh` — manifest + single worker (`add`/`start`/`stop`/`list`/`errors`/`rerun-errors`).
+- `queue.sh` — manifest + per-card workers (`add`/`add-all`/`start`/`stop`/`kill`/`reap`/`list`/`errors`/`worker`).
 - `lib.sh` — config lookup, logging, GPU lock.
 - `runtime/` — coordination state only (GPU lock, `_queue/` manifest + worker log); gitignored.
 - `results/` (or your `RESULTS_ROOT`) — per-job output dirs.
