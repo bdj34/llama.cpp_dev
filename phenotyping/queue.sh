@@ -14,6 +14,7 @@
 #   ./queue.sh add-all [--force]                   enqueue jobs.conf rows (--force: rewrite manifest to match jobs.conf, dropping stale keys)
 #   ./queue.sh start [--cards 0,1]                  clear stop + launch one worker per card (default 0,1)
 #   ./queue.sh stop                                stop after the current job (also blocks cron)
+#   ./queue.sh kill [-y]                           IMMEDIATE stop: kill workers + inference NOW (prompts y/N; -y skips)
 #   ./queue.sh list                                show the manifest
 #   ./queue.sh errors                              report error-only IDs per job
 #   ./queue.sh worker <card>                       (internal) per-card worker loop
@@ -33,7 +34,7 @@ JOBS="$QDIR/jobs.txt"; STOP="$QDIR/stop"; WLOG="$QDIR/worker.log"; WLOCK="$QDIR/
 touch "$JOBS"
 
 usage() {
-    grep '^#' "$DIR/queue.sh" | sed -n '3,26p' | sed 's/^# \{0,1\}//'
+    grep '^#' "$DIR/queue.sh" | sed -n '3,27p' | sed 's/^# \{0,1\}//'
     exit 2
 }
 
@@ -89,6 +90,32 @@ case "$cmd" in
         log "stop flag set; workers exit after the current job and cron no-ops until 'start'."
         ;;
 
+    kill)
+        # IMMEDIATE stop: set the stop flag, then kill the worker loops and the running inference.
+        # Prompts y/N first (skip with -y/--yes). In-flight patients are lost; finished IDs are on
+        # disk, so jobs resume on the next 'start'. Use this instead of 'stop' when you cannot wait
+        # for the current inference to finish.
+        if [ "${1:-}" != "-y" ] && [ "${1:-}" != "--yes" ]; then
+            printf 'Kill ALL workers and the running inference NOW? In-flight work is lost (finished IDs kept). [y/N] '
+            IFS= read -r _ans </dev/tty 2>/dev/null || _ans=""
+            case "$_ans" in
+                [Yy]|[Yy][Ee][Ss]) ;;
+                *) log "kill: aborted, nothing changed."; exit 0 ;;
+            esac
+        fi
+        : > "$STOP"                                                       # block cron + prevent relaunch
+        if pkill -f 'queue\.sh worker' 2>/dev/null; then log "kill: worker loops terminated."; else log "kill: no worker loops were running."; fi
+        binname="$(basename "$LLAMA_BIN")"
+        if pkill -9 -f "$binname" 2>/dev/null; then log "kill: inference ($binname) terminated."; else log "kill: no inference was running."; fi
+        sleep 1
+        if pgrep -f 'queue\.sh worker' >/dev/null 2>&1 || pgrep -f "$binname" >/dev/null 2>&1; then
+            warn "kill: some processes are still alive:"
+            { pgrep -af 'queue\.sh worker'; pgrep -af "$binname"; } 2>/dev/null >&2
+        else
+            log "kill: all stopped. Stop flag is set -- run './queue.sh start' to resume."
+        fi
+        ;;
+
     list)
         echo "manifest ($JOBS):"
         [ -s "$JOBS" ] && nl -ba "$JOBS" || echo "  (empty)"
@@ -136,7 +163,10 @@ case "$cmd" in
                 jkey="$(printf '%s_%s_rep%s_%s' "$t" "$m" "$r" "$y" | tr -c 'A-Za-z0-9_.-' '_')"   # F/T are distinct jobs
                 case "$DONE" in *" $jkey "*) continue ;; esac
                 pending=1
-                with_job_lock_nb "$JDIR/$jkey.lock" "$RUNNER" "$t" "$m" "$r" "$y" --gpu "$CARD" </dev/null
+                # 9>&- closes the worker-singleton lock fd for run_one and the inference it spawns,
+                # so a hung inference cannot keep worker.lock.<card> held after this worker exits
+                # (which would make the next 'start' say "already running" with no live worker).
+                with_job_lock_nb "$JDIR/$jkey.lock" "$RUNNER" "$t" "$m" "$r" "$y" --gpu "$CARD" </dev/null 9>&-
                 rc=$?
                 if [ "$rc" -eq 111 ]; then :                                        # busy on the other card -> retry when it frees
                 else DONE="$DONE$jkey "                                             # 0 (did work), 100 (nothing to do), or error -> settled

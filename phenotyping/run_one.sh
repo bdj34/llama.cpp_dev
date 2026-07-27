@@ -121,7 +121,33 @@ do_job() {
         --outDir "$outdir" --sequences "$n_remaining" $jargs ${PLACE[@]+"${PLACE[@]}"} )
     _record "${cmd[@]}"
     log "[$TASK/$MODEL/rep$REP] launching -> $outdir"
-    "${cmd[@]}" </dev/null; local rc=$?
+    # Guard against a post-completion CUDA teardown hang: the process finishes all work (writes
+    # "Total runtime" to metadata_*.txt) and then sometimes spins forever in llama_backend_free,
+    # holding the GPU lock and the card. Run it in the background; once the completion marker
+    # appears, allow a short grace period to exit cleanly, then SIGKILL. A kill AFTER completion
+    # is a success (all output is already written; the next run finds nothing to do).
+    local ref="$work/.launch"; : > "$ref"
+    local killflag="$work/.killed_after_done"; rm -f "$killflag"
+    "${cmd[@]}" </dev/null &
+    local pid=$!
+    (
+        local grace=30 md
+        while kill -0 "$pid" 2>/dev/null; do
+            md="$(find "$outdir" -maxdepth 1 -name 'metadata_*.txt' -newer "$ref" 2>/dev/null | head -n1)"
+            if [ -n "$md" ] && grep -ql "Total runtime" "$md" 2>/dev/null; then
+                for _ in $(seq "$grace"); do kill -0 "$pid" 2>/dev/null || exit 0; sleep 1; done
+                : > "$killflag"
+                warn "[$TASK/$MODEL/rep$REP] work complete but process alive after ${grace}s -> SIGKILL (teardown hang)"
+                kill -9 "$pid" 2>/dev/null
+                exit 0
+            fi
+            sleep 5
+        done
+    ) &
+    local wd=$!
+    wait "$pid"; local rc=$?
+    kill "$wd" 2>/dev/null; wait "$wd" 2>/dev/null   # stop the watchdog
+    [ -f "$killflag" ] && rc=0                        # completed, then only the teardown was killed
     [ "$rc" -eq 0 ] && log "[$TASK/$MODEL/rep$REP] batch done (exit 0)" \
                     || warn "[$TASK/$MODEL/rep$REP] exited $rc (finished IDs kept; resumes next run)"
     return "$rc"

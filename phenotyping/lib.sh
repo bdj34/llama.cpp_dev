@@ -80,7 +80,7 @@ with_job_lock_nb() {
     local rc                                                            # will hold the command's exit code
     if command -v flock >/dev/null 2>&1; then                          # flock available: non-blocking try
         exec 8>"$lock"                                                 # open fd 8 on the lock file
-        if flock -n 8; then "$@"; rc=$?; exec 8>&-; return $rc; fi     # got it: run cmd, close fd (release), return rc
+        if flock -n 8; then "$@" 8>&-; rc=$?; exec 8>&-; return $rc; fi # got it: run cmd (8>&- so children don't inherit the lock), close fd, return rc
         exec 8>&-; return 111                                         # already held: close fd, signal "skip" (111)
     fi
     # No flock: atomic lock DIRECTORY, non-blocking.
