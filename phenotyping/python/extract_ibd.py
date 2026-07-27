@@ -21,7 +21,9 @@ from snippet_lib import TaskConfig, run
 
 # Crohn's (incl. the common Chron's/Chrohn's misspellings) + its NON-colitis synonym forms
 # (the colitis forms, e.g. granulomatous colitis / ileocolitis, are caught by COLITIS below).
-CROHNS  = r"(?:crohn|chron|chrohn)\w*|regional\s+enteritis|granulomatous\s+(?:enteritis|ileitis)|(?:terminal\s+)?ileitis"
+# The "chron" misspelling is bounded to chron/chrons/chron's so it does NOT eat the "chron"
+# stem in chronic / chronological / synchronize etc.; crohn/chrohn are safe stems (\w* ok).
+CROHNS  = r"crohn\w*|\bchron(?:'?s)?\b|chrohn\w*|regional\s+enteritis|granulomatous\s+(?:enteritis|ileitis)|(?:terminal\s+)?ileitis"
 # Any colitis or proctitis, bare (no qualifier required -- safe in an IBD cohort, and higher
 # recall). This subsumes ulcerative / indeterminate / granulomatous / left-sided / chronic
 # colitis, pancolitis, ileocolitis, proctocolitis, and ulcerative/chronic proctitis.
