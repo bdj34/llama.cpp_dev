@@ -12,7 +12,7 @@ REPO_DIR="$(cd "$PHENO_DIR/.." && pwd)"
 LLAMA_BIN="${LLAMA_BIN:-$REPO_DIR/build/bin/llama-data-extraction}"
 GRAMMAR_DIR="${GRAMMAR_DIR:-$REPO_DIR/grammars}"
 SYSPROMPT_DIR="${SYSPROMPT_DIR:-$REPO_DIR/system_prompts}"
-RESULTS_ROOT="${RESULTS_ROOT:-/data/models/results_test}"     # HARDCODE CHANGE THIS TO REQUIRED OUTDIR. outDir = RESULTS_ROOT/<task>/<model>/rep<r>
+RESULTS_ROOT="${RESULTS_ROOT:-/data/models/results}"     # HARDCODE CHANGE THIS TO REQUIRED OUTDIR. outDir = RESULTS_ROOT/<task>/<model>/rep<r>
 
 CONF_DIR="$PHENO_DIR/config"
 JOBS_CONF="${JOBS_CONF:-$CONF_DIR/jobs.conf}"

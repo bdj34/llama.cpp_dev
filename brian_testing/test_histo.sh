@@ -16,14 +16,15 @@ cd /Users/brianjohnson/VA_IBD/llama.cpp_dev_merge_public
 cd /Users/brianjohnson/VA_IBD/llama.cpp_dev
 ./build/bin/llama-data-extraction \
 -m ~/Downloads/models_gguf/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
--sysf ./system_prompts/gemma/histologic_colitis.txt \
---no-escape \
---sequences 5 --parallel 5 \
+-sysf ./system_prompts/gemma4/histologic_colitis.txt \
+--no-escape --swa-full \
+--ctx-size 8192 \
+--sequences 5 --parallel 1 \
 --temp 0 --saveInput \
 --IDfile /Users/brianjohnson/VA_IBD/testing_data/histo_colitis/IDs.txt \
 --outDir ../testing_data/histo_colitis/output \
 --file /Users/brianjohnson/VA_IBD/testing_data/histo_colitis/inputs.txt \
---promptFormat gemma4
+--promptFormat gemma4-nonThinking
 
 # Gemma 3
 cd /Users/brianjohnson/VA_IBD/llama.cpp_dev_merge_public
