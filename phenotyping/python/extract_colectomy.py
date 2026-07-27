@@ -24,7 +24,7 @@ REMOVE = r"(?:resect|remov|excis)\w*"
 PROC = (
     rf"{SEG}?\s*colectom\w*|"                     # (hemi/procto/subtotal...)colectomy
     r"(?:sigmoid|proct|ileocec)ectom\w*|"         # sigmoidectomy, proctectomy, ileocecectomy
-    r"abdominoperineal\s+resection|(?-i:\bAPR\b)|"  # APR (case-sensitive so it is not "April")
+    r"abdominoperineal\s+resection|"             # APR spelled out (bare "APR" dropped: matched the month)
     r"low\s+anterior\s+resection|(?-i:\bLAR\b)|"     # LAR (case-sensitive; common rectal resection)
     rf"{ORGAN}.{{0,20}}?{REMOVE}|"                # "sigmoid colon was resected", "cecum removed"
     rf"{REMOVE}.{{0,20}}?{ORGAN}|"                # reverse order: "resection of the sigmoid colon"
@@ -43,7 +43,7 @@ CONFIG = TaskConfig(
     # (s-p / status post / underwent / performed / post-op / POD / history of / a year).
     # This separates a done procedure from mere discussion ("candidate for colectomy").
     priority_regex=(
-        r"\A(?=.*(?:ectom\w|resect|ostom|hartmann|pouch|(?-i:\bAPR\b)))"
+        r"\A(?=.*(?:ectom\w|resect|ostom|hartmann|pouch))"
         r"(?=.*(?:s/?p\b|status\s+post|underwent|performed|post[- ]?op|\bpod\b|"
         r"history\s+of|hx\s+of|(?:19|20)\d{2}|\d{1,3}\s*(?:years?|yrs?)\s+ago))"
     ),
