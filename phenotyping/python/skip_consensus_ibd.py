@@ -2,6 +2,9 @@
 """
 skip_consensus_ibd.py -- pre-filter the reviewer job with the two small models' agreement.
 
+ACTUAL CALL:
+./skip_consensus_ibd.py --path1 /data/models/results/ibd/gemma4-26-A4-nonThinking/rep1 --path2 /data/models/results/ibd/qwen3.6-35-A3-nonThinking/rep2 --out-dir /data/models/results/ibd_rerun/gemma4-31B-thinking/rep3
+
 Reads the output_*.txt files of a task's two jobs in specified path1 and path2 args and writes
 
     consensus_reached<TAB><ID>

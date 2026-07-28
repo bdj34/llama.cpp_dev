@@ -1,0 +1,31 @@
+# Colonoscopy timing extraction -- JSON array, one object per colonoscopy, fixed key order.
+# Inputs are CHUNKS of a patient's record (extract_colonoscopy_timing.py, mode="chunk"), so a
+# response covers only the colonoscopies in the excerpts shown; dedup across chunks is downstream.
+# "[]" is the common case (a chunk whose mentions are all scheduling/copy-forward), and is the
+# ONLY empty form the grammar admits -- "[{}]" (a null entry) cannot be produced.
+# Entries are capped at 12 to match the prompt and to bound decode against --n-predict.
+# Pair with system_prompts/{gemma4,qwen3.6}-nonThinking/colonoscopy_timing.txt.
+
+root ::= "[]" | ("[\n" entry (",\n" entry){0,11} "\n]")
+
+entry ::= ("  {\n"
+  "    \"date\": " coloDate ",\n"
+  "    \"care_setting\": " careSetting ",\n"
+  "    \"indication\": " indication ",\n"
+  "    \"confidence\": " conf "\n"
+  "  }")
+
+# Date at whatever precision the notes support. The decade form ("1990s") is the one value that
+# will NOT parse as a date downstream -- treat it as an interval, not an NA.
+coloDate ::= ("\"" year ( "-" mm ( "-" dd )? )? "\"" | "\"" decade "\"" | "\"unknown\"")
+
+careSetting ::= "\"VA\"" | "\"external\"" | "\"not_documented\""
+indication  ::= "\"screening\"" | "\"surveillance\"" | "\"ibd_assessment\"" | "\"positive_stool_test\"" | "\"symptoms\"" | "\"abnormal_imaging\"" | "\"therapeutic\"" | "\"other\"" | "\"not_documented\""
+conf        ::= "\"low\"" | "\"medium\"" | "\"high\"" | "\"certain\""
+
+year    ::= ("1" | "2") digit digit digit
+decade  ::= ("1" | "2") digit digit "0s"
+mm      ::= ("0" nonzero) | ("1" ("0" | "1" | "2"))
+dd      ::= ("0" nonzero) | (("1" | "2") digit) | ("3" ("0" | "1"))
+digit   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+nonzero ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

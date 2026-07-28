@@ -2,6 +2,9 @@
 """
 skip_consensus_crc.py -- pre-filter the reviewer job with the two small models' agreement.
 
+ACTUAL CALL:
+./skip_consensus_crc.py --path1 /data/models/results/crc_free_text/gemma4-26-A4-nonThinking/rep1 --path2 /data/models/results/crc_free_text/qwen3.6-35-A3-nonThinking/rep2 --out-dir /data/models/results/crc_free_text_rerun/gemma4-31B-thinking/rep3
+
 Reads the output_*.txt files of a task's two jobs in specified path1 and path2 args and writes
 
     consensus_reached<TAB><ID>
@@ -18,9 +21,15 @@ differ meaningfully (again, "meaningfully" defined here).
 
 WHAT COUNTS AS AGREEMENT lives in the AGREEMENT RULES block below -- it is the only part
 meant to be edited, and it is CRC-specific (each task gets its own skip_consensus_<task>.py).
-As set now: both answers must parse, `crc` must match, and when both say "yes" the diagnosis
-YEAR must match. Everything else -- confidence, anatomical_site, date_approximate, stage_*,
-detection_mode, care_setting -- is ignored; uncomment a line in AGREE_IF_YES to make it count.
+As set now: both answers must parse, `crc` must match, both models must be at least
+MIN_CONFIDENCE confident, and when both say "yes" the diagnosis YEAR, `anatomical_site`,
+`stage_ajcc` and `detection_mode` must match exactly. Everything else -- date_approximate,
+stage_t/n/m, care_setting -- is ignored; uncomment a line in AGREE_IF_YES to make it count.
+
+An "unknown" diagnosis_date never agrees, not even with another "unknown". The other fields
+compare exactly, so two matching non-answers ("not_documented" site, "unknown" stage) DO count
+as consensus; use a comparator that rejects those (see the commented-out exact_and_known) to
+send them to the reviewer instead.
 
     ./skip_consensus_crc.py --path1 <PATH> --path2 <PATH> --out-dir <PATH>
     ./skip_consensus_crc.py --path1 <PATH> --path2 <PATH> --out-dir <PATH> --dry-run --examples 10
@@ -36,12 +45,14 @@ PROG = Path(__file__).name
 
 # ============================ AGREEMENT RULES (EDIT HERE) ============================
 # Values that mean "the note did not say", on EITHER side, so they cannot contradict a real
-# answer. A rule wrapped in lenient() passes when either model gives one of these.
+# answer. A rule wrapped in lenient() passes when either model gives one of these -- no rule
+# below is, so a non-answer currently compares like any other value.
 WILDCARDS = {"unknown", "not_documented"}
 SITE_WILDCARDS = WILDCARDS | {"colon_nos"}          # "colon, not otherwise specified"
 
-# Anatomical sites collapsed to the granularity we actually care about. Sites not listed
-# compare as themselves. Edit the grouping (or delete it and use exact) to taste.
+# Anatomical sites collapsed to the granularity we actually care about, for same_site_group.
+# NOT wired in: anatomical_site compares exactly below, so sigmoid vs descending disagree.
+# Swap in same_site_group (or lenient(same_site_group, SITE_WILDCARDS)) to use the grouping.
 SITE_GROUP = {
     "cecum": "right", "ascending_colon": "right", "hepatic_flexure": "right", "right_colon": "right",
     "transverse_colon": "transverse",
@@ -87,7 +98,7 @@ AGREE_ALWAYS = [
 ]
 
 # Additional fields to agree on when BOTH models said crc="yes". Anything left out is ignored;
-# a field missing from either answer is skipped rather than counted as a disagreement.
+# a field a rule asks about but that is missing counts as a disagreement.
 AGREE_IF_YES = [
     ("diagnosis_date", same_known_year),
     ("anatomical_site", exact),
