@@ -1,0 +1,43 @@
+# Colectomy extraction -- JSON array, one object per resection, fixed key order.
+# A patient can have more than one operation (subtotal colectomy, later a completion
+# proctectomy), so this is an array like colonoscopy_timing rather than the single object CRC/IBD
+# use. Entries are capped at 3, the same cap the earlier colectomy.gbnf carried.
+# "[]" is the common case (excerpts that only DISCUSS an operation) and is the ONLY empty form
+# the grammar admits -- "[{}]" (a null entry) cannot be produced.
+# Pair with system_prompts/{gemma4,qwen3.6}-nonThinking/colectomy.txt.
+# NOTE: this parser needs each rule's alternation on ONE line (no line-wrapping).
+
+root ::= "[]" | ("[\n" entry (",\n" entry){0,2} "\n]")
+
+entry ::= ("  {\n"
+  "    \"procedure\": " procedure ",\n"
+  "    \"segments\": " segments ",\n"
+  "    \"surgery_date\": " surgDate ",\n"
+  "    \"date_approximate\": " dateApprox ",\n"
+  "    \"care_setting\": " careSetting ",\n"
+  "    \"confidence\": " conf "\n"
+  "  }")
+
+procedure ::= "\"segmental_colectomy\"" | "\"partial_colectomy\"" | "\"right_hemicolectomy\"" | "\"left_hemicolectomy\"" | "\"sigmoidectomy\"" | "\"ileocecectomy\"" | "\"low_anterior_resection\"" | "\"abdominoperineal_resection\"" | "\"proctectomy\"" | "\"subtotal_colectomy\"" | "\"total_colectomy\"" | "\"total_proctocolectomy\"" | "\"hartmann_procedure\"" | "\"colectomy_nos\""
+
+# Segments actually removed. "entire_colon" stands alone for a total colectomy; "not_documented"
+# when the notes name a procedure but no segment.
+segments ::= "[" segment (", " segment){0,7} "]"
+segment  ::= "\"cecum\"" | "\"ascending_colon\"" | "\"hepatic_flexure\"" | "\"transverse_colon\"" | "\"splenic_flexure\"" | "\"descending_colon\"" | "\"sigmoid_colon\"" | "\"rectum\"" | "\"terminal_ileum\"" | "\"entire_colon\"" | "\"not_documented\""
+
+surgDate   ::= "\"" year ( "-" mm ( "-" dd )? )? "\"" | "\"unknown\""
+dateApprox ::= ("\"exact\"" | "\"unknown\""
+             | "\"during " decade "0s\""
+             | "\"before " year "\""
+             | "\"after " year "\""
+             | "\"" year "-" year "\"")
+
+careSetting ::= "\"VA\"" | "\"external\"" | "\"not_documented\""
+conf        ::= "\"low\"" | "\"medium\"" | "\"high\"" | "\"certain\""
+
+year    ::= ("1" | "2") digit digit digit
+decade  ::= ("1" | "2") digit digit
+mm      ::= ("0" nonzero) | ("1" ("0" | "1" | "2"))
+dd      ::= ("0" nonzero) | (("1" | "2") digit) | ("3" ("0" | "1"))
+digit   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+nonzero ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

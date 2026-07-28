@@ -33,7 +33,7 @@ Dating rules -- use the excerpt's own Note date as the reference point:
 - No date information at all -> date = "unknown". Still report the colonoscopy.
 
 Rules:
-- Use "not_documented" (or "unknown") whenever the excerpts do not state a field. Never guess or infer a value.
+- Use "not_documented" (or "unknown") whenever the excerpts do not state a field. Never guess a value.
 - A colonoscopy that was already performed cannot be dated AFTER the Note date of the excerpt describing it. Never output such a date; a later date belongs to a planned procedure, which is not reported at all.
 - Do not split one colonoscopy into two entries just because two excerpts describe it, and do not merge two procedures that have different dates.
 <|im_end|>

@@ -1,7 +1,7 @@
 # Phenotyping inference queue
 
 A minimal, crash-proof way to run a batch of LLM extraction jobs on the GPU box and walk away.
-Preprocessing is a **separate** step (see [python/](python/)); this half only runs
+Preprocessing is a **separate** step (see [python/preprocessing/](python/preprocessing/)); this half only runs
 `llama-data-extraction` and is designed to survive the GPU being shut down for maintenance mid-run.
 
 ## Model
@@ -19,7 +19,7 @@ non-thinking variants, never collide).
 ## Prerequisites
 
 1. Build the tool: `../build/bin/llama-data-extraction`.
-2. Make the inputs with the extractors, e.g. `python/extract_ibd.py --buckets ... --out-dir /data/pheno/ibd`
+2. Make the inputs with the extractors, e.g. `python/preprocessing/extract_ibd.py --buckets ... --out-dir /data/pheno/ibd`
    (produces `inputs_<r>.txt` + `IDs_<r>.txt`).
 3. Fill in config/jobs.conf (one row per task x model).
 4. `flock` (standard on Linux) enables the per-worker singleton + per-card locks; without it there's
@@ -119,6 +119,27 @@ same outDir. Both rows are enqueued by `add-all`; each queue run does one retry 
 `F` run has produced errors. `./run_one.sh <task> <model> <rep>` runs the `F` row; add `T` as a 4th
 arg (`./run_one.sh ibd gemma 1 T`) to run the retry row directly.
 
+## Consensus pre-filter (reviewer jobs)
+
+A task's two small models each answer the same patients from their own `inputs_<r>.txt` subsample;
+a **reviewer** job (a bigger model, its own `<task>_rerun` row) then adjudicates. It should only
+read the patients the two disagreed on, and it does — for free, through the same resume rule.
+
+`between_jobs.sh` waits until **both** small-model jobs are complete (every ID in their
+`IDs_<r>.txt` appears in their `output_*.txt`), then runs `python/between_jobs/skip_consensus_<task>.py`,
+which writes `output_consensus_<datetime>.txt` into the **reviewer's** outDir with one
+`consensus_reached\t<ID>` row per agreed ID. Those IDs now look done to the reviewer job, so it
+processes only the rest. Run it before the reviewer job starts; it is idempotent (each block
+no-ops once the file exists) and is meant for your crontab next to the workers:
+```
+*/5 * * * * /ABS/PATH/phenotyping/between_jobs.sh >> /ABS/PATH/phenotyping/runtime/between_jobs.log 2>&1
+```
+**What counts as agreement is per task**, so each task gets its own `skip_consensus_<task>.py` with
+an AGREEMENT RULES block at the top — the only part meant to be edited. CRC and IBD differ today
+(e.g. IBD sends two `"uncertain"` verdicts to the reviewer; CRC lets two `"not_documented"` sites
+agree), which is deliberate. Check a rule change with `--dry-run` first: it prints how many IDs
+agreed and which field drove each disagreement, and `--examples N` shows sample pairs.
+
 ## What gets recorded (per run)
 
 In each `results/<task>/<model>/rep<r>/`:
@@ -154,4 +175,7 @@ and move the existing `results/<task>/<model>/rep*` dirs into the new root so re
 - `lib.sh` — config lookup, logging, GPU lock.
 - `runtime/` — coordination state only (GPU lock, `_queue/` manifest + worker log); gitignored.
 - `results/` (or your `RESULTS_ROOT`) — per-job output dirs.
-- `python/` — the standalone input builders (`extract_*.py`, `snippet_lib.py`).
+- `python/preprocessing/` — the standalone input builders (`extract_*.py`, `snippet_lib.py`).
+- `python/between_jobs/` — the per-task `skip_consensus_<task>.py` rules.
+- `between_jobs.sh` — the between-stage step (see [Consensus pre-filter](#consensus-pre-filter-reviewer-jobs)):
+  once a task's two small models are done, marks the IDs they agreed on so the reviewer skips them.

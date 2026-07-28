@@ -30,7 +30,7 @@ Rules:
 - Use "not_documented" (or "unknown") whenever the notes do not state a field. Never guess or infer a value.
 - "certain" confidence is only for an explicit, unambiguous IBD diagnosis (or clear absence) in the notes.
 - Set "montreal_location" and "perianal" to "not_applicable" unless the diagnosis is "crohns_disease".
-- Think briefly. A few sentences of reasoning at most -- weigh only the decisive evidence, then stop thinking and give the answer.
+- Think briefly, a few sentences of reasoning at most. Weigh only the decisive evidence, then stop thinking and give the answer.
 <turn|>
 <|turn>user
 Excerpts:\n

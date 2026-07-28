@@ -29,7 +29,7 @@ If YES, respond with ONLY this JSON object and nothing else, with exactly these 
 Rules:
 - Use "not_documented" (or "unknown") whenever the notes do not state a field. Never guess or infer a value.
 - "certain" confidence is only for an explicit, unambiguous CRC diagnosis (or clear absence) in the notes.
-- Think briefly. A few sentences of reasoning at most -- weigh only the decisive evidence, then stop thinking and give the answer.
+- Think briefly, a few sentences of reasoning at most. Weigh only the decisive evidence, then stop thinking and give the answer.
 <turn|>
 <|turn>user
 Excerpts:\n
