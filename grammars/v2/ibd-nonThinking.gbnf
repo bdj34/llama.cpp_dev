@@ -1,0 +1,45 @@
+root ::= yesObj | noObj
+
+yesObj ::= ("{\n"
+  "  \"ibd\": \"yes\",\n"
+  "  \"diagnosis\": " ibdDx ",\n"
+  "  \"confidence\": " conf ",\n"
+  "  \"endoscopy_confirmed\": " yesNoND ",\n"
+  "  \"diagnosis_date\": " diagDate ",\n"
+  "  \"date_approximate\": " dateApprox ",\n"
+  "  \"colon_extent\": " extent ",\n"
+  "  \"montreal_location\": " montrealLoc ",\n"
+  "  \"perianal\": " naYesNoND ",\n"
+  "  \"psc\": " yesNoND ",\n"
+  "  \"care_setting\": " careSetting "\n"
+  "}")
+
+noObj ::= ("{\n"
+  "  \"ibd\": " ("\"no\"" | "\"uncertain\"") ",\n"
+  "  \"diagnosis\": " nonIbdDx ",\n"
+  "  \"confidence\": " conf "\n"
+  "}")
+
+ibdDx    ::= "\"ulcerative_colitis\"" | "\"ulcerative_proctitis\"" | "\"ibd_unclassified\"" | "\"crohns_disease\""
+nonIbdDx ::= "\"microscopic_colitis\"" | "\"ischemic_colitis\"" | "\"infectious_colitis\"" | "\"cdiff_colitis\"" | "\"radiation_proctitis\"" | "\"diversion_colitis\"" | "\"drug_induced_colitis\"" | "\"other_colitis\"" | "\"colitis_nos\"" | "\"no_colitis\"" | "\"insufficient_information\""
+
+conf        ::= "\"low\"" | "\"medium\"" | "\"high\"" | "\"certain\""
+extent      ::= "\"proctitis\"" | "\"left_sided\"" | "\"extensive_pancolitis\"" | "\"segmental\"" | "\"none\"" | "\"not_documented\""
+montrealLoc ::= "\"L1\"" | "\"L2\"" | "\"L3\"" | "\"L4\"" | "\"L1+L4\"" | "\"L2+L4\"" | "\"L3+L4\"" | "\"not_documented\"" | "\"not_applicable\""
+careSetting ::= "\"VA\"" | "\"external\"" | "\"not_documented\""
+yesNoND     ::= "\"yes\"" | "\"no\"" | "\"not_documented\""
+naYesNoND   ::= "\"yes\"" | "\"no\"" | "\"not_documented\"" | "\"not_applicable\""
+
+diagDate   ::= "\"" year ( "-" mm ( "-" dd )? )? "\"" | "\"unknown\""
+dateApprox ::= ("\"exact\"" | "\"unknown\""
+             | "\"during " decade "0s\""
+             | "\"before " year "\""
+             | "\"after " year "\""
+             | "\"" year "-" year "\"")
+
+year    ::= ("1" | "2") digit digit digit
+decade  ::= ("1" | "2") digit digit
+mm      ::= ("0" nonzero) | ("1" ("0" | "1" | "2"))
+dd      ::= ("0" nonzero) | (("1" | "2") digit) | ("3" ("0" | "1"))
+digit   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+nonzero ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

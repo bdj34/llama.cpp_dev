@@ -1,4 +1,32 @@
 
+# Gemma-4
+./build/bin/llama-data-extraction \
+-m ~/Downloads/models_gguf/gemma-4-26B-A4B-it-UD-Q6_K.gguf \
+-sysf ./system_prompts/gemma4-nonThinking/ibd.txt \
+--no-escape \
+--sequences 16 --parallel 4 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 16384 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/v2/ibd-nonThinking.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat gemma4-nonThinking
+
+# Qwen 3.6
+./build/bin/llama-data-extraction \
+-m ~/Downloads/models_gguf/Qwen3-30B-A3B-Instruct-2507-Q4_K_M.gguf \
+-sysf ./system_prompts/qwen3.6-nonThinking/ibd.txt \
+--no-escape \
+--sequences 16 --parallel 4 --n-predict 300 --batch-size 2048 --n-gpu-layers 99 --ctx-size 16384 \
+--temp 0 --saveInput \
+--IDfile /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_patientIDs_06042024.txt \
+--grammar-file ./grammars/v2/ibd-nonThinking.gbnf \
+--outDir ../llm_ibd_outDir \
+--file /Users/brianjohnson/VA_IBD/testing_data/IBD_hx_deID/concat_input_06062024_revChronological.txt \
+--promptFormat qwen-nonThinking
+
+
+
 # Med Gemma 3 27B
 ./build/bin/llama-data-extraction \
 -m ~/Downloads/models_gguf/medgemma-27b-text-it-Q6_K.gguf \
