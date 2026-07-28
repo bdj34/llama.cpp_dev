@@ -18,7 +18,7 @@ fills the remaining budget.
 """
 from snippet_lib import TaskConfig, run
 
-SEG    = r"(?:procto|hemi|recto\s?sigmoid|ileocec|subtotal|total|segmental|partial)"
+SEG    = r"(?:procto|hemi|recto\s?sigmoid|subtotal|total|segmental|partial)"
 ORGAN  = r"\b(?:colon|rect\w*|cecum|sigmoid|bowel|ileocecal)"
 REMOVE = r"(?:resect|remov|excis)\w*"
 PROC = (

@@ -33,7 +33,7 @@ CONFIG = TaskConfig(
     ignore_regex=(
         r"(?i)(?:recommend|schedul\w*|due\s+for|plan(?:ned|s|ning)?\s+for|"
         r"will\s+(?:need|schedule|get)|refer\w*\s+for|should\s+(?:have|get|undergo)|"
-        r"advis\w*|order\w*\s+for).{0,25}?(?:screening\s+|surveillance\s+|repeat\s+)?colonoscop"
+        r"advis\w*|order\w*\s+for).{0,10}?(?:screening\s+|surveillance\s+|repeat\s+)?colonoscop"
     ),
 
     # Overrides the ignore above: a colonoscopy mention carrying a PAST-event cue (a year,
