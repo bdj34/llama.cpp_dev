@@ -26,9 +26,12 @@ reviewer regardless -- even two "uncertain"s, since neither model settled the qu
 both say "yes", `diagnosis` and the diagnosis YEAR must match exactly; when both say
 "crohns_disease", `montreal_location` must match exactly AND be documented -- two
 "not_documented" locations go to the reviewer, like two "uncertain" verdicts. Both models must
-also be at least MIN_CONFIDENCE confident. Everything else -- endoscopy_confirmed,
-date_approximate, colon_extent, perianal, psc, care_setting, and the non-IBD `diagnosis` on a
-"no"/"uncertain" answer -- is ignored; uncomment a line in the rule lists to make it count.
+also be at least MIN_CONFIDENCE confident. `endoscopy_confirmed` and `psc` must agree on presence:
+"yes" settles only against another "yes", while "no" and "not_documented" both count as no
+evidence and agree with each other -- so a documented finding against an undocumented one
+escalates. Everything else -- date_approximate,
+colon_extent, perianal, care_setting, and the non-IBD `diagnosis` on a "no"/"uncertain" answer
+-- is ignored; uncomment a line in the rule lists to make it count.
 
 A non-answer never forms consensus, not even against the same non-answer: "uncertain" ibd,
 "unknown" diagnosis_date and "not_documented" montreal_location all go to the reviewer. Note
@@ -91,6 +94,18 @@ def lenient(cmp, wildcards=WILDCARDS):
     return _cmp
 
 
+# For yes|no|not_documented findings (endoscopy_confirmed, psc): "no" and "not_documented" both
+# mean "no evidence of this in these notes", so they agree with each other. "yes" is a positive
+# finding and agrees only with "yes" -- one model documenting it while the other did not is a real
+# conflict, not silence.
+ABSENT = {"no", "not_documented"}
+
+
+def same_presence(a, b):
+    """yes/yes agrees; no, not_documented agree with each other; yes against either escalates."""
+    return (a == b == "yes") or (a in ABSENT and b in ABSENT)
+
+
 # Fields both answers must agree on, whatever the verdict. ("no"/"uncertain" bodies carry only
 # ibd + diagnosis + confidence, so only those three can go here.) The verdict must match
 # EXACTLY, and "uncertain" goes to the reviewer regardless -- even two "uncertain"s.
@@ -106,9 +121,10 @@ AGREE_IF_YES = [
     # Year only, and an "unknown" date never forms consensus even against another "unknown" --
     # the prompt sends approximate dates to date_approximate, so those land on the reviewer.
     ("diagnosis_date", settled(same_year, UNSETTLED_DATE)),
-    # ("endoscopy_confirmed", lenient(exact)),
+    # Presence findings: only yes/yes settles a positive; "no" and "not_documented" agree.
+    ("endoscopy_confirmed", same_presence),
+    ("psc", same_presence),
     # ("colon_extent",        lenient(exact)),
-    # ("psc",                 lenient(exact)),
     # ("care_setting",        lenient(exact)),
 ]
 
