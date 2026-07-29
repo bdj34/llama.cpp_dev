@@ -21,15 +21,13 @@ differ meaningfully (again, "meaningfully" defined here).
 
 WHAT COUNTS AS AGREEMENT lives in the AGREEMENT RULES block below -- it is the only part
 meant to be edited, and it is CRC-specific (each task gets its own skip_consensus_<task>.py).
-As set now: both answers must parse, `crc` must match, both models must be at least
-MIN_CONFIDENCE confident, and when both say "yes" the diagnosis YEAR, `anatomical_site`,
-`stage_ajcc` and `detection_mode` must match exactly. Everything else -- date_approximate,
-stage_t/n/m, care_setting -- is ignored; uncomment a line in AGREE_IF_YES to make it count.
+As set now the reviewer sees every patient EXCEPT those both models confidently called
+negative: an ID is skipped only when both answers parse, both say `crc` = "no", and both are at
+least MIN_CONFIDENCE confident. Any positive from either model escalates -- the validated
+pipeline's either-positive rule, so a CRC diagnosis is never confirmed on two votes alone.
 
-An "unknown" diagnosis_date never agrees, not even with another "unknown". The other fields
-compare exactly, so two matching non-answers ("not_documented" site, "unknown" stage) DO count
-as consensus; use a comparator that rejects those (see the commented-out exact_and_known) to
-send them to the reviewer instead.
+That makes the AGREE_IF_YES rules inert; they are kept because restoring ("crc", exact) in
+AGREE_ALWAYS brings them straight back for double-positive answers.
 
     ./skip_consensus_crc.py --path1 <PATH> --path2 <PATH> --out-dir <PATH>
     ./skip_consensus_crc.py --path1 <PATH> --path2 <PATH> --out-dir <PATH> --dry-run --examples 10
@@ -62,8 +60,9 @@ SITE_GROUP = {
 }
 
 CONFIDENCE_RANK = {"low": 0, "medium": 1, "high": 2, "certain": 3}
-# Set to "medium"/"high"/etc. to ALSO require both models be at least that confident before an
-# ID can be skipped; None = confidence does not affect agreement.
+# Both models must be at least this confident before an ID can be skipped. With every positive
+# escalated above, this now governs the NEGATIVES: a hesitant "no" goes to the reviewer, which is
+# the direction that protects recall on a rare cancer. None = confidence does not affect agreement.
 MIN_CONFIDENCE = "high"
 
 
@@ -92,14 +91,23 @@ def lenient(cmp, wildcards=WILDCARDS):
     return _cmp
 
 
+def negative_agreement(a, b):
+    """Only two "no" answers settle a patient. ANY positive goes to the reviewer, matching the
+    validated pipeline's either-positive escalation -- a CRC call is never made on two votes.
+    Use plain exact() here to let two agreeing positives be skipped again."""
+    return a == b == "no"
+
+
 # Fields both answers must agree on, whatever the verdict. (crc="no" bodies carry only
 # crc + confidence, so only those two can go here.)
 AGREE_ALWAYS = [
-    ("crc", exact),
+    ("crc", negative_agreement),
 ]
 
-# Additional fields to agree on when BOTH models said crc="yes". Anything left out is ignored;
-# a field a rule asks about but that is missing counts as a disagreement.
+# Additional fields to agree on when BOTH models said crc="yes". These are INERT while
+# AGREE_ALWAYS escalates every positive -- no answer reaches them. They apply again the moment
+# ("crc", exact) is restored above. A field a rule asks about but that is missing counts as a
+# disagreement.
 AGREE_IF_YES = [
     ("diagnosis_date", same_known_year),
     ("anatomical_site", exact),
