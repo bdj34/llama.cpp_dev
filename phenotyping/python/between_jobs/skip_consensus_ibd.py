@@ -40,6 +40,7 @@ the prompt puts approximate dates in date_approximate, so an "unknown" diagnosis
 """
 import argparse
 import json
+import re
 import sys
 from collections import Counter
 from datetime import datetime
@@ -156,11 +157,21 @@ def read_answers(out_dir):
     return answers, errors, no_grammar
 
 
+# The output file holds the model's raw text, which carries Gemma control tokens around the
+# answer (the end-of-turn marker, and a thought channel on a thinking model). Strip them and
+# keep only the outermost {...} before parsing.
+_CONTROL = re.compile(r"<\|[^<>]*>|<[^<>]*\|>")
+
+
 def parse(answer):
     """The single-level JSON object the ibd grammar produces, or None if it does not parse
     (a NO_GRAMMAR free-text answer, or a truncated one). Newlines come back escaped."""
+    text = _CONTROL.sub(" ", answer.replace("\\n", "\n"))
+    i, j = text.find("{"), text.rfind("}")
+    if i < 0 or j < i:
+        return None
     try:
-        obj = json.loads(answer.replace("\\n", "\n"))
+        obj = json.loads(text[i:j + 1])
     except ValueError:
         return None
     return obj if isinstance(obj, dict) else None
