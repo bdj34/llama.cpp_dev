@@ -66,7 +66,7 @@ WILDCARDS = {"not_documented", "unknown", "not_applicable"}
 CONFIDENCE_RANK = {"low": 0, "medium": 1, "high": 2, "certain": 3}
 # Set to "medium"/"high"/etc. to ALSO require both models be at least that confident before an
 # ID can be skipped; None = confidence does not affect agreement.
-MIN_CONFIDENCE = "medium"
+MIN_CONFIDENCE = "high"
 
 
 def exact(a, b):
@@ -80,9 +80,11 @@ def same_year(a, b):
 
 def settled(cmp, unsettled):
     """Wrap a comparator so a non-answer on either side never forms consensus, even against the
-    same non-answer: two models that both failed to pin the value have not settled it."""
+    same non-answer: two models that both failed to pin the value have not settled it. The set is
+    tagged onto the comparator so the summary can separate "nobody knew" from "they conflict"."""
     def _cmp(a, b):
         return a not in unsettled and b not in unsettled and cmp(a, b)
+    _cmp.unsettled = unsettled
     return _cmp
 
 
@@ -201,6 +203,11 @@ def check(rules, ja, jb):
         if field not in ja or field not in jb:
             return f"missing {field}"
         if not cmp(ja[field], jb[field]):
+            # Separate "neither model pinned it down" from "the two models conflict" -- same
+            # escalation, very different fix.
+            unsettled = getattr(cmp, "unsettled", ())
+            if ja[field] in unsettled or jb[field] in unsettled:
+                return f"{field} unsettled"
             return field
     return None
 
