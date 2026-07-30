@@ -239,11 +239,17 @@ def cluster_patient(all_notes, wl_notes, cpt_dates, path_entries, window, max_no
 
 
 def build_input(ev, scratch_fh):
-    """Render one event as the model input: every document in one chronological stream, each
-    labeled with what it is. Same-day ties put the endoscopic document first, since pathology is
-    downstream of the procedure and reads better after it. A confirmed report and clinical notes
-    never appear together -- cluster_patient only pulls clinical notes when no report was
-    confirmed -- so the label alone tells the model what kind of source it has."""
+    """Render one event as the model input, each document labeled with what it is and dated.
+
+    When a confirmed report exists, ALL reports precede ALL pathology regardless of date: the
+    report is the procedure and the pathology is downstream of it, and matching jars to lesions
+    reads naturally in that direction. Date order would usually invert it, since a report is
+    dated by when it was SIGNED (often a day or more later) while a specimen is dated by when it
+    was taken -- which is the procedure date itself.
+
+    With no confirmed report, documents stay in date order, same-day ties going to the clinical
+    note. A confirmed report and clinical notes never appear together, since cluster_patient
+    only pulls clinical notes when no report was confirmed."""
     docs = []
     for row in ev.notes:
         docs.append((_parse_dt(row["NoteDateTime"]).date(), 0, "COLONOSCOPY REPORT", row, None))
@@ -251,7 +257,8 @@ def build_input(ev, scratch_fh):
         docs.append((_parse_dt(row["NoteDateTime"]).date(), 0, "CLINICAL NOTE", row, None))
     for _, pe in ev.paths:
         docs.append((pe.taken, 1, "PATHOLOGY REPORT", None, pe))
-    docs.sort(key=lambda d: (d[0], d[1]))
+    # kind-major when a report anchors the reading, date-major otherwise.
+    docs.sort(key=(lambda d: (d[1], d[0])) if ev.notes else (lambda d: (d[0], d[1])))
 
     parts = [f"Event date: {ev.anchor.isoformat()}"]
     for d, _, label, row, pe in docs:
@@ -319,7 +326,7 @@ def main():
 
     def emit(icn, events, fh):
         for seq, ev in enumerate(events, 1):
-            eid = f"{icn}|{ev.anchor.strftime('%Y%m%d')}|{seq}"
+            eid = f"{icn}_{ev.anchor.strftime('%Y%m%d')}_{seq}"
             # A CPT with no pathology and no note in the window has nothing to read: the input
             # would be a SOURCES header and a date, and the model could only answer nulls. Keep
             # the manifest row -- it is still a real event for denominators -- but do not spend
