@@ -58,7 +58,7 @@ def main():
     src.add_argument("--buckets", help="dir of bucket_*.csv.gz note buckets")
     src.add_argument("--notes", help="single notes CSV")
     ap.add_argument("--out-dir", default="colonoscopy_report_yn_inputs")
-    ap.add_argument("--max-chars", type=int, default=8000,
+    ap.add_argument("--max-chars", type=int, default=4000,
                     help="head+tail budget per note. This is the throughput knob: the system "
                          "prompt is prefilled once and shared across sequences, so cost is "
                          "note tokens alone. A report identifies itself in its opening lines "
