@@ -95,14 +95,14 @@ def main():
     src.add_argument("--buckets", help="dir of bucket_*.csv.gz note buckets")
     src.add_argument("--notes", help="single notes CSV")
     ap.add_argument("--out-dir", default="colonoscopy_report_yn_inputs")
-    ap.add_argument("--max-chars", type=int, default=4000,
+    ap.add_argument("--max-chars", type=int, default=8000,
                     help="head+tail budget per note. This is the throughput knob: the system "
                          "prompt is prefilled once and shared across sequences, so cost is "
                          "note tokens alone. A report identifies itself in its opening lines "
                          "and its impression, so this can go lower if the corpus demands it.")
     ap.add_argument("--path-csv", help="pathology CSV; only PatientICN/SpecimenTakenDate are read")
     ap.add_argument("--cpt-csv", help="CPT CSV: PatientICN, CPT_date")
-    ap.add_argument("--window-days", type=int, default=30,
+    ap.add_argument("--window-days", type=int, default=10,
                     help="keep a note only if it falls within this many days of a pathology "
                          "specimen date or a colonoscopy CPT date")
     args = ap.parse_args()
