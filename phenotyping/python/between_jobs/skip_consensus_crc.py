@@ -98,6 +98,11 @@ def negative_agreement(a, b):
     return a == b == "no"
 
 
+# Values that escalate even when BOTH models give them, so the summary can report an agreed
+# positive as policy rather than as a conflict between the models.
+negative_agreement.policy_escalates = {"yes"}
+
+
 # Fields both answers must agree on, whatever the verdict. (crc="no" bodies carry only
 # crc + confidence, so only those two can go here.)
 AGREE_ALWAYS = [
@@ -184,6 +189,11 @@ def agrees(a, b):
         if field not in ja or field not in jb:
             return False, f"missing {field}"
         if not cmp(ja[field], jb[field]):
+            # Both models saying "yes" is not a disagreement -- it is the either-positive rule
+            # sending an agreed positive for review. Report it as such so the tally separates
+            # policy escalations from genuine model conflicts.
+            if ja[field] == jb[field] and ja[field] in getattr(cmp, "policy_escalates", ()):
+                return False, f"{field} agreed positive"
             return False, field
 
     if ja.get("crc") == "yes" and jb.get("crc") == "yes":
