@@ -26,16 +26,17 @@ Anchoring, in strict priority order, all within --window-days:
 
   4. An event with no gate-confirmed report falls back to EVERY note the patient has in
      [anchor - 1 day, anchor + --window-days]: the day before through the signing lag.
-     These are labeled as unconfirmed in the input so the model knows it is reading
-     nearby context rather than a verified procedure report.
+     They are labeled CLINICAL NOTE rather than COLONOSCOPY REPORT so the model knows it
+     is reading nearby context rather than a verified procedure report.
 
 Nothing is truncated. A report's findings and impression are what the extraction needs and
 both sit at the end, so a size cap here would silently cost accuracy; the ctx budget is set
 in jobs.conf instead. Watch manifest.csv's input_chars to size it.
 
-Every event is emitted, exam-only ones included. Each input carries a SOURCES header so the
-model can separate "the report is silent on prep" from "there is no report" -- these are
-opposite facts downstream and both otherwise arrive as "unknown".
+Documents are emitted as one chronological stream, each labeled COLONOSCOPY REPORT, CLINICAL
+NOTE, or PATHOLOGY REPORT, ties going to the endoscopic document. The labels are what let the
+model separate "the report is silent on prep" from "there is no report" -- opposite facts
+downstream that would otherwise both arrive as "unknown".
 
 Newlines are escaped to a literal backslash-n: data-extraction.cpp splits --file on '\n'
 (one record per line) and calls convertEscapedNewlines() on each record itself.
@@ -238,36 +239,28 @@ def cluster_patient(all_notes, wl_notes, cpt_dates, path_entries, window, max_no
 
 
 def build_input(ev, scratch_fh):
-    """Render one event as the model input. Order is deliberate: SOURCES first so the model
-    fixes what is and is not available before reading anything, then pathology (the anchor),
-    then the report or the nearby notes standing in for it."""
-    n_paths, n_wl, n_fb = len(ev.paths), len(ev.notes), len(ev.fallback_notes)
-    if n_wl:
-        report_src = f"confirmed report x{n_wl}"
-    elif n_fb:
-        report_src = f"NONE - {n_fb} unconfirmed note(s) from the same window shown instead"
-    else:
-        report_src = "NONE"
-    parts = [
-        f"SOURCES: colonoscopy report: {report_src} | "
-        f"pathology reports: {n_paths if n_paths else 'NONE'} | "
-        f"CPT date: {', '.join(d.isoformat() for d in ev.cpt_dates) if ev.cpt_dates else 'NONE'}",
-        f"Event date: {ev.anchor.isoformat()}",
-    ]
-    for i, (delta, pe) in enumerate(sorted(ev.paths, key=lambda p: (abs(p[0]), p[1].sid)), 1):
-        scratch_fh.seek(pe.offset)
-        parts += ["", f"<<< PATHOLOGY REPORT {i} of {n_paths} >>>",
-                  f"Specimen taken date: {pe.taken.isoformat()} ({delta:+d} days from event date)",
-                  json.loads(scratch_fh.readline().decode("utf-8"))["text"]]
+    """Render one event as the model input: every document in one chronological stream, each
+    labeled with what it is. Same-day ties put the endoscopic document first, since pathology is
+    downstream of the procedure and reads better after it. A confirmed report and clinical notes
+    never appear together -- cluster_patient only pulls clinical notes when no report was
+    confirmed -- so the label alone tells the model what kind of source it has."""
+    docs = []
     for row in ev.notes:
-        parts += ["", "<<< COLONOSCOPY REPORT >>>",
-                  f"Report date: {_parse_dt(row['NoteDateTime']).date().isoformat()}",
-                  row["ReportText"]]
-    for i, row in enumerate(ev.fallback_notes, 1):
-        parts += ["", f"<<< NEARBY NOTE {i} of {n_fb} -- NOT confirmed to be a procedure "
-                      f"report; may be unrelated to this colonoscopy >>>",
-                  f"Note date: {_parse_dt(row['NoteDateTime']).date().isoformat()}",
-                  row["ReportText"]]
+        docs.append((_parse_dt(row["NoteDateTime"]).date(), 0, "COLONOSCOPY REPORT", row, None))
+    for row in ev.fallback_notes:
+        docs.append((_parse_dt(row["NoteDateTime"]).date(), 0, "CLINICAL NOTE", row, None))
+    for _, pe in ev.paths:
+        docs.append((pe.taken, 1, "PATHOLOGY REPORT", None, pe))
+    docs.sort(key=lambda d: (d[0], d[1]))
+
+    parts = [f"Event date: {ev.anchor.isoformat()}"]
+    for d, _, label, row, pe in docs:
+        if pe is not None:
+            scratch_fh.seek(pe.offset)
+            text = json.loads(scratch_fh.readline().decode("utf-8"))["text"]
+        else:
+            text = row["ReportText"]
+        parts += ["", f"<<< {label} -- {d.isoformat()} >>>", text]
     body = "\n".join(parts)
     return body.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
 

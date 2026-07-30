@@ -79,18 +79,18 @@ log "colectomy: both models done -> writing consensus"
 python "$PY_DIR/skip_consensus_colectomy.py" --path1 /data/models/results/colectomy/gemma4-26-A4-nonThinking/rep1 --path2 /data/models/results/colectomy/qwen3.6-35-A3-nonThinking/rep2 --out-dir /data/models/results/colectomy_rerun/gemma4-31B-thinking/rep3
 fi
 
-# colonoscopy_report_yn -> colonoscopy_event. Turn the gate's Yes answers into a whitelist, then
+# colonoscopy_report_yn -> colonoscopy_details_extraction. Turn the gate's Yes answers into a whitelist, then
 # assemble one input per colonoscopy EVENT from the whitelisted reports + the pathology and CPT
 # CSVs. Unlike the consensus blocks this one takes tens of minutes, so it holds a lock: cron
 # fires every 5 minutes and the sentinel is only written at the end.
 YN_OUT="$RESULTS/colonoscopy_report_yn/gemma4-26-A4-nonThinking/rep1"
-EVENT_IN="$INPUTS/colonoscopy_event"
+EVENT_IN="$INPUTS/colonoscopy_details_extraction"
 if [ -f "$PY_DIR/extract_colonoscopy_event.py" ] \
-   && job_done "$YN_OUT" "$INPUTS/colo_reports_pre_yn/IDs_1.txt" \
+   && job_done "$YN_OUT" "$INPUTS/colonoscopy_report_yn/IDs_1.txt" \
    && ! inputs_built "$EVENT_IN"; then
 (
-    flock -n 9 || { log "colonoscopy_event: build already running, skipping"; exit 0; }
-    log "colonoscopy_report_yn: gate done -> building whitelist + colonoscopy_event inputs"
+    flock -n 9 || { log "colonoscopy_details_extraction: build already running, skipping"; exit 0; }
+    log "colonoscopy_report_yn: gate done -> building whitelist + colonoscopy_details_extraction inputs"
     mkdir -p "$EVENT_IN"
     awk -F'\t' '$1=="Answer: Yes" { print ($NF=="NO_GRAMMAR" ? $(NF-1) : $NF) }' \
         "$YN_OUT"/output_*.txt | sort -u > "$EVENT_IN/whitelist.txt"
@@ -102,6 +102,6 @@ if [ -f "$PY_DIR/extract_colonoscopy_event.py" ] \
         --whitelist "$EVENT_IN/whitelist.txt" \
         --out-dir   "$EVENT_IN" \
       && touch "$EVENT_IN/.built" \
-      && log "colonoscopy_event: inputs built"
-) 9>"$INPUTS/.colonoscopy_event.lock"
+      && log "colonoscopy_details_extraction: inputs built"
+) 9>"$INPUTS/.colonoscopy_details_extraction.lock"
 fi
