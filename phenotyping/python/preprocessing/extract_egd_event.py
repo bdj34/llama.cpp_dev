@@ -41,7 +41,7 @@ import re
 import sys
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import date
+from datetime import date, time
 from pathlib import Path
 
 from snippet_lib import _iter_buckets, _iter_single_csv, _open_maybe_gzip, _parse_dt
@@ -172,11 +172,26 @@ def cluster_patient(cpt_dates, notes, path_entries, window, merge_days, max_note
         _, _, ev = min(near, key=lambda c: (c[0], c[1]))
         ev.paths.append((int((pe.taken - ev.anchor).days), pe))
 
-    dated_notes = [(_parse_dt(r["NoteDateTime"]).date(), r) for r in notes]
+    dated_notes = [(_parse_dt(r["NoteDateTime"]), r) for r in notes]
     for ev in events:
-        near = [(abs((d - ev.anchor).days), d, r) for d, r in dated_notes]
-        near = sorted(c for c in near if c[0] <= window)[:max_notes]
-        ev.notes = [r for _, _, r in sorted(near, key=lambda c: c[1])]
+        # Every note written on the procedure day is kept, cap or not: one of them is the EGD
+        # report, and which one is not knowable here without reading them. The cap governs only
+        # the surrounding days, and same-day notes count against it, so an event with more
+        # same-day notes than the cap simply keeps them all.
+        same_day, other = [], []
+        for dt, r in dated_notes:
+            gap = abs((dt.date() - ev.anchor).days)
+            if gap == 0:
+                same_day.append((dt, r))
+            elif gap <= window:
+                other.append((gap, dt.date() < ev.anchor, dt, r))
+        # Sort on an explicit key -- the row dict is not orderable and same-day notes tie on
+        # both distance and date. Equidistant notes go to the one at or AFTER the CPT date: a
+        # note two days before is pre-procedure, two days after is usually the report.
+        other.sort(key=lambda c: (c[0], c[1], c[2]))
+        room = max(max_notes - len(same_day), 0)
+        chosen = same_day + [(dt, r) for _, _, dt, r in other[:room]]
+        ev.notes = [r for _, r in sorted(chosen, key=lambda c: c[0])]
 
     return events
 
@@ -185,18 +200,27 @@ def build_input(ev, scratch_fh):
     """One event as the model input: every document in date order, each labeled and dated.
     Same-day ties put the note first -- pathology is downstream of the procedure and reads
     better after the endoscopic description."""
-    docs = [(_parse_dt(r["NoteDateTime"]).date(), 0, "CLINICAL NOTE", r, None) for r in ev.notes]
-    docs += [(pe.taken, 1, "PATHOLOGY REPORT", None, pe) for _, pe in ev.paths]
-    docs.sort(key=lambda d: (d[0], d[1]))
+    # Sort on (date, kind, time): notes carry a full EntryDateTime and pathology only a
+    # specimen date, so the day is the shared key. Same-day ties put the notes first, in
+    # timestamp order -- pathology is downstream of the procedure and reads better after it.
+    docs = []
+    for r in ev.notes:
+        dt = _parse_dt(r["NoteDateTime"])
+        docs.append((dt.date(), 0, dt.time(), "CLINICAL NOTE",
+                     dt.strftime("%Y-%m-%d %H:%M"), r, None))
+    for _, pe in ev.paths:
+        docs.append((pe.taken, 1, time.min, "PATHOLOGY REPORT",
+                     pe.taken.isoformat(), None, pe))
+    docs.sort(key=lambda d: (d[0], d[1], d[2]))
 
     parts = [f"Event date: {ev.anchor.isoformat()}"]
-    for d, _, label, row, pe in docs:
+    for *_, label, stamp, row, pe in docs:
         if pe is not None:
             scratch_fh.seek(pe.offset)
             text = json.loads(scratch_fh.readline().decode("utf-8"))["text"]
         else:
             text = row["ReportText"]
-        parts += ["", f"<<< {label} -- {d.isoformat()} >>>", text]
+        parts += ["", f"<<< {label} -- {stamp} >>>", text]
     body = "\n".join(parts)
     return body.replace("\r\n", "\n").replace("\r", "\n").replace("\n", "\\n")
 
