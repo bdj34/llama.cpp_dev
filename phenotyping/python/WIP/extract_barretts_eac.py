@@ -20,7 +20,7 @@ model (it must see the negatives to answer "no").
 
     ./extract_barretts_eac.py --buckets /data/note_buckets --out-dir /data/barretts_eac/raw_inputs
 """
-from snippet_lib import TaskConfig, run
+from phenotyping.python.preprocessing.snippet_lib import TaskConfig, run
 
 # Esophageal context used to gate the ambiguous "intestinal metaplasia" term.
 ESO = (

@@ -16,7 +16,7 @@ fills the remaining budget.
 
     ./extract_colectomy.py --buckets /data/note_buckets --out-dir /data/colectomy/raw_inputs
 """
-from snippet_lib import TaskConfig, run
+from phenotyping.python.preprocessing.snippet_lib import TaskConfig, run
 
 SEG    = r"(?:procto|hemi|recto\s?sigmoid|subtotal|total|segmental|partial)"
 ORGAN  = r"\b(?:colon|rect\w*|cecum|sigmoid|bowel|ileocecal)"

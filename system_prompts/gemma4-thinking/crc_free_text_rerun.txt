@@ -23,7 +23,7 @@ If YES, respond with ONLY this JSON object and nothing else, with exactly these 
   "stage_t": primary tumor category -- "Tis", "T0", "T1", "T2", "T3", "T4", "T4a", "T4b", "TX", or "not_documented".
   "stage_n": regional lymph node category -- "N0", "N1", "N1a", "N1b", "N1c", "N2", "N2a", "N2b", "NX", or "not_documented".
   "stage_m": distant metastasis category -- "M0", "M1", "M1a", "M1b", "M1c", "MX", or "not_documented".
-  "care_setting": where the CRC was DIAGNOSED -- "VA", "external" (non-VA/community), or "not_documented".
+  "care_setting": where the CRC was DIAGNOSEnotD -- "VA", "external" (non-VA/community), or "not_documented".
 }
 
 Rules:

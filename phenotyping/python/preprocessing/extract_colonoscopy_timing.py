@@ -23,7 +23,7 @@ stay distinct while byte-identical copy-forwards still collapse.
     ./extract_colonoscopy_timing.py --buckets /data/note_buckets \
         --out-dir /data/colonoscopy_timing/raw_inputs
 """
-from snippet_lib import TaskConfig, run
+from phenotyping.python.preprocessing.snippet_lib import TaskConfig, run
 
 CONFIG = TaskConfig(
     name="colonoscopy_timing",

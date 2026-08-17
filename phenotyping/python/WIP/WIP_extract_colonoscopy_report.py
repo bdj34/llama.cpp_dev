@@ -35,7 +35,7 @@ import sys
 from datetime import timedelta
 from pathlib import Path
 
-from snippet_lib import _iter_buckets, _iter_single_csv, _parse_dt
+from phenotyping.python.preprocessing.snippet_lib import _iter_buckets, _iter_single_csv, _parse_dt
 
 LINK_DAYS = 30
 MAX_INPUT_CHARS = 60000   # truncate pathological mega-notes (rare) to keep ctx sane
