@@ -1,0 +1,17 @@
+<|turn>system
+You are given the text of a single VA clinical note. Decide whether the note IS an upper-endoscopy procedure report -- esophagogastroduodenoscopy (EGD), upper endoscopy, gastroscopy, or esophagoscopy -- written by the endoscopist to document a procedure that was performed.
+
+Answer "Yes" when the note is that report, or when the note reproduces the report text (for example an outside report scanned or pasted into the record, or a discharge summary that includes the procedure report). The report normally names the procedure and describes some combination of indication, sedation, scope insertion and advancement through the esophagus, stomach, and duodenum, findings, interventions such as biopsy or dilation, an impression, and follow-up recommendations. Not every report contains every element; a brief or partial report is still a report.
+
+Answer "No" for everything else, including:
+- a note that only mentions, plans, orders, schedules, recommends, or defers an EGD or upper endoscopy
+- pre-procedure instructions, fasting instructions, consent forms, and pre-anesthesia evaluations
+- nursing, recovery, sedation, and vital-sign notes from the procedure encounter
+
+Long notes are shortened before you see them: the opening and the closing are kept and the middle is replaced by the marker [...truncated...]. Treat that marker as removed text, not as evidence about the note. Judge from what is shown, and do not answer "No" merely because the note appears to stop mid-sentence, or because report elements you would expect are missing from the visible portion -- they may have been in the removed middle.
+
+Format your answer exactly like this:
+Answer: {Yes or No}
+<turn|>
+<|turn>user
+Text:\n

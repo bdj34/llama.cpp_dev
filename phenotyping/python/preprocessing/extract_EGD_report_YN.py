@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-extract_colonoscopy_report_YN.py -- inputs for the `colonoscopy_report_yn` gate.
+extract_EGD_report_YN.py -- inputs for the `egd_report_yn` gate.
 
-One input per candidate note. gemma-4-26-A4 answers Yes/No to "is this a colonoscopy
-procedure report", and the Yes IDs become the whitelist that extract_colonoscopy_event.py
+One input per candidate note. gemma-4-26-A4 answers Yes/No to "is this an EGD
+procedure report", and the Yes IDs become the whitelist that between_jobs/extract_egd_event.py
 reads with --whitelist.
 
 A model gate rather than a TIU document-title whitelist on purpose: titles drift over time
@@ -11,8 +11,7 @@ and differ by station, so a title rule does not port to another site, while the 
 does.
 
 The regex below is a PREFILTER, not the gate. It asks only whether a note could possibly be
-a lower-endoscopy report -- does it name the procedure at all -- which drops the bulk of the
-full-text-search corpus (notes that matched on "colitis" or "mesalamine" alone) without
+an upper-endoscopy report -- does it name the procedure at all without
 making any report-vs-mention judgment. That judgment is the model's, which is the entire
 point of the gate, so the prefilter is deliberately recall-favoring and imposes no structure
 requirement.
@@ -23,8 +22,8 @@ indication) and closes with the impression; the middle is what is expendable.
 Newlines are escaped to a literal backslash-n because data-extraction.cpp splits --file on
 '\n' (one record per line) and calls convertEscapedNewlines() on each record itself.
 
-    ./extract_colonoscopy_report_YN.py --buckets /data/note_buckets \
-        --out-dir /data/models/inputs/colonoscopy_report_yn
+    ./extract_EGD_report_YN.py --buckets /data/note_buckets \
+        --out-dir /data/models/inputs/egd_report_yn
 """
 import argparse
 import bisect
@@ -36,11 +35,11 @@ from pathlib import Path
 
 from snippet_lib import _iter_buckets, _iter_single_csv, _open_maybe_gzip, _parse_dt
 
-# Names any lower endoscopy. No structure cues and no negative lookarounds: a note that only
-# PLANS a colonoscopy still reaches the model, which is what we want it deciding.
+# Names any upper endoscopy. No structure cues and no negative lookarounds: a note that only
+# PLANS an EGD still reaches the model, which is what we want it deciding.
 PREFILTER = re.compile(
-    r"(?i)\b(?:colonoscop\w*|sigmoidoscop\w*|pouchoscop\w*|chromoendoscop\w*|"
-    r"lower\s+endoscopy|flex(?:ible)?\s+sig\w*)"
+    r"(?i)\b(?:upper\s+(?:GI\s+)?endoscopy|gastroscop\w*|esophagoscop\w*|"
+    r"EGD|esophagogastroduodenoscop\w*)"
 )
 
 
@@ -59,10 +58,10 @@ def _load_anchor_dates(path_csv, cpt_csv):
     """Return (anchors, path_note_ids).
 
     anchors:       PatientICN -> sorted procedure-anchor dates, pathology SpecimenTakenDate and
-                   colonoscopy CPT dates pooled. Only dates are read, so the pathology CSV's
+                   EGD CPT dates pooled. Only dates are read, so the pathology CSV's
                    report text streams past rather than being held.
     path_note_ids: the TIU note IDs of the pathology reports themselves. Those notes also sit in
-                   the buckets and mention polyps and colonoscopies, so they would otherwise be
+                   the buckets and mention EGD/EGD terms, so they would otherwise be
                    sent to the gate -- where they are always No, since a pathology report is not
                    a procedure report. They reach the extraction through the pathology CSV
                    regardless, so gating them is pure waste."""
@@ -104,11 +103,11 @@ def _near_anchor(anchors, d, window_days):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Build colonoscopy_report_yn gate inputs.")
+    ap = argparse.ArgumentParser(description="Build egd_report_yn gate inputs.")
     src = ap.add_mutually_exclusive_group(required=True)
     src.add_argument("--buckets", help="dir of bucket_*.csv.gz note buckets")
     src.add_argument("--notes", help="single notes CSV")
-    ap.add_argument("--out-dir", default="colonoscopy_report_yn_inputs")
+    ap.add_argument("--out-dir", default="egd_report_yn_inputs")
     ap.add_argument("--max-chars", type=int, default=8000,
                     help="head+tail budget per note. This is the throughput knob: the system "
                          "prompt is prefilled once and shared across sequences, so cost is "
@@ -116,9 +115,9 @@ def main():
                          "and its impression, so this can go lower if the corpus demands it.")
     ap.add_argument("--path-csv", help="pathology CSV; only PatientICN/SpecimenTakenDate are read")
     ap.add_argument("--cpt-csv", help="CPT CSV: PatientICN, CPT_date")
-    ap.add_argument("--window-days", type=int, default=10,
+    ap.add_argument("--window-days", type=int, default=20,
                     help="keep a note only if it falls within this many days of a pathology "
-                         "specimen date or a colonoscopy CPT date")
+                         "specimen date or an EGD CPT date")
     args = ap.parse_args()
 
     outdir = Path(args.out_dir)
@@ -131,19 +130,19 @@ def main():
 
     anchors, path_note_ids = _load_anchor_dates(args.path_csv, args.cpt_csv)
     if anchors:
-        print(f"[colonoscopy_report_yn] anchors for {len(anchors):,} patients; keeping notes "
+        print(f"[egd_report_yn] anchors for {len(anchors):,} patients; keeping notes "
               f"within +/-{args.window_days}d of a specimen or CPT date; excluding "
               f"{len(path_note_ids):,} pathology notes", file=sys.stderr)
     else:
-        print("[colonoscopy_report_yn] WARNING: no --path-csv/--cpt-csv, so every note "
+        print("[egd_report_yn] WARNING: no --path-csv/--cpt-csv, so every note "
               "matching the prefilter is submitted to the gate", file=sys.stderr)
 
     source = _iter_buckets(Path(args.buckets)) if args.buckets else _iter_single_csv(Path(args.notes))
     n_seen = n_near = n_kept = n_path = 0
     for pid, rows in source:
-        # A colonoscopy with neither a CPT code nor tissue taken cannot anchor an event that
+        # An EGD with neither a CPT code nor tissue taken cannot anchor an event that
         # carries anything to extract, so those notes never reach the gate. External procedures
-        # documented only in narrative are covered by the colonoscopy_timing task instead.
+        # documented only in narrative are covered by the EGD_timing task instead.
         pt_anchors = anchors.get(pid) if anchors else None
         if anchors and not pt_anchors:
             n_seen += len(rows)
@@ -171,9 +170,9 @@ def main():
 
     in_w.close()
     id_w.close()
-    print(f"[colonoscopy_report_yn] {n_seen:,} notes seen ({n_path:,} were pathology reports, "
+    print(f"[egd_report_yn] {n_seen:,} notes seen ({n_path:,} were pathology reports, "
           f"dropped) -> {n_near:,} in window "
-          f"-> {n_kept:,} named a lower endoscopy "
+          f"-> {n_kept:,} named an upper endoscopy "
           f"({100.0 * n_kept / max(n_seen, 1):.2f}% of corpus) -> {outdir}", file=sys.stderr)
 
 

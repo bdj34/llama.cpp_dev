@@ -14,6 +14,8 @@ INPUTS="/data/models/inputs"
 BUCKETS="/data/models/ibd_csv_data/note_buckets"
 PATH_CSV="/data/models/ibd_csv_data/pathReports/colo_pathReports_IBDPts_2026-07-15.csv.gz"
 CPT_CSV="/data/models/ibd_csv_data/CPT/colo_CPT_IBDPts_2026-07-15.csv.gz"
+EGD_PATH_CSV="/data/models/ibd_csv_data/pathReports/egd_pathReports_IBDPts_2026-07-15.csv.gz"
+EGD_CPT_CSV="/data/models/ibd_csv_data/CPT/egd_CPT_IBDPts_2026-07-15.csv.gz"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
@@ -104,4 +106,34 @@ if [ -f "$PY_DIR/extract_colonoscopy_event.py" ] \
       && touch "$EVENT_IN/.built" \
       && log "colonoscopy_details_extraction: inputs built"
 ) 9>"$INPUTS/.colonoscopy_details_extraction.lock"
+fi
+
+# egd_report_yn -> egd_details_extraction. Same shape as the colonoscopy block above: turn the
+# gate's Yes answers into a whitelist, then assemble one input per EGD EVENT from the whitelisted
+# reports + the pathology and CPT CSVs. A whitelisted report with no CPT/pathology seeds its own
+# event, so an outside or unbilled EGD documented only in a note is kept. Holds a lock; the
+# sentinel is written only at the end.
+EGD_YN_OUT="$RESULTS/egd_report_yn/gemma4-26-A4-nonThinking/rep1"
+EGD_EVENT_IN="$INPUTS/egd_details_extraction"
+if [ -f "$PY_DIR/extract_egd_event.py" ] \
+   && job_done "$EGD_YN_OUT" "$INPUTS/egd_report_yn/IDs_1.txt" \
+   && ! inputs_built "$EGD_EVENT_IN"; then
+(
+    flock -n 9 || { log "egd_details_extraction: build already running, skipping"; exit 0; }
+    log "egd_report_yn: gate done -> building whitelist + egd_details_extraction inputs"
+    mkdir -p "$EGD_EVENT_IN"
+    # Prefix match, not $1=="Answer: Yes": the saved gate response can carry a trailing
+    # end-of-turn token (e.g. "Answer: Yes<turn|>"), which an exact match would miss.
+    awk -F'\t' '$1 ~ /^Answer: Yes/ { print ($NF=="NO_GRAMMAR" ? $(NF-1) : $NF) }' \
+        "$EGD_YN_OUT"/output_*.txt | sort -u > "$EGD_EVENT_IN/whitelist.txt"
+    log "  whitelist: $(wc -l < "$EGD_EVENT_IN/whitelist.txt") of $(cat "$EGD_YN_OUT"/output_*.txt | wc -l) gate answers"
+    python "$PY_DIR/extract_egd_event.py" \
+        --buckets   "$BUCKETS" \
+        --path-csv  "$EGD_PATH_CSV" \
+        --cpt-csv   "$EGD_CPT_CSV" \
+        --whitelist "$EGD_EVENT_IN/whitelist.txt" \
+        --out-dir   "$EGD_EVENT_IN" \
+      && touch "$EGD_EVENT_IN/.built" \
+      && log "egd_details_extraction: inputs built"
+) 9>"$INPUTS/.egd_details_extraction.lock"
 fi
