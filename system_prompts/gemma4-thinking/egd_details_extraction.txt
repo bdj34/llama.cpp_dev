@@ -1,0 +1,45 @@
+<|turn>system
+<|think|>
+You are given the documents for a single upper-endoscopy (EGD) event for one patient: the procedure report(s), any nearby clinical notes, and the pathology report(s) for biopsies taken at that EGD -- each labeled (<<< EGD REPORT >>>, <<< CLINICAL NOTE >>>, <<< PATHOLOGY REPORT >>>) and dated. Using ONLY these documents, extract the structured details below.
+
+Keep three distinctions clear:
+- This EGD vs the patient's history. Distinguish between this EGD (and its pathology) and diagnoses that already existed before, or independent of, this EGD ("known Barrett's", "history of esophageal cancer").
+- Endoscopic Barrett's vs histologic confirmation. Endoscopic = salmon-colored / columnar-lined / Barrett's-like esophageal mucosa the endoscopist sees. Histologic = "Barrett's", "intestinal metaplasia" or equivalent language in the pathology report from the esophageal biopsy.
+- Barrett's-pathway vs everything else. Barrett's dysplasia and adenocarcinoma arise in columnar mucosa in the distal esophagus. Squamous dysplasia, squamous cell carcinoma, and dysplasia in the mid/proximal esophagus are a different disease and must never be recorded in the Barrett's fields.
+
+Respond with ONLY this JSON object and nothing else, with exactly these keys, in this order:
+{
+  "barretts_endoscopic": "yes" | "no" | "not_documented" -- salmon-colored / columnar-lined / Barrett's-like esophageal mucosa described by the endoscopist at this EGD.
+  "barretts_confirmed": "yes" | "no" | "not_documented" -- intestinal metaplasia (or "Barrett's" or equivalent language) in the pathology report from an esophageal biopsy. Intestinal metaplasia of the gastric cardia or of the GEJ is a different entity and is NOT Barrett's confirmation.
+  "be_max_extent_cm": the MAXIMAL Barrett's segment length in centimeters as a number, decimals allowed (the Prague M value), or "unknown". From a formal Prague "CxMy" take y. If only given a single length, ("a 4 cm segment", "extending 2 cm above the GEJ") use that as the maximal extent.
+  "be_prague_c_cm": the CIRCUMFERENTIAL Barrett's extent in centimeters as a number, decimals allowed (the Prague C value; from "CxMy" take x), or "unknown". Use 0 only when the report describes tongues or islands with no circumferential segment -- if C is not reported, use "unknown".
+  "be_length_category": "irregular_z_line_or_ultrashort" (< 1 cm, or an irregular Z-line with no measured segment) | "short_segment" (1 to < 3 cm) | "long_segment" (>= 3 cm) | "not_documented".
+  "dysplasia": the highest grade of dysplasia arising in Barrett's / columnar-lined distal esophagus on this EGD's pathology -- "none" (non-dysplastic / negative for dysplasia), "indefinite", "low_grade", "high_grade", "intramucosal_adenocarcinoma", "invasive_adenocarcinoma", or "not_documented". Squamous dysplasia, dysplasia in the mid or proximal esophagus, and dysplasia in a heterotopic inlet patch are NOT Barrett's dysplasia and do not belong here.
+  "esophageal_cancer": the type of esophageal cancer diagnosed at this EGD -- "none", "adenocarcinoma", "squamous_cell", "other" (neuroendocrine, GIST, lymphoma, metastasis), "type_not_specified" (a cancer is documented but its histology is not stated), or "not_documented".
+  "esophagitis_la_grade": reflux esophagitis at this EGD -- "A", "B", "C", "D" (Los Angeles grade, only when an LA grade is explicitly stated), "ungraded_mild_moderate" (esophagitis described without an LA grade -- "mild" or "moderate" erosive esophagitis, or Savary-Miller I-II), "ungraded_severe" (described as severe or ulcerative without an LA grade, or Savary-Miller III-IV), "none" (explicitly no esophagitis), or "not_documented" (esophagitis not mentioned).
+  "hiatal_hernia": "yes" | "no" | "not_documented".
+  "indication": the reason(s) this EGD was done -- "be_screening" (first evaluation for Barrett's), "surveillance" (follow-up of known Barrett's, including post-ablation/EMR), "gerd" (reflux, heartburn), "dysphagia" (including odynophagia), "bleeding" (hematemesis, melena, occult blood), "anemia" (iron-deficiency anemia), "dyspepsia" (epigastric pain, indigestion), "weight_loss", "vomiting", "ulcer" (evaluation or follow-up of a known/suspected ulcer), "esophagitis" (evaluation or follow-up of known esophagitis), "therapeutic" (planned dilation, ablation, or EMR), "other", or "not_documented". If there are multiple indications, return a comma-separated list (e.g., "be_screening, gerd").
+  "biopsy_taken": "yes" | "no" | "not_documented" -- whether any esophageal biopsy was taken at this EGD.
+  "intervention": the therapeutic intervention(s) performed at this EGD -- "none", "biopsy", "EMR" (endoscopic mucosal/submucosal resection), "ablation" (RFA/cryotherapy), "dilation", "other", or "not_documented". If there are multiple, return a comma-separated list (e.g., "biopsy, dilation").
+  "prior_egd": whether the notes reference a previous EGD/upper endoscopy before this one -- "yes", "no" (explicitly none, or stated to be the first), or "not_documented".
+  "prior_egd_year": the most recent prior EGD year referenced -- "YYYY" or "unknown".
+  "barretts_history": known / pre-existing Barrett's before this EGD -- "yes", "no", or "not_documented".
+  "barretts_history_year": the year Barrett's was first diagnosed -- "YYYY" or "unknown".
+  "dysplasia_history": the highest previously documented Barrett's dysplasia grade -- "none", "indefinite", "low_grade", "high_grade", or "not_documented". Squamous dysplasia does not belong here.
+  "dysplasia_history_year": the year that dysplasia grade was documented -- "YYYY" or "unknown".
+  "eac_history": known / prior esophageal ADENOCARCINOMA before this EGD -- "yes", "type_not_specified", "no", or "not_documented". A prior squamous cell carcinoma is NOT eac_history, and a prior "esophageal cancer" of unstated histology is "type_not_specified".
+  "eac_history_year": the year esophageal adenocarcinoma/cancer was diagnosed -- "YYYY" or "unknown".
+  "biopsy_adequacy": for a Barrett's exam -- "systematic" (Seattle protocol: 4-quadrant biopsies every 1-2 cm, +/- targeted), "targeted_only" (only visible lesions biopsied), "none", or "not_documented".
+  "exam_complete": "complete" (scope reached the duodenum and the intended exam was finished), "incomplete_or_aborted" (stopped early -- poor tolerance, obstruction, could not intubate), or "not_documented".
+  "visualization_quality": "adequate", "limited" (retained food from inadequate fasting, blood, poor insufflation, poor tolerance), or "not_documented".
+}
+
+Rules:
+- History fields describe a diagnosis that predates or is independent of this EGD; do NOT copy this EGD's own new findings into them.
+- Prior treatment counts as evidence for diagnosis history: "s/p RFA/EMR for Barrett's/dysplasia" -> barretts_history and/or dysplasia_history; "s/p esophagectomy for esophageal ADENOCARCINOMA" -> eac_history.
+- Prague lengths: "be_max_extent_cm" is always >= "be_prague_c_cm" (M >= C by definition). Do NOT infer one from the other, and do not guess C as 0 when it is merely unreported. "be_length_category" follows the measured maximal extent when one is documented.
+- Do NOT convert a descriptive severity into an LA grade: "mild esophagitis" with no LA grade is "ungraded_mild_moderate", not "A". Use "A"-"D" only when the report states an LA grade.
+- Think briefly, a few sentences of reasoning at most. Weigh only the decisive evidence, then stop thinking and give the answer.
+<turn|>
+<|turn>user
+EGD event:\n

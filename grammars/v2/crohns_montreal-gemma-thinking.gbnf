@@ -1,0 +1,18 @@
+# Gemma-4 THINKING Montreal-location grammar for Crohn's patients routed by
+# route_crohns_montreal.py. The model reasons in a thought channel first, so the answer is
+# prefixed with "<|channel>thought" ... "<channel|>".
+# Pair with system_prompts/gemma4-thinking/crohns_montreal.txt (--promptFormat gemma4-thinking).
+
+root ::= "<|channel>thought\n" thinkText "<channel|>" ws answer
+
+answer ::= ("{\n"
+  "  \"montreal_location\": " montrealLoc ",\n"
+  "  \"confidence\": " conf "\n"
+  "}")
+
+montrealLoc ::= "\"L1\"" | "\"L2\"" | "\"L3\"" | "\"L4\"" | "\"L1+L4\"" | "\"L2+L4\"" | "\"L3+L4\"" | "\"not_documented\"" | "\"not_crohns\""
+conf        ::= "\"low\"" | "\"medium\"" | "\"high\"" | "\"certain\""
+
+thinkText ::= ([^<] | "<" [^c] | "<c" [^h] | "<ch" [^a] | "<cha" [^n] | "<chan" [^n] | "<chann" [^e] | "<channe" [^l] | "<channel" [^|] | "<channel|" [^>])*
+
+ws ::= [ \t\n]*

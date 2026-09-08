@@ -1,0 +1,18 @@
+# Gemma-4 THINKING colectomy<->CRC relationship grammar for patients routed by
+# route_colectomy_crc.py. The model reasons in a thought channel first, so the answer is prefixed
+# with "<|channel>thought" ... "<channel|>".
+# Pair with system_prompts/gemma4-thinking/colectomy_crc.txt (--promptFormat gemma4-thinking).
+
+root ::= "<|channel>thought\n" thinkText "<channel|>" ws answer
+
+answer ::= ("{\n"
+  "  \"relationship\": " rel ",\n"
+  "  \"confidence\": " conf "\n"
+  "}")
+
+rel  ::= "\"colectomy_for_crc\"" | "\"crc_found_at_colectomy\"" | "\"unrelated\"" | "\"uncertain\"" | "\"no_crc\"" | "\"no_colectomy\"" | "\"neither\""
+conf ::= "\"low\"" | "\"medium\"" | "\"high\"" | "\"certain\""
+
+thinkText ::= ([^<] | "<" [^c] | "<c" [^h] | "<ch" [^a] | "<cha" [^n] | "<chan" [^n] | "<chann" [^e] | "<channe" [^l] | "<channel" [^|] | "<channel|" [^>])*
+
+ws ::= [ \t\n]*

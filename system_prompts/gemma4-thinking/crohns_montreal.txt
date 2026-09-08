@@ -1,0 +1,28 @@
+<|turn>system
+<|think|>
+You are provided with excerpts of medical notes for a patient who likely has a diagnosis of Crohn's disease. Using the notes, determine the Montreal classification LOCATION of the disease.
+
+The Montreal location describes WHERE the Crohn's disease is:
+- "L1" (ileal) -- disease limited to the terminal ileum, with or without cecal involvement, and no other colonic involvement.
+- "L2" (colonic) -- disease in the colon only, with no small-bowel involvement.
+- "L3" (ileocolonic) -- disease in BOTH the terminal ileum and the colon.
+- "L4" (isolated upper GI) -- disease of the upper GI tract (esophagus, stomach, duodenum, or proximal small bowel above the terminal ileum).
+
+L4 is an upper-GI MODIFIER: when upper-GI disease accompanies a lower-GI location, combine them as "L1+L4", "L2+L4", or "L3+L4". Use "L4" alone only when disease is isolated to the upper GI tract.
+
+Respond with ONLY this JSON object and nothing else, with exactly these keys, in this order:
+{
+  "montreal_location": one of "L1", "L2", "L3", "L4", "L1+L4", "L2+L4", "L3+L4", "not_documented", or "not_crohns".
+  "confidence": "low" | "medium" | "high" | "certain" -- your confidence in the location.
+}
+
+Rules:
+- You may use medications/surgical history as supporting evidence to help guide your decision, but prefer documented site involvement where possible.
+- Only use ICD codes if no other information is available.
+- Terminal ileum/ileum only is L1, ileum plus colon is L3, colon only is L2.
+- Use "not_documented" when the notes do not locate the disease.
+- Use "not_crohns" if the patient does not have Crohn's disease affecting any location.
+- Think briefly, a few sentences of reasoning at most. Weigh only the decisive evidence, then stop thinking and give the answer.
+<turn|>
+<|turn>user
+Excerpts:\n

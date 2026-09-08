@@ -137,3 +137,55 @@ if [ -f "$PY_DIR/extract_egd_event.py" ] \
       && log "egd_details_extraction: inputs built"
 ) 9>"$INPUTS/.egd_details_extraction.lock"
 fi
+
+# ibd reviewer -> crohns_montreal. Once the ibd reviewer has settled every patient, route the
+# Crohn's patients to a focused Montreal-location task (L1/L2/L3 +/- L4). A patient is routed if
+# ANY of the three models -- the reviewer or either small model -- called them Crohn's (union,
+# recall-favoring). The router reuses the ibd note excerpts (replicate 3, the reviewer's own
+# view), filtered to that set. Holds a lock; the sentinel is written only at the end.
+IBD_REVIEWER="$RESULTS/ibd_rerun/gemma4-31B-thinking/rep3"
+MONTREAL_IN="$INPUTS/crohns_montreal"
+if [ -f "$PY_DIR/route_crohns_montreal.py" ] \
+   && job_done "$IBD_REVIEWER" "$INPUTS/ibd/IDs_3.txt" \
+   && ! inputs_built "$MONTREAL_IN"; then
+(
+    flock -n 9 || { log "crohns_montreal: build already running, skipping"; exit 0; }
+    log "ibd reviewer done -> routing Crohn's patients to crohns_montreal inputs"
+    python "$PY_DIR/route_crohns_montreal.py" \
+        --reviewer-dir "$IBD_REVIEWER" \
+        --path1        "$RESULTS/ibd/gemma4-26-A4-nonThinking/rep1" \
+        --path2        "$RESULTS/ibd/qwen3.6-35-A3-nonThinking/rep2" \
+        --ibd-inputs   "$INPUTS/ibd" \
+        --replicate    3 \
+        --out-dir      "$MONTREAL_IN" \
+      && touch "$MONTREAL_IN/.built" \
+      && log "crohns_montreal: inputs built"
+) 9>"$INPUTS/.crohns_montreal.lock"
+fi
+
+# colectomy + crc -> colectomy_crc. Once BOTH the colectomy and CRC reviewers are done, find the
+# patients with a colectomy surgery-year within +/-1 of a CRC diagnosis-year (union across all
+# three sources per task) and re-extract a colectomy+CRC timeline from the buckets for them, so a
+# downstream task can classify the relationship (colectomy_for_crc / crc_found_at_colectomy /
+# unrelated). Holds a lock; the sentinel is written only at the end.
+COLECTOMY_CRC_IN="$INPUTS/colectomy_crc"
+if [ -f "$PY_DIR/route_colectomy_crc.py" ] \
+   && job_done "$RESULTS/colectomy_rerun/gemma4-31B-thinking/rep3"      "$INPUTS/colectomy/IDs_3.txt" \
+   && job_done "$RESULTS/crc_free_text_rerun/gemma4-31B-thinking/rep3"  "$INPUTS/crc_free_text/IDs_3.txt" \
+   && ! inputs_built "$COLECTOMY_CRC_IN"; then
+(
+    flock -n 9 || { log "colectomy_crc: build already running, skipping"; exit 0; }
+    log "colectomy + crc reviewers done -> routing same-year colectomy+CRC patients"
+    python "$PY_DIR/route_colectomy_crc.py" \
+        --colectomy-dirs "$RESULTS/colectomy_rerun/gemma4-31B-thinking/rep3" \
+                         "$RESULTS/colectomy/gemma4-26-A4-nonThinking/rep1" \
+                         "$RESULTS/colectomy/qwen3.6-35-A3-nonThinking/rep2" \
+        --crc-dirs       "$RESULTS/crc_free_text_rerun/gemma4-31B-thinking/rep3" \
+                         "$RESULTS/crc_free_text/gemma4-26-A4-nonThinking/rep1" \
+                         "$RESULTS/crc_free_text/qwen3.6-35-A3-nonThinking/rep2" \
+        --buckets  "$BUCKETS" \
+        --out-dir  "$COLECTOMY_CRC_IN" \
+      && touch "$COLECTOMY_CRC_IN/.built" \
+      && log "colectomy_crc: inputs built"
+) 9>"$INPUTS/.colectomy_crc.lock"
+fi
