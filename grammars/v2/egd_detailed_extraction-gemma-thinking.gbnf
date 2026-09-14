@@ -1,0 +1,71 @@
+# Gemma-4 THINKING EGD detailed-extraction grammar: one object per EGD EVENT, fixed key order.
+# The model reasons in a thought channel first, so the answer is prefixed with
+# "<|channel>thought" ... "<channel|>".
+# Pair with system_prompts/gemma4-thinking/egd_detailed_extraction.txt (--promptFormat gemma4-thinking).
+#
+# Three fields are LIST-valued -- "neoplasia", "indication", "intervention". The list is one JSON
+# string holding comma-separated bare tokens ("low_grade, high_grade"), so the quotes wrap the
+# whole list, not each item. Order and duplicates are deliberately unconstrained: downstream
+# parses them as sets, and a nonsensical combination ("none, low_grade") is kept visible as a
+# data-quality signal rather than being forbidden here.
+#
+# NOTE: this parser needs each rule's alternation on ONE line (no line-wrapping), and a
+# multi-line rule body must be wrapped in parentheses.
+
+root ::= "<|channel>thought\n" thinkText "<channel|>" ws answer
+
+answer ::= ("{\n"
+  "  \"barretts_endoscopic\": " yesNoND ",\n"
+  "  \"barretts_confirmed\": " yesNoND ",\n"
+  "  \"be_max_extent_cm\": " cmVal ",\n"
+  "  \"be_prague_c_cm\": " cmVal ",\n"
+  "  \"be_length_category\": " lenCat ",\n"
+  "  \"neoplasia\": " neoList ",\n"
+  "  \"neoplasia_multifocal\": " yesNoND ",\n"
+  "  \"esophageal_cancer\": " cancerType ",\n"
+  "  \"esophagitis_la_grade\": " esophGrade ",\n"
+  "  \"hiatal_hernia\": " yesNoND ",\n"
+  "  \"indication\": " indList ",\n"
+  "  \"biopsy_taken\": " yesNoND ",\n"
+  "  \"intervention\": " intvList ",\n"
+  "  \"prior_egd\": " yesNoND ",\n"
+  "  \"prior_egd_year\": " yearVal ",\n"
+  "  \"barretts_history\": " yesNoND ",\n"
+  "  \"barretts_history_year\": " yearVal ",\n"
+  "  \"dysplasia_history\": " dysHist ",\n"
+  "  \"dysplasia_history_year\": " yearVal ",\n"
+  "  \"eac_history\": " eacHist ",\n"
+  "  \"eac_history_year\": " yearVal ",\n"
+  "  \"biopsy_adequacy\": " biopAdq ",\n"
+  "  \"exam_complete\": " examComplete ",\n"
+  "  \"visualization_quality\": " visQual "\n"
+  "}")
+
+yesNoND      ::= "\"yes\"" | "\"no\"" | "\"not_documented\""
+lenCat       ::= "\"irregular_z_line_or_ultrashort\"" | "\"short_segment\"" | "\"long_segment\"" | "\"not_documented\""
+cancerType   ::= "\"none\"" | "\"adenocarcinoma\"" | "\"squamous_cell\"" | "\"other\"" | "\"type_not_specified\"" | "\"not_documented\""
+esophGrade   ::= "\"A\"" | "\"B\"" | "\"C\"" | "\"D\"" | "\"ungraded_mild_moderate\"" | "\"ungraded_severe\"" | "\"none\"" | "\"not_documented\""
+dysHist      ::= "\"none\"" | "\"indefinite\"" | "\"low_grade\"" | "\"high_grade\"" | "\"not_documented\""
+eacHist      ::= "\"yes\"" | "\"type_not_specified\"" | "\"no\"" | "\"not_documented\""
+biopAdq      ::= "\"systematic\"" | "\"targeted_only\"" | "\"none\"" | "\"not_documented\""
+examComplete ::= "\"complete\"" | "\"incomplete_or_aborted\"" | "\"not_documented\""
+visQual      ::= "\"adequate\"" | "\"limited\"" | "\"not_documented\""
+
+# List-valued fields: quotes wrap the whole comma-separated list.
+neoList  ::= "\"" neoItem (", " neoItem)* "\""
+neoItem  ::= "none" | "indefinite" | "low_grade" | "high_grade" | "intramucosal_adenocarcinoma" | "invasive_adenocarcinoma" | "not_documented"
+indList  ::= "\"" indItem (", " indItem)* "\""
+indItem  ::= "be_screening" | "surveillance" | "gerd" | "dysphagia" | "bleeding" | "anemia" | "dyspepsia" | "weight_loss" | "vomiting" | "ulcer" | "esophagitis" | "therapeutic" | "other" | "not_documented"
+intvList ::= "\"" intvItem (", " intvItem)* "\""
+intvItem ::= "none" | "biopsy" | "EMR" | "ablation" | "dilation" | "other" | "not_documented"
+
+# Lengths in cm: a bare JSON number (decimals allowed) or the string "unknown".
+cmVal  ::= cmNum | "\"unknown\""
+cmNum  ::= [0-9] [0-9]? ("." [0-9])?
+
+yearVal ::= "\"" year "\"" | "\"unknown\""
+year    ::= ("1" | "2") [0-9] [0-9] [0-9]
+
+thinkText ::= ([^<] | "<" [^c] | "<c" [^h] | "<ch" [^a] | "<cha" [^n] | "<chan" [^n] | "<chann" [^e] | "<channe" [^l] | "<channel" [^|] | "<channel|" [^>])*
+
+ws ::= [ \t\n]*
