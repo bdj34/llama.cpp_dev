@@ -3,7 +3,8 @@
 # "<|channel>thought" ... "<channel|>".
 # Pair with system_prompts/gemma4-thinking/egd_detailed_extraction.txt (--promptFormat gemma4-thinking).
 #
-# Three fields are LIST-valued -- "neoplasia", "indication", "intervention". The list is one JSON
+# Four fields are LIST-valued -- "neoplasia", "other_findings", "indication",
+# "esophageal_intervention". The list is one JSON
 # string holding comma-separated bare tokens ("low_grade, high_grade"), so the quotes wrap the
 # whole list, not each item. Order and duplicates are deliberately unconstrained: downstream
 # parses them as sets, and a nonsensical combination ("none, low_grade") is kept visible as a
@@ -15,6 +16,13 @@
 root ::= "<|channel>thought\n" thinkText "<channel|>" ws answer
 
 answer ::= ("{\n"
+  "  \"egd_performed\": " body "\n"
+  "}")
+
+body   ::= noBody | yesBody
+noBody ::= "\"no\""
+
+yesBody ::= ("\"yes\",\n"
   "  \"barretts_endoscopic\": " yesNoND ",\n"
   "  \"barretts_confirmed\": " yesNoND ",\n"
   "  \"be_max_extent_cm\": " cmVal ",\n"
@@ -25,9 +33,10 @@ answer ::= ("{\n"
   "  \"esophageal_cancer\": " cancerType ",\n"
   "  \"esophagitis_la_grade\": " esophGrade ",\n"
   "  \"hiatal_hernia\": " yesNoND ",\n"
+  "  \"other_findings\": " othList ",\n"
   "  \"indication\": " indList ",\n"
   "  \"biopsy_taken\": " yesNoND ",\n"
-  "  \"intervention\": " intvList ",\n"
+  "  \"esophageal_intervention\": " intvList ",\n"
   "  \"prior_egd\": " yesNoND ",\n"
   "  \"prior_egd_year\": " yearVal ",\n"
   "  \"barretts_history\": " yesNoND ",\n"
@@ -38,8 +47,7 @@ answer ::= ("{\n"
   "  \"eac_history_year\": " yearVal ",\n"
   "  \"biopsy_adequacy\": " biopAdq ",\n"
   "  \"exam_complete\": " examComplete ",\n"
-  "  \"visualization_quality\": " visQual "\n"
-  "}")
+  "  \"visualization_quality\": " visQual)
 
 yesNoND      ::= "\"yes\"" | "\"no\"" | "\"not_documented\""
 lenCat       ::= "\"irregular_z_line_or_ultrashort\"" | "\"short_segment\"" | "\"long_segment\"" | "\"not_documented\""
@@ -58,6 +66,8 @@ indList  ::= "\"" indItem (", " indItem)* "\""
 indItem  ::= "be_screening" | "surveillance" | "gerd" | "dysphagia" | "bleeding" | "anemia" | "dyspepsia" | "weight_loss" | "vomiting" | "ulcer" | "esophagitis" | "therapeutic" | "other" | "not_documented"
 intvList ::= "\"" intvItem (", " intvItem)* "\""
 intvItem ::= "none" | "biopsy" | "EMR" | "ablation" | "dilation" | "other" | "not_documented"
+othList  ::= "\"" othItem (", " othItem)* "\""
+othItem  ::= "none" | "stricture" | "ring_or_web" | "eosinophilic_esophagitis" | "varices" | "diverticulum" | "gastric_or_duodenal_ulcer" | "other" | "not_documented"
 
 # Lengths in cm: a bare JSON number (decimals allowed) or the string "unknown".
 cmVal  ::= cmNum | "\"unknown\""
