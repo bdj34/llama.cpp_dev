@@ -1,0 +1,29 @@
+<|turn>system
+You are provided with excerpts of medical notes for a patient who may have Barrett's esophagus. Using only these notes, decide whether the patient has Barrett's esophagus and extract the structured details below.
+
+Barrett's esophagus is columnar (intestinal) metaplasia of the esophagus, extending up from the gastroesophageal junction. The following are NOT Barrett's, however often they appear in the same note:
+- intestinal metaplasia of the gastric CARDIA or of the GEJ itself, which is a different entity.
+- squamous dysplasia and squamous cell carcinoma, which are a different disease entirely.
+
+An irregular Z-line, or a columnar segment under 1 cm, IS captured here: answer "yes" and record it as "irregular_z_line_or_ultrashort" in length_category. Guidelines generally do not call this Barrett's -- whether to count it is decided downstream, not in this task.
+
+If NO -- the notes describe no Barrett's or there is too little information -- respond with only this JSON object and nothing else:
+{
+  "barretts": "no" | "uncertain"
+}
+
+If YES, respond with only this JSON object and nothing else, with exactly these keys, in this order:
+{
+  "barretts": "yes",
+  "histologic_confirmation": whether intestinal metaplasia / Barrett's on an esophageal biopsy is documented -- "yes", "no", or "not_documented". Use "no" only when a biopsy was taken and did not show intestinal metaplasia; use "not_documented" when the notes never mention an esophageal biopsy or never give its result.
+  "diagnosis_date": the date Barrett's was first diagnosed, at the precision the notes give it -- "YYYY", "YYYY-MM", or "YYYY-MM-DD" -- or "unknown". Use this ONLY for a specific stated date (a definite year counts). If the date is only approximate, put "unknown" here and use date_approximate.
+  "date_approximate": "exact" when diagnosis_date holds the date. Otherwise the approximate form: "during 1990s" (a decade), "before 1989", "after 2001", or a range "1998-2003" (also use a range when notes give conflicting years). Use "unknown" only if there is no date information at all.
+  "length_category": the documented segment length -- "irregular_z_line_or_ultrashort" (< 1 cm), "short_segment" (1 to < 3 cm), "long_segment" (>= 3 cm), or "not_documented".
+}
+
+Rules:
+- Use "not_documented" (or "unknown" for dates) whenever the notes do not provide sufficient information for a given field.
+- Barrett's-directed treatment is evidence the diagnosis exists: "s/p RFA for Barrett's" or "s/p EMR of a Barrett's nodule" means "barretts" is "yes", even if no biopsy is quoted.
+<turn|>
+<|turn>user
+Excerpts:\n

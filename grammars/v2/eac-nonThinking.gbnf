@@ -1,0 +1,50 @@
+# Esophageal adenocarcinoma free-text extraction -- JSON output, fixed key order.
+# Early exit: no esophageal cancer, or squamous only, emits just {"eac": "no"} and stops.
+# A cancer whose histology is never stated takes the FULL object with eac="uncertain_histology",
+# so its site, Siewert type and stage are kept rather than discarded.
+# Pair with system_prompts/{gemma4,qwen3.6}-nonThinking/eac.txt.
+#
+# NOTE: this parser needs each rule's alternation on ONE line (no line-wrapping), and a
+# multi-line rule body must be wrapped in parentheses.
+
+root ::= yesObj | noObj
+
+yesObj ::= ("{\n"
+  "  \"eac\": " eacVal ",\n"
+  "  \"diagnosis_date\": " date ",\n"
+  "  \"date_approximate\": " approx ",\n"
+  "  \"anatomical_site\": " site ",\n"
+  "  \"siewert\": " siewert ",\n"
+  "  \"barretts_associated\": " yesNoND ",\n"
+  "  \"detection_mode\": " mode ",\n"
+  "  \"stage_ajcc\": " ajcc ",\n"
+  "  \"stage_t\": " tcat ",\n"
+  "  \"stage_n\": " ncat ",\n"
+  "  \"stage_m\": " mcat ",\n"
+  "  \"care_setting\": " setting "\n"
+  "}")
+
+noObj ::= ("{\n"
+  "  \"eac\": \"no\"\n"
+  "}")
+
+eacVal  ::= "\"yes\"" | "\"uncertain_histology\""
+yesNoND ::= "\"yes\"" | "\"no\"" | "\"not_documented\""
+site    ::= "\"upper_esophagus\"" | "\"mid_esophagus\"" | "\"distal_esophagus\"" | "\"gej\"" | "\"gastric_cardia\"" | "\"esophagus_nos\"" | "\"other\"" | "\"not_documented\""
+siewert ::= "\"I\"" | "\"II\"" | "\"III\"" | "\"not_applicable\"" | "\"not_documented\""
+mode    ::= "\"screen_detected\"" | "\"surveillance_detected\"" | "\"symptomatic\"" | "\"incidental\"" | "\"not_documented\""
+ajcc    ::= "\"0\"" | "\"I\"" | "\"II\"" | "\"III\"" | "\"IV\"" | "\"unknown\"" | "\"not_documented\""
+tcat    ::= "\"Tis\"" | "\"T0\"" | "\"T1\"" | "\"T1a\"" | "\"T1b\"" | "\"T2\"" | "\"T3\"" | "\"T4\"" | "\"T4a\"" | "\"T4b\"" | "\"TX\"" | "\"not_documented\""
+ncat    ::= "\"N0\"" | "\"N1\"" | "\"N2\"" | "\"N3\"" | "\"NX\"" | "\"not_documented\""
+mcat    ::= "\"M0\"" | "\"M1\"" | "\"MX\"" | "\"not_documented\""
+setting ::= "\"VA\"" | "\"external\"" | "\"not_documented\""
+
+date   ::= "\"" year ( "-" mm ( "-" dd )? )? "\"" | "\"unknown\""
+approx ::= ("\"exact\"" | "\"unknown\"" | "\"during " decade "0s\"" | "\"before " year "\"" | "\"after " year "\"" | "\"" year "-" year "\"")
+
+year    ::= ("1" | "2") digit digit digit
+decade  ::= ("1" | "2") digit digit
+mm      ::= ("0" nonzero) | ("1" ("0" | "1" | "2"))
+dd      ::= ("0" nonzero) | (("1" | "2") digit) | ("3" ("0" | "1"))
+digit   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+nonzero ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"

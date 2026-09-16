@@ -51,9 +51,11 @@ so each would otherwise appear twice -- once as a CLINICAL NOTE and again as the
 it is -- while crowding out real notes under --max-notes. Their TIU note IDs are collected while
 indexing pathology and dropped from the note stream.
 
-Nothing is truncated. A report's findings and impression are what the extraction needs and both
-sit at the end, so a size cap here would silently cost accuracy; the ctx budget is set in
-jobs.conf instead. Watch manifest.csv's input_chars to size it.
+Nothing is truncated: a report's findings and impression both sit at the END, so a size cap would
+silently cost accuracy. Instead an oversized CONTEXT note -- a nearby note that is NOT a
+gate-confirmed report -- is dropped whole (--max-context-chars). A gate-confirmed EGD report and
+the pathology report are never dropped, however long, since they are the primary evidence. The ctx
+budget is still set in jobs.conf; watch manifest.csv's input_chars to size --parallel.
 
 Documents are emitted as one chronological stream, each labeled EGD REPORT, CLINICAL NOTE, or
 PATHOLOGY REPORT, ties going to the endoscopic document. The labels are what let the model
@@ -337,6 +339,12 @@ def main():
     ap.add_argument("--max-notes", type=int, default=5,
                     help="cap on notes per event TOTAL, gate-confirmed report(s) included; the "
                          "remaining slots are filled with the notes nearest the anchor")
+    ap.add_argument("--max-context-chars", type=int, default=50000,
+                    help="a CONTEXT note (not a gate-confirmed report) is only shown if its text is "
+                         "at most this many characters. Runaway notes -- scanned-record dumps, full "
+                         "chart exports -- otherwise blow past the per-client ctx budget and kill "
+                         "the run (KV exhaustion is fatal, not a per-input skip). Reports and "
+                         "pathology are exempt.")
     ap.add_argument("--lookback-days", type=int, default=5,
                     help="how many days BEFORE the anchor a context note may fall; the forward "
                          "reach is --window-days. Applies whether or not a report was confirmed")
@@ -395,6 +403,8 @@ def main():
             counts["with_nearby_only"] += bool(ev.fallback_notes and not ev.notes)
             counts["with_cpt"] += bool(ev.cpt_dates)
             counts["chars"] += len(line)
+            if len(line) > counts["max_chars"]:
+                counts["max_chars"] = len(line)
 
     source = _iter_buckets(Path(args.buckets)) if args.buckets else _iter_single_csv(Path(args.notes))
     seen = set()
@@ -409,10 +419,21 @@ def main():
                 if _parse_dt(r["NoteDateTime"]):
                     dated.append(r)
             wl_notes = [r for r in dated if is_report(r)]
+            report_ids = {r["NoteID"] for r in wl_notes}
+            # Context pool: nearby notes only. A gate-confirmed report never comes from here (it
+            # arrives as wl_notes), so length-gating this pool cannot drop a report.
+            ctx_notes = []
+            for r in dated:
+                if r["NoteID"] in report_ids:
+                    continue
+                if len(r["ReportText"] or "") > args.max_context_chars:
+                    counts["ctx_oversized_dropped"] += 1
+                    continue
+                ctx_notes.append(r)
             paths, cpts = path_index.get(icn, []), cpt_index.get(icn, [])
             if not (wl_notes or paths or cpts):
                 continue
-            emit(icn, cluster_patient(dated, wl_notes, cpts, paths, args.window_days,
+            emit(icn, cluster_patient(ctx_notes, wl_notes, cpts, paths, args.window_days,
                                       args.merge_days, args.max_notes, args.lookback_days), fh)
 
         # Patients whose pathology or CPT rows never met a note bucket still have real events.
@@ -431,7 +452,8 @@ def main():
           f"path {counts['with_path']:,} | confirmed report {counts['with_report']:,} | "
           f"nearby-notes only {counts['with_nearby_only']:,} | cpt {counts['with_cpt']:,} | "
           f"{counts['path_notes_dropped']:,} pathology notes dropped | "
-          f"mean {counts['chars'] // n:,} chars/emitted input | "
+          f"{counts['ctx_oversized_dropped']:,} context notes over --max-context-chars dropped | "
+          f"mean {counts['chars'] // n:,} / max {counts['max_chars']:,} chars per emitted input | "
           f"{counts['patients_no_notes']:,} patients had no notes in the buckets -> {outdir}",
           file=sys.stderr)
 

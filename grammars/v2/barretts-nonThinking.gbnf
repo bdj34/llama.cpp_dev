@@ -1,0 +1,37 @@
+# Barrett's patient-level ascertainment -- JSON output, fixed key order.
+# Early exit: barretts="no"/"uncertain" emits only that one key and stops.
+# Pair with system_prompts/{gemma4,qwen3.6}-nonThinking/barretts.txt.
+#
+# length_category shares its tokens with the event-level egd_detailed_extraction task on
+# purpose, so the two join directly. Note an irregular Z-line / sub-cm segment answers "yes"
+# here and is labelled via length_category -- the >=1 cm cohort decision is made downstream.
+#
+# NOTE: this parser needs each rule's alternation on ONE line (no line-wrapping), and a
+# multi-line rule body must be wrapped in parentheses.
+
+root ::= yesObj | noObj
+
+yesObj ::= ("{\n"
+  "  \"barretts\": \"yes\",\n"
+  "  \"histologic_confirmation\": " yesNoND ",\n"
+  "  \"diagnosis_date\": " diagDate ",\n"
+  "  \"date_approximate\": " dateApprox ",\n"
+  "  \"length_category\": " lenCat "\n"
+  "}")
+
+noObj ::= ("{\n"
+  "  \"barretts\": " ("\"no\"" | "\"uncertain\"") "\n"
+  "}")
+
+yesNoND ::= "\"yes\"" | "\"no\"" | "\"not_documented\""
+lenCat  ::= "\"irregular_z_line_or_ultrashort\"" | "\"short_segment\"" | "\"long_segment\"" | "\"not_documented\""
+
+diagDate   ::= "\"" year ( "-" mm ( "-" dd )? )? "\"" | "\"unknown\""
+dateApprox ::= ("\"exact\"" | "\"unknown\"" | "\"during " decade "0s\"" | "\"before " year "\"" | "\"after " year "\"" | "\"" year "-" year "\"")
+
+year    ::= ("1" | "2") digit digit digit
+decade  ::= ("1" | "2") digit digit
+mm      ::= ("0" nonzero) | ("1" ("0" | "1" | "2"))
+dd      ::= ("0" nonzero) | (("1" | "2") digit) | ("3" ("0" | "1"))
+digit   ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+nonzero ::= "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
