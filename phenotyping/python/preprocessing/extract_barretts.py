@@ -34,14 +34,8 @@ BE_CORE = (
 )
 # The endpoint. Reached only through Barrett's, so an EAC mention is Barrett's evidence.
 EAC = r"o?esophageal\s+(?:adeno)?carcinoma|adenocarcinoma\s+of\s+the\s+o?esophagus|(?-i:\bEAC\b)"
-# Barrett's-directed treatment. Often the ONLY place the diagnosis is named ("s/p RFA").
-# NOTE: bare RFA also means cardiac/hepatic ablation -- kept for recall, drop it if the
-# snippet budget is being eaten by cardiology notes.
-TX = (
-    r"radiofrequency\s+ablation|(?-i:\bRFA\b)|halo\s*(?:90|360)|cryoablation|cryotherapy|"
-    r"endoscopic\s+mucosal\s+resection|endoscopic\s+submucosal\s+dissection|o?esophagectom\w*"
-)
-BE_TERM = rf"{BE_CORE}|{EAC}|{TX}"
+
+BE_TERM = rf"{BE_CORE}|{EAC}"
 
 CONFIG = TaskConfig(
     name="barretts",
