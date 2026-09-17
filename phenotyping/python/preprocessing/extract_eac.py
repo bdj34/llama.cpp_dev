@@ -46,7 +46,7 @@ CANCER = (
 BARRETTS = r"barret\w*"
 # Definitive surgery. Site-specific, so it implies esophageal disease without a cancer word.
 SURG = r"o?esophagectom\w*"
-EAC_TERM = rf"{CANCER}|{BARRETTS}|{SURG}"
+EAC_TERM = rf"{CANCER}|{SURG}"
 
 CONFIG = TaskConfig(
     name="eac",
